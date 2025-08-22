@@ -194,7 +194,8 @@ export const TrainView = () => {
         };
     }
   };
-  return <div className="space-y-6">
+  return (
+    <div className="space-y-6">
       {/* Consent Modal */}
       <ConsentModal isOpen={showConsentModal} onConsentGiven={handleConsentGiven} />
 
@@ -207,8 +208,8 @@ export const TrainView = () => {
         </p>
       </div>
 
-      {/* Analytics Toggle */}
-      {hasConsented && <Card className="p-4 bg-muted/30">
+      {/* Analytics Toggle - Hidden for now */}
+      {/* {hasConsented && <Card className="p-4 bg-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <BarChart3 className="h-5 w-5 text-primary" />
@@ -221,7 +222,7 @@ export const TrainView = () => {
             </div>
             <Switch checked={sessionManager.getSession()?.shareAnalytics || false} onCheckedChange={handleAnalyticsToggle} />
           </div>
-        </Card>}
+        </Card>} */}
 
       {/* Current Phrase */}
       <Card className="p-8 text-center bg-[#f5f8de]">
@@ -238,7 +239,8 @@ export const TrainView = () => {
       </Card>
 
       {/* Success State */}
-      {isSuccess && <Card className="p-6 border-success/20 bg-success/5 text-center">
+      {isSuccess && (
+        <Card className="p-6 border-success/20 bg-success/5 text-center">
           <div className="flex flex-col items-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
               <CheckCircle className="h-6 w-6 text-success" />
@@ -250,7 +252,8 @@ export const TrainView = () => {
               </p>
             </div>
           </div>
-        </Card>}
+        </Card>
+      )}
 
       {/* Error State */}
       {error && <ErrorState {...getErrorDetails(error)} onRetry={() => setError(null)} />}
@@ -262,17 +265,28 @@ export const TrainView = () => {
       </Card>
 
       {/* Empty State when no recording */}
-      {!audioBlob && !error && !isSuccess && <EmptyState icon={MessageSquare} title="Graba la frase" description="Presiona el botón de grabar y lee la frase en voz alta para ayudar a entrenar el modelo" />}
+      {!audioBlob && !error && !isSuccess && (
+        <EmptyState 
+          icon={MessageSquare} 
+          title="Graba la frase" 
+          description="Presiona el botón de grabar y lee la frase en voz alta para ayudar a entrenar el modelo" 
+        />
+      )}
 
       {/* Consent and Privacy */}
-      {audioBlob && !isSuccess && <Card className="p-6">
+      {audioBlob && !isSuccess && (
+        <Card className="p-6">
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-foreground">
               Consentimiento y Privacidad
             </h3>
             
             <div className="flex items-start space-x-3">
-              <Checkbox id="consent" checked={hasConsented} onCheckedChange={checked => setHasConsented(checked === true)} />
+              <Checkbox 
+                id="consent" 
+                checked={hasConsented} 
+                onCheckedChange={checked => setHasConsented(checked === true)} 
+              />
               <label htmlFor="consent" className="text-sm text-foreground leading-relaxed cursor-pointer">
                 Autorizo el uso de esta grabación para mejorar el sistema de reconocimiento 
                 de voz de Adagio. Entiendo que mis datos serán tratados de forma confidencial 
@@ -289,16 +303,22 @@ export const TrainView = () => {
               </p>
             </div>
           </div>
-        </Card>}
+        </Card>
+      )}
 
       {/* Submit Button */}
-      {audioBlob && hasConsented && !isSuccess && <div className="flex justify-center gap-4">
+      {audioBlob && hasConsented && !isSuccess && (
+        <div className="flex justify-center gap-4">
           <Button onClick={handleSubmit} disabled={isSubmitting} size="xl" variant="accent">
-            {isSubmitting ? <>
+            {isSubmitting ? (
+              <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Enviando...
-              </> : 'Enviar Grabación'}
+              </>
+            ) : 'Enviar Grabación'}
           </Button>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 };

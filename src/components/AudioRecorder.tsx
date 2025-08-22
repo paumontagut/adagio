@@ -77,6 +77,7 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioInputs = devices
         .filter(device => device.kind === 'audioinput')
+        .filter(device => device.deviceId !== 'default') // Remove duplicate default
         .map(device => ({
           deviceId: device.deviceId,
           label: device.label || `Micrófono ${device.deviceId.slice(0, 8)}`
