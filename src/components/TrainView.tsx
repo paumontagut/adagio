@@ -14,17 +14,7 @@ import { sessionManager } from '@/lib/sessionManager';
 import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3 } from 'lucide-react';
 
 // Placeholder phrases - will be replaced with API call later
-const samplePhrases = [
-  "Buenos días, ¿cómo está usted?",
-  "Necesito ayuda con esto, por favor",
-  "El clima está muy agradable hoy",
-  "Me gustaría hacer una reservación",
-  "¿Puede repetir eso, por favor?",
-  "Muchas gracias por su ayuda",
-  "Hasta luego, que tenga un buen día",
-  "¿Dónde está la estación más cercana?",
-];
-
+const samplePhrases = ["Buenos días, ¿cómo está usted?", "Necesito ayuda con esto, por favor", "El clima está muy agradable hoy", "Me gustaría hacer una reservación", "¿Puede repetir eso, por favor?", "Muchas gracias por su ayuda", "Hasta luego, que tenga un buen día", "¿Dónde está la estación más cercana?"];
 interface RecordingData {
   phrase_text: string;
   audio_url: string;
@@ -34,11 +24,8 @@ interface RecordingData {
   device_label: string;
   created_at: string;
 }
-
 export const TrainView = () => {
-  const [currentPhrase, setCurrentPhrase] = useState(() => 
-    samplePhrases[Math.floor(Math.random() * samplePhrases.length)]
-  );
+  const [currentPhrase, setCurrentPhrase] = useState(() => samplePhrases[Math.floor(Math.random() * samplePhrases.length)]);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [hasConsented, setHasConsented] = useState(false);
@@ -46,7 +33,9 @@ export const TrainView = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
 
   // Check if user already gave consent and track page view
   useEffect(() => {
@@ -56,7 +45,6 @@ export const TrainView = () => {
     }
     sessionManager.pageView('train');
   }, []);
-
   const getNewPhrase = useCallback(() => {
     const newPhrase = samplePhrases[Math.floor(Math.random() * samplePhrases.length)];
     setCurrentPhrase(newPhrase);
@@ -64,13 +52,11 @@ export const TrainView = () => {
     setError(null);
     setIsSuccess(false);
   }, []);
-
   const handleRecordingComplete = (blob: Blob, result?: ProcessingResult) => {
     setAudioBlob(blob);
     setProcessingResult(result || null);
     setError(null);
   };
-
   const handleSubmit = async () => {
     if (!audioBlob) {
       toast({
@@ -97,25 +83,21 @@ export const TrainView = () => {
       });
       return;
     }
-
     setIsSubmitting(true);
     setError(null);
-
     try {
       // Use processed audio if available, otherwise use original
       const audioToUpload = processingResult?.blob || audioBlob;
-      
+
       // Create FormData to upload audio file
       const formData = new FormData();
       formData.append('audio_file', audioToUpload, 'recording.wav');
       formData.append('phrase_text', currentPhrase);
       formData.append('session_id', session.sessionId);
-      
+
       // Get audio metadata
-      const duration_ms = processingResult?.metrics.duration 
-        ? Math.round(processingResult.metrics.duration * 1000)
-        : 5000; // Fallback
-      
+      const duration_ms = processingResult?.metrics.duration ? Math.round(processingResult.metrics.duration * 1000) : 5000; // Fallback
+
       formData.append('duration_ms', duration_ms.toString());
       formData.append('sample_rate', processingResult?.metrics.sampleRate?.toString() || '16000');
       formData.append('format', 'wav');
@@ -127,9 +109,8 @@ export const TrainView = () => {
       // This would be replaced with actual backend endpoint
       const response = await fetch('/api/recordings', {
         method: 'POST',
-        body: formData,
+        body: formData
       });
-
       if (!response.ok) {
         if (response.status === 413) {
           throw new Error('LARGE_FILE');
@@ -139,13 +120,11 @@ export const TrainView = () => {
         }
         throw new Error(`HTTP_${response.status}`);
       }
-
       const data: RecordingData = await response.json();
-      
       setIsSuccess(true);
       toast({
         title: "¡Gracias por tu ayuda!",
-        description: "Tu grabación ha sido guardada correctamente",
+        description: "Tu grabación ha sido guardada correctamente"
       });
 
       // Track success analytics
@@ -158,15 +137,13 @@ export const TrainView = () => {
         setIsSuccess(false);
         getNewPhrase();
       }, 2000);
-      
     } catch (error) {
       console.error('Error uploading recording:', error);
       const errorMessage = error instanceof Error ? error.message : 'UNKNOWN';
       setError(errorMessage);
-      
+
       // Track error analytics
       sessionManager.trainUploadError(errorMessage);
-      
       toast({
         title: "Error al guardar",
         description: "No se pudo guardar la grabación",
@@ -176,21 +153,18 @@ export const TrainView = () => {
       setIsSubmitting(false);
     }
   };
-
   const handleConsentGiven = (analyticsConsent: boolean) => {
     sessionManager.updateConsent(true);
     sessionManager.updateAnalyticsConsent(analyticsConsent);
     setHasConsented(true);
     setShowConsentModal(false);
-    
+
     // Now proceed with submission
     handleSubmit();
   };
-
   const handleAnalyticsToggle = (enabled: boolean) => {
     sessionManager.updateAnalyticsConsent(enabled);
   };
-
   const getErrorDetails = (errorCode: string) => {
     switch (errorCode) {
       case 'LARGE_FILE':
@@ -220,14 +194,9 @@ export const TrainView = () => {
         };
     }
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Consent Modal */}
-      <ConsentModal
-        isOpen={showConsentModal}
-        onConsentGiven={handleConsentGiven}
-      />
+      <ConsentModal isOpen={showConsentModal} onConsentGiven={handleConsentGiven} />
 
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-foreground mb-2">
@@ -239,8 +208,7 @@ export const TrainView = () => {
       </div>
 
       {/* Analytics Toggle */}
-      {hasConsented && (
-        <Card className="p-4 bg-muted/30">
+      {hasConsented && <Card className="p-4 bg-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <BarChart3 className="h-5 w-5 text-primary" />
@@ -251,24 +219,15 @@ export const TrainView = () => {
                 </p>
               </div>
             </div>
-            <Switch
-              checked={sessionManager.getSession()?.shareAnalytics || false}
-              onCheckedChange={handleAnalyticsToggle}
-            />
+            <Switch checked={sessionManager.getSession()?.shareAnalytics || false} onCheckedChange={handleAnalyticsToggle} />
           </div>
-        </Card>
-      )}
+        </Card>}
 
       {/* Current Phrase */}
-      <Card className="p-8 text-center bg-secondary/20">
+      <Card className="p-8 text-center bg-[#f5f8de]">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-medium text-foreground">Frase a grabar:</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={getNewPhrase}
-            className="flex items-center gap-2"
-          >
+          <Button variant="outline" size="sm" onClick={getNewPhrase} className="flex items-center gap-2 bg-[#0d0c1d] text-white">
             <RefreshCw className="h-4 w-4" />
             Nueva frase
           </Button>
@@ -279,8 +238,7 @@ export const TrainView = () => {
       </Card>
 
       {/* Success State */}
-      {isSuccess && (
-        <Card className="p-6 border-success/20 bg-success/5 text-center">
+      {isSuccess && <Card className="p-6 border-success/20 bg-success/5 text-center">
           <div className="flex flex-col items-center space-y-3">
             <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
               <CheckCircle className="h-6 w-6 text-success" />
@@ -292,53 +250,30 @@ export const TrainView = () => {
               </p>
             </div>
           </div>
-        </Card>
-      )}
+        </Card>}
 
       {/* Error State */}
-      {error && (
-        <ErrorState 
-          {...getErrorDetails(error)}
-          onRetry={() => setError(null)}
-        />
-      )}
+      {error && <ErrorState {...getErrorDetails(error)} onRetry={() => setError(null)} />}
 
       {/* Audio Recording */}
       <Card className="p-6">
         <h3 className="text-lg font-medium mb-4 text-foreground">Grabación</h3>
-        <AudioRecorder 
-          onRecordingComplete={handleRecordingComplete}
-          maxDuration={30}
-        />
+        <AudioRecorder onRecordingComplete={handleRecordingComplete} maxDuration={30} />
       </Card>
 
       {/* Empty State when no recording */}
-      {!audioBlob && !error && !isSuccess && (
-        <EmptyState
-          icon={MessageSquare}
-          title="Graba la frase"
-          description="Presiona el botón de grabar y lee la frase en voz alta para ayudar a entrenar el modelo"
-        />
-      )}
+      {!audioBlob && !error && !isSuccess && <EmptyState icon={MessageSquare} title="Graba la frase" description="Presiona el botón de grabar y lee la frase en voz alta para ayudar a entrenar el modelo" />}
 
       {/* Consent and Privacy */}
-      {audioBlob && !isSuccess && (
-        <Card className="p-6">
+      {audioBlob && !isSuccess && <Card className="p-6">
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-foreground">
               Consentimiento y Privacidad
             </h3>
             
             <div className="flex items-start space-x-3">
-              <Checkbox
-                id="consent"
-                checked={hasConsented}
-                onCheckedChange={(checked) => setHasConsented(checked === true)}
-              />
-              <label 
-                htmlFor="consent" 
-                className="text-sm text-foreground leading-relaxed cursor-pointer"
-              >
+              <Checkbox id="consent" checked={hasConsented} onCheckedChange={checked => setHasConsented(checked === true)} />
+              <label htmlFor="consent" className="text-sm text-foreground leading-relaxed cursor-pointer">
                 Autorizo el uso de esta grabación para mejorar el sistema de reconocimiento 
                 de voz de Adagio. Entiendo que mis datos serán tratados de forma confidencial 
                 y utilizados únicamente para fines de investigación y desarrollo.
@@ -354,29 +289,16 @@ export const TrainView = () => {
               </p>
             </div>
           </div>
-        </Card>
-      )}
+        </Card>}
 
       {/* Submit Button */}
-      {audioBlob && hasConsented && !isSuccess && (
-        <div className="flex justify-center gap-4">
-          <Button 
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            size="xl"
-            variant="accent"
-          >
-            {isSubmitting ? (
-              <>
+      {audioBlob && hasConsented && !isSuccess && <div className="flex justify-center gap-4">
+          <Button onClick={handleSubmit} disabled={isSubmitting} size="xl" variant="accent">
+            {isSubmitting ? <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Enviando...
-              </>
-            ) : (
-              'Enviar Grabación'
-            )}
+              </> : 'Enviar Grabación'}
           </Button>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
