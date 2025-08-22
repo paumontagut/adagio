@@ -5,7 +5,9 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { AudioRecorder } from '@/components/AudioRecorder';
 import { FileUpload } from '@/components/FileUpload';
-import { Loader2, Copy, Download } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
+import { Loader2, Copy, Download, FileAudio, AlertCircle } from 'lucide-react';
 
 interface TranscriptionResponse {
   transcription: string;
@@ -16,6 +18,7 @@ export const TranscribeView = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleTranscribe = async () => {
@@ -31,6 +34,7 @@ export const TranscribeView = () => {
     }
 
     setIsLoading(true);
+    setError(null);
     
     try {
       const formData = new FormData();
@@ -43,13 +47,19 @@ export const TranscribeView = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        if (response.status === 413) {
+          throw new Error('LARGE_FILE');
+        }
+        if (response.status === 415) {
+          throw new Error('INVALID_FORMAT');
+        }
+        throw new Error(`HTTP_${response.status}`);
       }
 
       const data: TranscriptionResponse = await response.json();
       
       if (!data.transcription || data.transcription.trim() === '') {
-        throw new Error('No se detectó audio');
+        throw new Error('NO_AUDIO');
       }
       
       setTranscription(data.transcription);
@@ -59,13 +69,23 @@ export const TranscribeView = () => {
       });
     } catch (error) {
       console.error('Error transcribing:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? error.message : 'UNKNOWN';
+      setError(errorMessage);
+      
+      let toastMessage = "Error al procesar el audio";
+      if (errorMessage === 'NO_AUDIO') {
+        toastMessage = "No se detectó audio en el archivo";
+      } else if (errorMessage === 'INVALID_FORMAT') {
+        toastMessage = "Formato de audio no válido";
+      } else if (errorMessage === 'LARGE_FILE') {
+        toastMessage = "El archivo es demasiado grande";
+      } else if (errorMessage.includes('NetworkError')) {
+        toastMessage = "Error de conexión";
+      }
       
       toast({
         title: "Error en la transcripción",
-        description: errorMessage.includes('No se detectó audio') 
-          ? "No se detectó audio en el archivo" 
-          : "Error al procesar el audio. Verifica el formato.",
+        description: toastMessage,
         variant: "destructive"
       });
     } finally {
@@ -99,12 +119,50 @@ export const TranscribeView = () => {
 
   const handleRecordingComplete = (blob: Blob) => {
     setAudioBlob(blob);
-    setUploadedFile(null); // Clear uploaded file when recording
+    setUploadedFile(null);
+    setError(null); // Clear any previous errors
   };
 
   const handleFileUpload = (file: File) => {
     setUploadedFile(file);
-    setAudioBlob(null); // Clear recorded audio when uploading
+    setAudioBlob(null);
+    setError(null); // Clear any previous errors
+  };
+
+  const getErrorDetails = (errorCode: string) => {
+    switch (errorCode) {
+      case 'NO_AUDIO':
+        return {
+          title: 'No se detectó audio',
+          description: 'El archivo no contiene audio audible o está dañado.',
+          solution: 'Verifica que el micrófono funcione correctamente y graba de nuevo, o prueba con otro archivo de audio.'
+        };
+      case 'INVALID_FORMAT':
+        return {
+          title: 'Formato no compatible',
+          description: 'El formato del archivo no es compatible con el sistema.',
+          solution: 'Usa archivos WAV, MP3, WEBM u OGG. Evita formatos poco comunes o archivos corruptos.'
+        };
+      case 'LARGE_FILE':
+        return {
+          title: 'Archivo muy grande',
+          description: 'El archivo supera el límite de tamaño permitido.',
+          solution: 'Reduce la duración del audio o usa una menor calidad de grabación. Máximo 10MB.'
+        };
+      default:
+        if (errorCode.includes('NetworkError')) {
+          return {
+            title: 'Error de conexión',
+            description: 'No se pudo conectar con el servidor de transcripción.',
+            solution: 'Verifica tu conexión a internet e inténtalo de nuevo.'
+          };
+        }
+        return {
+          title: 'Error desconocido',
+          description: 'Ocurrió un problema inesperado durante la transcripción.',
+          solution: 'Inténtalo de nuevo en unos momentos o contacta con soporte.'
+        };
+    }
   };
 
   const hasAudio = audioBlob || uploadedFile;
@@ -132,6 +190,14 @@ export const TranscribeView = () => {
         <FileUpload onFileSelect={handleFileUpload} />
       </Card>
 
+      {/* Error State */}
+      {error && (
+        <ErrorState 
+          {...getErrorDetails(error)}
+          onRetry={() => setError(null)}
+        />
+      )}
+
       {/* Transcribe Button */}
       <div className="flex justify-center">
         <Button 
@@ -150,6 +216,15 @@ export const TranscribeView = () => {
           )}
         </Button>
       </div>
+
+      {/* Empty State or Transcription Results */}
+      {!transcription && !error && !isLoading && (
+        <EmptyState
+          icon={FileAudio}
+          title="Listo para transcribir"
+          description="Graba tu voz o sube un archivo para comenzar la transcripción automática"
+        />
+      )}
 
       {/* Transcription Results */}
       {transcription && (

@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Mic, MicOff, Play, Pause, RotateCcw } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
+import { Mic, MicOff, Play, Pause, RotateCcw, Settings, AlertTriangle } from 'lucide-react';
 
 interface AudioRecorderProps {
   onRecordingComplete: (blob: Blob) => void;
@@ -260,21 +262,22 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
 
   if (permissionGranted === false) {
     return (
-      <Card className="p-6 text-center">
-        <div className="space-y-4">
-          <MicOff className="h-12 w-12 mx-auto text-muted-foreground" />
-          <div>
-            <h3 className="font-medium text-foreground">Permisos de micrófono requeridos</h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              Para grabar audio, necesitamos acceso a tu micrófono. 
-              Por favor permite el acceso cuando el navegador lo solicite.
-            </p>
-          </div>
-          <Button onClick={checkPermissionsAndDevices} variant="outline">
-            Comprobar permisos
-          </Button>
-        </div>
-      </Card>
+      <ErrorState
+        title="Permisos de micrófono requeridos"
+        description="Para grabar audio, necesitamos acceso a tu micrófono."
+        solution="Haz clic en 'Permitir' cuando el navegador solicite permisos. Si ya los rechazaste, busca el ícono del micrófono en la barra de direcciones y actívalo."
+        onRetry={checkPermissionsAndDevices}
+      />
+    );
+  }
+
+  if (permissionGranted === null) {
+    return (
+      <EmptyState
+        icon={Settings}
+        title="Verificando permisos"
+        description="Comprobando acceso al micrófono..."
+      />
     );
   }
 

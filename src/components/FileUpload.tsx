@@ -2,7 +2,9 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, File, X, CheckCircle } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
+import { Upload, File, X, CheckCircle, FileAudio } from 'lucide-react';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -23,26 +25,25 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const validateFile = (file: File): boolean => {
     // Check file type
     if (!ACCEPTED_AUDIO_TYPES.includes(file.type)) {
-      toast({
-        title: "Formato no válido",
-        description: "Por favor sube un archivo de audio válido (WAV, MP3, WEBM, OGG, M4A, AAC)",
-        variant: "destructive"
-      });
+      setUploadError('INVALID_FORMAT');
       return false;
     }
 
     // Check file size
     if (file.size > MAX_FILE_SIZE) {
-      toast({
-        title: "Archivo muy grande",
-        description: "El archivo no puede superar los 10MB",
-        variant: "destructive"
-      });
+      setUploadError('LARGE_FILE');
+      return false;
+    }
+
+    // Check if file is empty
+    if (file.size === 0) {
+      setUploadError('EMPTY_FILE');
       return false;
     }
 
@@ -50,6 +51,7 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
   };
 
   const handleFileSelection = (file: File) => {
+    setUploadError(null);
     if (validateFile(file)) {
       setSelectedFile(file);
       onFileSelect(file);
@@ -99,6 +101,7 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
 
   const removeFile = () => {
     setSelectedFile(null);
+    setUploadError(null);
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -109,8 +112,67 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getErrorDetails = (errorCode: string) => {
+    switch (errorCode) {
+      case 'INVALID_FORMAT':
+        return {
+          title: 'Formato no válido',
+          description: 'El tipo de archivo seleccionado no es compatible.',
+          solution: 'Usa archivos de audio en formato WAV, MP3, WEBM, OGG, M4A o AAC.'
+        };
+      case 'LARGE_FILE':
+        return {
+          title: 'Archivo muy grande',
+          description: 'El archivo supera el límite de 10MB.',
+          solution: 'Reduce la duración del audio, usa menor calidad de grabación, o comprime el archivo.'
+        };
+      case 'EMPTY_FILE':
+        return {
+          title: 'Archivo vacío',
+          description: 'El archivo seleccionado está vacío o dañado.',
+          solution: 'Verifica que el archivo contenga audio válido e inténtalo con otro archivo.'
+        };
+      default:
+        return {
+          title: 'Error desconocido',
+          description: 'Ocurrió un problema al procesar el archivo.',
+          solution: 'Inténtalo con otro archivo o contacta con soporte.'
+        };
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {/* Error State */}
+      {uploadError && (
+        <ErrorState 
+          {...getErrorDetails(uploadError)}
+          onRetry={() => setUploadError(null)}
+        />
+      )}
+
+      {/* Empty State when no file selected */}
+      {!selectedFile && !uploadError && (
+        <EmptyState
+          icon={FileAudio}
+          title="Selecciona tu archivo"
+          description="Arrastra y suelta un archivo de audio aquí o selecciónalo manualmente"
+          action={
+            <Button variant="outline" asChild>
+              <label className="cursor-pointer">
+                <Upload className="h-4 w-4 mr-2" />
+                Seleccionar archivo
+                <input
+                  type="file"
+                  accept={ACCEPTED_AUDIO_TYPES.join(',')}
+                  onChange={handleFileInput}
+                  className="hidden"
+                />
+              </label>
+            </Button>
+          }
+        />
+      )}
       {/* Drag & Drop Area */}
       <Card
         className={`relative border-2 border-dashed transition-colors cursor-pointer ${
