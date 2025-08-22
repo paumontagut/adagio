@@ -80,7 +80,8 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
         .map(device => ({
           deviceId: device.deviceId,
           label: device.label || `Micrófono ${device.deviceId.slice(0, 8)}`
-        }));
+        }))
+        .filter(device => device.label !== 'Default'); // Filter out generic "Default" labels
       
       setAvailableDevices(audioInputs);
     } catch (error) {

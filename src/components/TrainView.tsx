@@ -207,8 +207,8 @@ export const TrainView = () => {
         </p>
       </div>
 
-      {/* Analytics Toggle */}
-      {hasConsented && <Card className="p-4 bg-muted/30">
+      {/* Analytics Toggle - Hidden temporarily */}
+      {/* {hasConsented && <Card className="p-4 bg-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <BarChart3 className="h-5 w-5 text-primary" />
@@ -221,7 +221,7 @@ export const TrainView = () => {
             </div>
             <Switch checked={sessionManager.getSession()?.shareAnalytics || false} onCheckedChange={handleAnalyticsToggle} />
           </div>
-        </Card>}
+        </Card>} */}
 
       {/* Current Phrase */}
       <Card className="p-8 text-center bg-[#f5f8de]">
