@@ -2,9 +2,8 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
-import { Upload, File, X, CheckCircle, FileAudio } from 'lucide-react';
+import { Upload, File, X, CheckCircle } from 'lucide-react';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -151,29 +150,7 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
         />
       )}
 
-      {/* Empty State when no file selected */}
-      {!selectedFile && !uploadError && (
-        <EmptyState
-          icon={FileAudio}
-          title="Selecciona tu archivo"
-          description="Arrastra y suelta un archivo de audio aquí o selecciónalo manualmente"
-          action={
-            <Button variant="outline" asChild>
-              <label className="cursor-pointer">
-                <Upload className="h-4 w-4 mr-2" />
-                Seleccionar archivo
-                <input
-                  type="file"
-                  accept={ACCEPTED_AUDIO_TYPES.join(',')}
-                  onChange={handleFileInput}
-                  className="hidden"
-                />
-              </label>
-            </Button>
-          }
-        />
-      )}
-      {/* Drag & Drop Area */}
+      {/* Drag & Drop Area - Main and only file selection method */}
       <Card
         className={`relative border-2 border-dashed transition-colors cursor-pointer ${
           dragActive 
@@ -251,22 +228,6 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
           </Button>
         </div>
       )}
-
-      {/* Manual Upload Button */}
-      <div className="flex justify-center">
-        <Button variant="outline" asChild>
-          <label className="cursor-pointer">
-            <Upload className="h-4 w-4 mr-2" />
-            Seleccionar archivo
-            <input
-              type="file"
-              accept={ACCEPTED_AUDIO_TYPES.join(',')}
-              onChange={handleFileInput}
-              className="hidden"
-            />
-          </label>
-        </Button>
-      </div>
     </div>
   );
 };
