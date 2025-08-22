@@ -5,10 +5,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
-import { Mic, MicOff, Play, Pause, RotateCcw, Settings, AlertTriangle } from 'lucide-react';
+import { ConsentModal } from '@/components/ConsentModal';
+import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
+import { audioProcessor, ProcessingResult } from '@/lib/audioProcessor';
+import { sessionManager } from '@/lib/sessionManager';
+import { Mic, MicOff, Play, Pause, RotateCcw, Settings } from 'lucide-react';
 
 interface AudioRecorderProps {
-  onRecordingComplete: (blob: Blob) => void;
+  onRecordingComplete: (blob: Blob, processingResult?: ProcessingResult) => void;
   maxDuration?: number; // in seconds
 }
 
@@ -21,12 +25,14 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [availableDevices, setAvailableDevices] = useState<AudioDevice[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>('default');
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -175,15 +181,33 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
         setRecordedBlob(blob);
         
-        // Create URL for playback
-        const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
-        
-        onRecordingComplete(blob);
+        // Process audio
+        setIsProcessing(true);
+        try {
+          const result = await audioProcessor.processRecording(blob);
+          setProcessingResult(result);
+          
+          // Create URL for playback
+          const url = URL.createObjectURL(result.blob);
+          setAudioUrl(url);
+          
+          onRecordingComplete(result.blob, result);
+          
+          // Track analytics
+          sessionManager.recordStop(result.metrics.duration);
+        } catch (error) {
+          console.error('Error processing audio:', error);
+          // Fallback to original blob
+          const url = URL.createObjectURL(blob);
+          setAudioUrl(url);
+          onRecordingComplete(blob);
+        } finally {
+          setIsProcessing(false);
+        }
         
         // Cleanup
         stream.getTracks().forEach(track => track.stop());
@@ -195,6 +219,9 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
+      
+      // Track analytics
+      sessionManager.recordStart();
 
       // Start timer
       intervalRef.current = setInterval(() => {
@@ -246,6 +273,7 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
 
   const resetRecording = () => {
     setRecordedBlob(null);
+    setProcessingResult(null);
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
@@ -340,7 +368,10 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
       {/* Recording Status */}
       <div className="text-center space-y-2">
         <div className="text-sm text-muted-foreground">
-          {isRecording ? 'Grabando...' : recordedBlob ? 'Grabación completada' : 'Listo para grabar'}
+          {isProcessing ? 'Procesando audio...' 
+            : isRecording ? 'Grabando...' 
+            : recordedBlob ? 'Grabación completada' 
+            : 'Listo para grabar'}
         </div>
         
         <div className="text-lg font-mono text-foreground">
@@ -357,6 +388,15 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
           </div>
         )}
       </div>
+
+      {/* Audio Metrics Display */}
+      {processingResult && (
+        <AudioMetricsDisplay
+          metrics={processingResult.metrics}
+          isValid={processingResult.isValid}
+          warnings={processingResult.warnings}
+        />
+      )}
 
       {/* Hidden audio element for playback */}
       {audioUrl && (

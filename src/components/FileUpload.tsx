@@ -9,17 +9,15 @@ interface FileUploadProps {
   onFileSelect: (file: File) => void;
 }
 
+// Restrict accepted file types to .wav, .mp3, .webm only
 const ACCEPTED_AUDIO_TYPES = [
   'audio/wav',
   'audio/mp3',
   'audio/mpeg', 
-  'audio/webm',
-  'audio/ogg',
-  'audio/m4a',
-  'audio/aac'
+  'audio/webm'
 ];
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
 export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
@@ -117,12 +115,12 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
         return {
           title: 'Formato no válido',
           description: 'El tipo de archivo seleccionado no es compatible.',
-          solution: 'Usa archivos de audio en formato WAV, MP3, WEBM, OGG, M4A o AAC.'
+          solution: 'Usa archivos de audio en formato WAV, MP3 o WEBM únicamente.'
         };
       case 'LARGE_FILE':
         return {
           title: 'Archivo muy grande',
-          description: 'El archivo supera el límite de 10MB.',
+          description: 'El archivo supera el límite de 20MB.',
           solution: 'Reduce la duración del audio, usa menor calidad de grabación, o comprime el archivo.'
         };
       case 'EMPTY_FILE':
@@ -197,7 +195,7 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
                   o haz clic para seleccionar
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Formatos soportados: WAV, MP3, WEBM, OGG, M4A, AAC (máx. 10MB)
+                  Formatos soportados: WAV, MP3, WEBM (máx. 20MB)
                 </p>
               </div>
             </>

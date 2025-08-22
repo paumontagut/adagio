@@ -1,12 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { AudioRecorder } from '@/components/AudioRecorder';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
-import { Loader2, RefreshCw, MessageSquare, CheckCircle } from 'lucide-react';
+import { ConsentModal } from '@/components/ConsentModal';
+import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
+import { ProcessingResult } from '@/lib/audioProcessor';
+import { sessionManager } from '@/lib/sessionManager';
+import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3 } from 'lucide-react';
 
 // Placeholder phrases - will be replaced with API call later
 const samplePhrases = [
@@ -35,11 +40,22 @@ export const TrainView = () => {
     samplePhrases[Math.floor(Math.random() * samplePhrases.length)]
   );
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [hasConsented, setHasConsented] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
+
+  // Check if user already gave consent and track page view
+  useEffect(() => {
+    const session = sessionManager.getSession();
+    if (session) {
+      setHasConsented(session.consentGiven);
+    }
+    sessionManager.pageView('train');
+  }, []);
 
   const getNewPhrase = useCallback(() => {
     const newPhrase = samplePhrases[Math.floor(Math.random() * samplePhrases.length)];
@@ -49,8 +65,9 @@ export const TrainView = () => {
     setIsSuccess(false);
   }, []);
 
-  const handleRecordingComplete = (blob: Blob) => {
+  const handleRecordingComplete = (blob: Blob, result?: ProcessingResult) => {
     setAudioBlob(blob);
+    setProcessingResult(result || null);
     setError(null);
   };
 
@@ -64,10 +81,18 @@ export const TrainView = () => {
       return;
     }
 
-    if (!hasConsented) {
+    // Check if user has given consent
+    const session = sessionManager.getSession();
+    if (!session?.consentGiven) {
+      setShowConsentModal(true);
+      return;
+    }
+
+    // Validate audio quality if processing result exists
+    if (processingResult && !processingResult.isValid) {
       toast({
-        title: "Error", 
-        description: "Por favor acepta los términos de uso de datos",
+        title: "Audio no válido",
+        description: "Por favor mejora la calidad del audio antes de enviar",
         variant: "destructive"
       });
       return;
@@ -77,18 +102,27 @@ export const TrainView = () => {
     setError(null);
 
     try {
+      // Use processed audio if available, otherwise use original
+      const audioToUpload = processingResult?.blob || audioBlob;
+      
       // Create FormData to upload audio file
       const formData = new FormData();
-      formData.append('audio_file', audioBlob, 'recording.webm');
+      formData.append('audio_file', audioToUpload, 'recording.wav');
       formData.append('phrase_text', currentPhrase);
-      formData.append('user_id', 'anonymous'); // Anonymous for now
+      formData.append('session_id', session.sessionId);
       
       // Get audio metadata
-      const duration_ms = audioBlob.size > 0 ? 5000 : 0; // Placeholder - would need real duration
+      const duration_ms = processingResult?.metrics.duration 
+        ? Math.round(processingResult.metrics.duration * 1000)
+        : 5000; // Fallback
+      
       formData.append('duration_ms', duration_ms.toString());
-      formData.append('sample_rate', '16000');
-      formData.append('format', 'webm');
+      formData.append('sample_rate', processingResult?.metrics.sampleRate?.toString() || '16000');
+      formData.append('format', 'wav');
       formData.append('device_label', 'Browser MediaRecorder');
+
+      // Track analytics
+      sessionManager.trainUpload();
 
       // This would be replaced with actual backend endpoint
       const response = await fetch('/api/recordings', {
@@ -114,10 +148,13 @@ export const TrainView = () => {
         description: "Tu grabación ha sido guardada correctamente",
       });
 
+      // Track success analytics
+      sessionManager.trainUploadSuccess();
+
       // Reset for next recording after a delay
       setTimeout(() => {
         setAudioBlob(null);
-        setHasConsented(false);
+        setProcessingResult(null);
         setIsSuccess(false);
         getNewPhrase();
       }, 2000);
@@ -127,6 +164,9 @@ export const TrainView = () => {
       const errorMessage = error instanceof Error ? error.message : 'UNKNOWN';
       setError(errorMessage);
       
+      // Track error analytics
+      sessionManager.trainUploadError(errorMessage);
+      
       toast({
         title: "Error al guardar",
         description: "No se pudo guardar la grabación",
@@ -135,6 +175,20 @@ export const TrainView = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConsentGiven = (analyticsConsent: boolean) => {
+    sessionManager.updateConsent(true);
+    sessionManager.updateAnalyticsConsent(analyticsConsent);
+    setHasConsented(true);
+    setShowConsentModal(false);
+    
+    // Now proceed with submission
+    handleSubmit();
+  };
+
+  const handleAnalyticsToggle = (enabled: boolean) => {
+    sessionManager.updateAnalyticsConsent(enabled);
   };
 
   const getErrorDetails = (errorCode: string) => {
@@ -169,6 +223,12 @@ export const TrainView = () => {
 
   return (
     <div className="space-y-6">
+      {/* Consent Modal */}
+      <ConsentModal
+        isOpen={showConsentModal}
+        onConsentGiven={handleConsentGiven}
+      />
+
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-foreground mb-2">
           Entrenamiento del Modelo
@@ -177,6 +237,27 @@ export const TrainView = () => {
           Ayúdanos a mejorar el reconocimiento grabando esta frase
         </p>
       </div>
+
+      {/* Analytics Toggle */}
+      {hasConsented && (
+        <Card className="p-4 bg-muted/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Estadísticas anónimas</p>
+                <p className="text-xs text-muted-foreground">
+                  Ayuda a mejorar la aplicación compartiendo datos de uso
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={sessionManager.getSession()?.shareAnalytics || false}
+              onCheckedChange={handleAnalyticsToggle}
+            />
+          </div>
+        </Card>
+      )}
 
       {/* Current Phrase */}
       <Card className="p-8 text-center bg-secondary/20">

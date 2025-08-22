@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -7,7 +7,8 @@ import { AudioRecorder } from '@/components/AudioRecorder';
 import { FileUpload } from '@/components/FileUpload';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
-import { Loader2, Copy, Download, FileAudio, AlertCircle } from 'lucide-react';
+import { sessionManager } from '@/lib/sessionManager';
+import { Loader2, Copy, Download, FileAudio } from 'lucide-react';
 
 interface TranscriptionResponse {
   transcription: string;
@@ -20,6 +21,11 @@ export const TranscribeView = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Track page view analytics
+  useEffect(() => {
+    sessionManager.pageView('transcribe');
+  }, []);
 
   const handleTranscribe = async () => {
     const fileToTranscribe = audioBlob || uploadedFile;
@@ -35,6 +41,9 @@ export const TranscribeView = () => {
 
     setIsLoading(true);
     setError(null);
+    
+    // Track analytics
+    sessionManager.transcribeRequest();
     
     try {
       const formData = new FormData();
@@ -63,6 +72,11 @@ export const TranscribeView = () => {
       }
       
       setTranscription(data.transcription);
+      
+      // Track success analytics
+      const duration = audioBlob ? 5 : 0; // Would use actual duration
+      sessionManager.transcribeSuccess(duration);
+      
       toast({
         title: "Transcripción completada",
         description: "Audio transcrito correctamente",
@@ -71,6 +85,9 @@ export const TranscribeView = () => {
       console.error('Error transcribing:', error);
       const errorMessage = error instanceof Error ? error.message : 'UNKNOWN';
       setError(errorMessage);
+      
+      // Track error analytics
+      sessionManager.transcribeError(errorMessage);
       
       let toastMessage = "Error al procesar el audio";
       if (errorMessage === 'NO_AUDIO') {
@@ -141,13 +158,13 @@ export const TranscribeView = () => {
         return {
           title: 'Formato no compatible',
           description: 'El formato del archivo no es compatible con el sistema.',
-          solution: 'Usa archivos WAV, MP3, WEBM u OGG. Evita formatos poco comunes o archivos corruptos.'
+          solution: 'Usa archivos WAV, MP3 o WEBM únicamente. Evita formatos poco comunes o archivos corruptos.'
         };
       case 'LARGE_FILE':
         return {
           title: 'Archivo muy grande',
           description: 'El archivo supera el límite de tamaño permitido.',
-          solution: 'Reduce la duración del audio o usa una menor calidad de grabación. Máximo 10MB.'
+          solution: 'Reduce la duración del audio o usa una menor calidad de grabación. Máximo 20MB.'
         };
       default:
         if (errorCode.includes('NetworkError')) {
