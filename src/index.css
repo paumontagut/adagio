@@ -2,14 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Adagio Design System - Paleta oficial de colores */
+/* Adagio Design System - Paleta oficial y variables CSS */
 
 @layer base {
   :root {
     /* Adagio Brand Colors - Exact hex converted to HSL */
     --adagio-primary: 186 100% 20%;     /* #005C64 */
+    --adagio-primary-hover: 186 100% 16%; 
+    --adagio-primary-active: 186 100% 12%;
     --adagio-primary-light: 204 71% 73%; /* #90C2E7 */
+    --adagio-primary-light-hover: 204 71% 68%;
     --adagio-accent: 45 100% 63%;        /* #FFBC42 */
+    --adagio-accent-hover: 45 100% 58%;
+    --adagio-accent-active: 45 100% 53%;
     --adagio-background: 64 47% 91%;     /* #F5F8DE */
     --adagio-text: 246 18% 9%;           /* #0D0C1D */
     
@@ -17,29 +22,38 @@
     --background: var(--adagio-background);
     --foreground: var(--adagio-text);
     
-    --card: var(--adagio-background);
+    --card: 0 0% 100%;
     --card-foreground: var(--adagio-text);
     
     --popover: 0 0% 100%;
     --popover-foreground: var(--adagio-text);
     
     --primary: var(--adagio-primary);
+    --primary-hover: var(--adagio-primary-hover);
+    --primary-active: var(--adagio-primary-active);
     --primary-foreground: 0 0% 100%;
     
     --secondary: var(--adagio-primary-light);
+    --secondary-hover: var(--adagio-primary-light-hover);
     --secondary-foreground: var(--adagio-text);
     
-    --muted: 186 25% 85%;
-    --muted-foreground: var(--adagio-text);
+    --muted: 186 25% 88%;
+    --muted-hover: 186 25% 83%;
+    --muted-foreground: 186 15% 45%;
     
     --accent: var(--adagio-accent);
+    --accent-hover: var(--adagio-accent-hover);
+    --accent-active: var(--adagio-accent-active);
     --accent-foreground: var(--adagio-text);
     
     --destructive: 0 84% 60%;
+    --destructive-hover: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 186 25% 85%;
+    --border: 186 30% 82%;
+    --border-hover: 186 30% 75%;
     --input: 0 0% 100%;
+    --input-border: 186 25% 80%;
     --ring: var(--adagio-primary);
     
     --radius: 0.75rem;
@@ -50,9 +64,27 @@
     
     /* Success/Error states */
     --success: 142 72% 29%;
+    --success-hover: 142 72% 25%;
     --success-foreground: 0 0% 100%;
     --warning: 45 100% 63%;
+    --warning-hover: 45 100% 58%;
     --warning-foreground: var(--adagio-text);
+    
+    /* Animations and transitions */
+    --transition-colors: color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                        background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                        border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-transform: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-opacity: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-shadow: box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(var(--adagio-primary) / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(var(--adagio-primary) / 0.1),
+                 0 2px 4px -2px hsl(var(--adagio-primary) / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(var(--adagio-primary) / 0.1),
+                 0 4px 6px -4px hsl(var(--adagio-primary) / 0.1);
+    --shadow-focus: 0 0 0 2px hsl(var(--adagio-primary) / 0.2);
   }
   
   .dark {

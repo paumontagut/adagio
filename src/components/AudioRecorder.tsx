@@ -306,9 +306,9 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
       <div className="flex items-center justify-center gap-4">
         <Button
           onClick={isRecording ? stopRecording : startRecording}
-          size="lg"
-          variant={isRecording ? "destructive" : "default"}
-          className="h-16 w-16 rounded-full"
+          size="icon"
+          variant={isRecording ? "destructive" : "accent"}
+          className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-shadow"
         >
           {isRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
         </Button>
@@ -318,7 +318,7 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
             <Button
               onClick={togglePlayback}
               variant="outline"
-              className="h-12 w-12 rounded-full"
+              className="h-12 w-12 rounded-full hover:shadow-md transition-shadow"
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
@@ -326,7 +326,7 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
             <Button
               onClick={resetRecording}
               variant="outline"
-              className="h-12 w-12 rounded-full"
+              className="h-12 w-12 rounded-full hover:shadow-md transition-shadow"
             >
               <RotateCcw className="h-4 w-4" />
             </Button>

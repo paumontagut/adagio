@@ -21,18 +21,18 @@ const Index = () => {
         </header>
 
         {/* Main Tabs */}
-        <Card className="p-6 shadow-lg border-border">
+        <Card className="p-6 shadow-lg border-border bg-card">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted">
+            <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted p-1 h-12">
               <TabsTrigger 
                 value="transcribe" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md"
               >
                 Transcribir
               </TabsTrigger>
               <TabsTrigger 
                 value="train"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md"
               >
                 Entrenar
               </TabsTrigger>

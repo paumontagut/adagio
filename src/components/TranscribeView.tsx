@@ -137,8 +137,8 @@ export const TranscribeView = () => {
         <Button 
           onClick={handleTranscribe}
           disabled={!hasAudio || isLoading}
-          size="lg"
-          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3"
+          size="xl"
+          variant="default"
         >
           {isLoading ? (
             <>

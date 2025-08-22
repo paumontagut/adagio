@@ -194,8 +194,8 @@ export const TrainView = () => {
         <Button 
           onClick={handleSubmit}
           disabled={!audioBlob || !hasConsented || isSubmitting}
-          size="lg"
-          className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-3"
+          size="xl"
+          variant="accent"
         >
           {isSubmitting ? (
             <>
