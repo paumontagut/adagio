@@ -61,6 +61,28 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Adagio brand colors
+				adagio: {
+					primary: 'hsl(var(--adagio-primary))',
+					'primary-light': 'hsl(var(--adagio-primary-light))',
+					accent: 'hsl(var(--adagio-accent))',
+					background: 'hsl(var(--adagio-background))',
+					text: 'hsl(var(--adagio-text))'
+				},
+				// Audio states
+				audio: {
+					level: 'hsl(var(--audio-level))',
+					inactive: 'hsl(var(--audio-inactive))'
+				},
+				// Status colors
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
+				warning: {
+					DEFAULT: 'hsl(var(--warning))',
+					foreground: 'hsl(var(--warning-foreground))'
 				}
 			},
 			borderRadius: {
