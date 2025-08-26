@@ -214,6 +214,16 @@ export const TranscribeView = () => {
   const stateConfig = getStateConfig();
   const isProcessing = state === 'uploading' || state === 'transcribing';
   const canTranscribe = audioBlob && backendOnline && !isProcessing;
+  
+  // Debug info - remove in production
+  console.log('TranscribeView state:', { 
+    audioBlob: !!audioBlob, 
+    backendOnline, 
+    isProcessing, 
+    canTranscribe,
+    state,
+    transcription: !!transcription
+  });
 
   return (
     <div className="space-y-6">
@@ -293,7 +303,7 @@ export const TranscribeView = () => {
       )}
 
       {/* Transcribe Button */}
-      {!isProcessing && !transcription && (
+      {!isProcessing && !transcription && audioBlob && (
         <div className="flex justify-center">
           <Button 
             onClick={handleTranscribe}
@@ -305,6 +315,11 @@ export const TranscribeView = () => {
             <FileAudio className="mr-2 h-4 w-4" />
             Transcribir Audio
           </Button>
+          {!backendOnline && (
+            <p className="text-sm text-muted-foreground mt-2 text-center">
+              Esperando conexión al servidor...
+            </p>
+          )}
         </div>
       )}
 
