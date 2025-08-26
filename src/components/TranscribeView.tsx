@@ -70,30 +70,43 @@ export const TranscribeView = () => {
 
     // Track analytics
     sessionManager.transcribeRequest();
-
+    
+    // Timers and flags for UI state transitions
+    let progressIntervalId: number | null = null;
+    let toTranscribingTimeoutId: number | null = null;
+    let finished = false;
+    
     try {
       // Create file from blob with appropriate name and type
       const fileName = audioMetadata?.format === 'wav' ? 'audio.wav' : 'audio.mp3';
       const fileType = audioMetadata?.format === 'wav' ? 'audio/wav' : 'audio/mp3';
       const audioFile = new File([audioBlob], fileName, { type: fileType });
 
-      // Simulate upload progress for better UX
-      const progressInterval = setInterval(() => {
+      // Simulate upload progress for mejor UX
+      progressIntervalId = window.setInterval(() => {
         setUploadProgress(prev => {
           if (prev < 90) return prev + 5;
           return prev;
         });
       }, 200);
 
-      // Change to transcribing state after "upload"
-      setTimeout(() => {
-        setState('transcribing');
-        setUploadProgress(100);
-        clearInterval(progressInterval);
-      }, 1500);
+      // Pasar a estado "transcribing" tras breve delay salvo que ya haya terminado
+      toTranscribingTimeoutId = window.setTimeout(() => {
+        if (!finished) {
+          setState('transcribing');
+          setUploadProgress(100);
+        }
+        if (progressIntervalId) clearInterval(progressIntervalId);
+      }, 800);
 
       const result = await transcribeService.transcribeFile(audioFile);
-      
+
+      // Marcar como finalizado y limpiar timers
+      finished = true;
+      if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
+      if (progressIntervalId) clearInterval(progressIntervalId);
+      setUploadProgress(100);
+
       setTranscription(result.text);
       setState('completed');
 
@@ -106,10 +119,13 @@ export const TranscribeView = () => {
         description: "El audio ha sido transcrito exitosamente"
       });
 
-      clearInterval(progressInterval);
-
     } catch (error) {
       const transcribeError = error as TranscribeError;
+
+      // Cleanup timers to avoid stale state updates
+      if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
+      if (progressIntervalId) clearInterval(progressIntervalId);
+
       setError(transcribeError);
       setState('error');
       
@@ -122,6 +138,9 @@ export const TranscribeView = () => {
         variant: "destructive"
       });
     } finally {
+      // Ensure timers are cleared
+      if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
+      if (progressIntervalId) clearInterval(progressIntervalId);
       setUploadProgress(0);
     }
   };
