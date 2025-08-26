@@ -15,9 +15,9 @@ export interface TranscribeError {
   details?: string;
 }
 
-const TRANSCRIBE_URL = import.meta.env.VITE_TRANSCRIBE_URL || '';
-const HEALTH_URL = import.meta.env.VITE_HEALTH_URL || '';
-const TIMEOUT_MS = (parseInt(import.meta.env.VITE_TRANSCRIBE_TIMEOUT) || 90) * 1000;
+const TRANSCRIBE_URL = import.meta.env.VITE_TRANSCRIBE_URL || import.meta.env.NEXT_PUBLIC_TRANSCRIBE_URL || '';
+const HEALTH_URL = import.meta.env.VITE_HEALTH_URL || import.meta.env.NEXT_PUBLIC_HEALTH_URL || '';
+const TIMEOUT_MS = (parseInt(import.meta.env.VITE_TRANSCRIBE_TIMEOUT || import.meta.env.NEXT_PUBLIC_TRANSCRIBE_TIMEOUT) || 90) * 1000;
 
 class TranscribeService {
   /**
