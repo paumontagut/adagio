@@ -340,9 +340,9 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
           onClick={isRecording ? stopRecording : startRecording}
           size="icon"
           variant={isRecording ? "destructive" : "accent"}
-          className="h-16 w-16 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+          className="h-20 w-20 rounded-full shadow-lg hover:shadow-xl transition-shadow"
         >
-          {isRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+          {isRecording ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
         </Button>
 
         {recordedBlob && (

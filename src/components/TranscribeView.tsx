@@ -237,12 +237,6 @@ export const TranscribeView = () => {
             Graba tu voz o sube un archivo para transcribir a texto
           </p>
         </div>
-        
-        {/* Backend Status */}
-        <BackendStatus 
-          onStatusChange={setBackendOnline}
-          autoRefresh={true}
-        />
       </div>
 
       {/* Audio Input Section */}
@@ -388,6 +382,14 @@ export const TranscribeView = () => {
           description="Graba tu voz o sube un archivo para comenzar la transcripción automática"
         />
       )}
+
+      {/* Backend Status - Moved to bottom */}
+      <div className="flex justify-center">
+        <BackendStatus 
+          onStatusChange={setBackendOnline}
+          autoRefresh={true}
+        />
+      </div>
     </div>
   );
 };
