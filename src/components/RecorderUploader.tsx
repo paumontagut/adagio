@@ -3,34 +3,21 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Mic, 
-  Square, 
-  Play, 
-  Pause, 
-  Upload, 
-  X, 
-  FileAudio,
-  Loader2,
-  CheckCircle
-} from 'lucide-react';
+import { Mic, Square, Play, Pause, Upload, X, FileAudio, Loader2, CheckCircle } from 'lucide-react';
 import { AudioRecorder } from '@/components/AudioRecorder';
 import { FileUpload } from '@/components/FileUpload';
 import { audioConverter, type ConversionResult } from '@/lib/audioConverter';
 import { toast } from '@/hooks/use-toast';
-
 export interface RecorderUploaderProps {
   onAudioReady: (blob: Blob, metadata: ConversionResult) => void;
   disabled?: boolean;
   maxDuration?: number;
 }
-
 type AudioSource = 'none' | 'recording' | 'upload';
-
-export const RecorderUploader = ({ 
-  onAudioReady, 
+export const RecorderUploader = ({
+  onAudioReady,
   disabled = false,
-  maxDuration = 20 
+  maxDuration = 20
 }: RecorderUploaderProps) => {
   const [audioSource, setAudioSource] = useState<AudioSource>('none');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -38,13 +25,10 @@ export const RecorderUploader = ({
   const [audioMetadata, setAudioMetadata] = useState<ConversionResult | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
-  
   const audioRef = useRef<HTMLAudioElement>(null);
-
   const handleRecordingComplete = useCallback(async (blob: Blob) => {
     setIsProcessing(true);
     setProcessingProgress(20);
-    
     try {
       // Convert to optimal format for transcription
       const converted = await audioConverter.convertAudio(blob, {
@@ -52,46 +36,36 @@ export const RecorderUploader = ({
         targetChannels: 1,
         targetFormat: 'wav'
       });
-      
       setProcessingProgress(60);
-      
       setAudioBlob(converted.blob);
       setAudioMetadata(converted);
       setAudioSource('recording');
-      
       setProcessingProgress(100);
-      
       toast({
         title: 'Grabación lista',
-        description: `Audio procesado: ${converted.channels} canal(es), ${converted.sampleRate}Hz`,
+        description: `Audio procesado: ${converted.channels} canal(es), ${converted.sampleRate}Hz`
       });
-      
       onAudioReady(converted.blob, converted);
-      
     } catch (error) {
       console.error('Error processing recording:', error);
       toast({
         title: 'Error de procesamiento',
         description: 'No se pudo procesar la grabación',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsProcessing(false);
       setProcessingProgress(0);
     }
   }, [onAudioReady]);
-
   const handleFileSelect = useCallback(async (file: File) => {
     setIsProcessing(true);
     setProcessingProgress(20);
-    
     try {
       // Check if conversion is needed
       const needsConversion = audioConverter.needsConversion(file);
-      
       let finalBlob: Blob;
       let metadata: ConversionResult;
-      
       if (needsConversion) {
         setProcessingProgress(40);
         const converted = await audioConverter.convertAudio(file, {
@@ -101,52 +75,46 @@ export const RecorderUploader = ({
         });
         finalBlob = converted.blob;
         metadata = converted;
-        
         toast({
           title: 'Archivo convertido',
-          description: `Convertido a WAV 16kHz mono (${Math.round(converted.duration)}s)`,
+          description: `Convertido a WAV 16kHz mono (${Math.round(converted.duration)}s)`
         });
       } else {
         // Use original file
         const arrayBuffer = await file.arrayBuffer();
-        const tempBlob = new Blob([arrayBuffer], { type: file.type });
-        
+        const tempBlob = new Blob([arrayBuffer], {
+          type: file.type
+        });
         metadata = {
           blob: tempBlob,
           format: file.type.includes('wav') ? 'wav' : 'mp3',
-          sampleRate: 16000, // Assume optimal if no conversion needed
+          sampleRate: 16000,
+          // Assume optimal if no conversion needed
           channels: 1,
           duration: 0 // Will be updated by audio element
         };
-        
         finalBlob = tempBlob;
       }
-      
       setProcessingProgress(80);
-      
       setAudioBlob(finalBlob);
       setAudioMetadata(metadata);
       setAudioSource('upload');
-      
       setProcessingProgress(100);
       onAudioReady(finalBlob, metadata);
-      
     } catch (error) {
       console.error('Error processing file:', error);
       toast({
         title: 'Error de procesamiento',
         description: 'No se pudo procesar el archivo de audio',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsProcessing(false);
       setProcessingProgress(0);
     }
   }, [onAudioReady]);
-
   const handlePlayPause = () => {
     if (!audioRef.current || !audioBlob) return;
-    
     if (isPlaying) {
       audioRef.current.pause();
     } else {
@@ -157,7 +125,6 @@ export const RecorderUploader = ({
       audioRef.current.play();
     }
   };
-
   const handleReset = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -166,19 +133,16 @@ export const RecorderUploader = ({
         audioRef.current.src = '';
       }
     }
-    
     setAudioBlob(null);
     setAudioMetadata(null);
     setAudioSource('none');
     setIsPlaying(false);
   };
-
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -189,8 +153,7 @@ export const RecorderUploader = ({
 
   // Show processing state
   if (isProcessing) {
-    return (
-      <Card className="p-6">
+    return <Card className="p-6">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <div className="text-center">
@@ -206,14 +169,12 @@ export const RecorderUploader = ({
             </p>
           </div>
         </div>
-      </Card>
-    );
+      </Card>;
   }
 
   // Show audio ready state
   if (audioBlob && audioMetadata) {
-    return (
-      <Card className="p-6">
+    return <Card className="p-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -227,28 +188,14 @@ export const RecorderUploader = ({
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleReset}
-              disabled={disabled}
-            >
+            <Button variant="ghost" size="sm" onClick={handleReset} disabled={disabled}>
               <X className="h-4 w-4" />
             </Button>
           </div>
 
           <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-md">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePlayPause}
-              disabled={disabled}
-            >
-              {isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
+            <Button variant="outline" size="sm" onClick={handlePlayPause} disabled={disabled}>
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
             
             <div className="flex-1 text-sm">
@@ -262,61 +209,25 @@ export const RecorderUploader = ({
             </div>
           </div>
 
-          <audio
-            ref={audioRef}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onEnded={() => setIsPlaying(false)}
-            className="hidden"
-          />
+          <audio ref={audioRef} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onEnded={() => setIsPlaying(false)} className="hidden" />
         </div>
-      </Card>
-    );
+      </Card>;
   }
 
   // Show input selection
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Recording Section */}
-        <Card className="p-4">
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-              <Mic className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-medium">Grabar audio</h3>
-              <p className="text-sm text-muted-foreground">
-                Graba directamente desde tu micrófono
-              </p>
-            </div>
-          </div>
-        </Card>
+        
 
         {/* Upload Section */}
-        <Card className="p-4">
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
-              <FileAudio className="h-6 w-6 text-accent" />
-            </div>
-            <div>
-              <h3 className="font-medium">Subir archivo</h3>
-              <p className="text-sm text-muted-foreground">
-                Selecciona un archivo WAV o MP3
-              </p>
-            </div>
-          </div>
-        </Card>
+        
       </div>
 
       {/* Audio Recorder Component */}
-      <AudioRecorder
-        onRecordingComplete={handleRecordingComplete}
-        maxDuration={maxDuration}
-      />
+      <AudioRecorder onRecordingComplete={handleRecordingComplete} maxDuration={maxDuration} />
 
       {/* File Upload Component */}
       <FileUpload onFileSelect={handleFileSelect} />
-    </div>
-  );
+    </div>;
 };
