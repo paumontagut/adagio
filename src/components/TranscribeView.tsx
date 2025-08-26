@@ -288,6 +288,63 @@ export const TranscribeView = () => {
                 </span>
               </div>
             )}
+            
+            {/* Show transcription directly in the same widget when completed */}
+            {state === 'completed' && transcription && (
+              <div className="w-full space-y-4 mt-6">
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyTranscription}
+                      className="w-full sm:w-auto"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadTranscription}
+                      className="w-full sm:w-auto"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Descargar
+                    </Button>
+                  </div>
+                  
+                  <Textarea
+                    value={transcription}
+                    readOnly
+                    className="min-h-[120px] resize-none bg-muted/30 text-center"
+                    placeholder="La transcripción aparecerá aquí..."
+                  />
+                  
+                  {audioMetadata && (
+                    <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-muted/20 p-3 rounded-md gap-2">
+                      <span className="text-center sm:text-left">
+                        Procesado: {audioMetadata.format.toUpperCase()} • 
+                        {audioMetadata.sampleRate}Hz • 
+                        {audioMetadata.channels} canal{audioMetadata.channels !== 1 ? 'es' : ''}
+                      </span>
+                      <span>
+                        Duración: {Math.round(audioMetadata.duration)}s
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={handleReset}
+                    >
+                      Transcribir otro audio
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       )}
@@ -330,64 +387,6 @@ export const TranscribeView = () => {
           title="Listo para transcribir"
           description="Graba tu voz o sube un archivo para comenzar la transcripción automática"
         />
-      )}
-
-      {/* Transcription Results */}
-      {transcription && state === 'completed' && (
-        <Card className="p-6">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium text-foreground">Transcripción</h3>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyTranscription}
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copiar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadTranscription}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Descargar
-                </Button>
-              </div>
-            </div>
-            
-            <Textarea
-              value={transcription}
-              readOnly
-              className="min-h-[120px] resize-none bg-muted/30"
-              placeholder="La transcripción aparecerá aquí..."
-            />
-            
-            {audioMetadata && (
-              <div className="flex justify-between items-center text-sm text-muted-foreground bg-muted/20 p-3 rounded-md">
-                <span>
-                  Procesado: {audioMetadata.format.toUpperCase()} • 
-                  {audioMetadata.sampleRate}Hz • 
-                  {audioMetadata.channels} canal{audioMetadata.channels !== 1 ? 'es' : ''}
-                </span>
-                <span>
-                  Duración: {Math.round(audioMetadata.duration)}s
-                </span>
-              </div>
-            )}
-            
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                onClick={handleReset}
-              >
-                Transcribir otro audio
-              </Button>
-            </div>
-          </div>
-        </Card>
       )}
     </div>
   );
