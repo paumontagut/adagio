@@ -22,6 +22,34 @@ export const PrivacyPolicy = () => {
               Política de Privacidad
             </h1>
           </div>
+          <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 mb-4">
+            <h2 className="text-xl font-semibold mb-3">⚠️ Resumen sobre Datos Biométricos</h2>
+            <p className="text-sm mb-3">
+              Esta Política describe el tratamiento de <strong>datos biométricos de voz</strong> y <strong>datos de salud implícitos</strong>. 
+              Su voz contiene características únicas que pueden identificarle permanentemente y revelar información sobre su estado de salud.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2 text-sm">
+              <div>
+                <strong>Su voz es un dato biométrico único:</strong>
+                <ul className="list-disc pl-4 text-xs text-muted-foreground mt-1">
+                  <li>Patrones acústicos únicos e inmutables</li>
+                  <li>Frecuencias fundamentales específicas</li>
+                  <li>Características de identificación permanente</li>
+                </ul>
+              </div>
+              <div>
+                <strong>Posible información sanitaria implícita:</strong>
+                <ul className="list-disc pl-4 text-xs text-muted-foreground mt-1">
+                  <li>Indicadores neurológicos (Parkinson, Alzheimer)</li>
+                  <li>Condiciones respiratorias (asma, EPOC)</li>
+                  <li>Estados emocionales y fatiga vocal</li>
+                </ul>
+              </div>
+            </div>
+            <p className="text-sm mt-3 font-medium">
+              Por esta razón, requerimos <strong>consentimiento explícito específico</strong> y hemos completado una <strong>Evaluación de Impacto (EIPD)</strong>.
+            </p>
+          </div>
           <p className="text-lg text-muted-foreground">
             Servicio de Transcripción Adagio
           </p>
@@ -52,45 +80,74 @@ export const PrivacyPolicy = () => {
             </CardContent>
           </Card>
 
-          {/* Datos que Recopilamos */}
+          {/* Naturaleza Biométrica de la Voz */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Database className="h-5 w-5 text-primary" />
-                2. Datos que Recopilamos
+                2. Naturaleza Biométrica de sus Datos de Voz
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                <h4 className="font-semibold mb-2 text-warning-foreground">
+                  ⚠️ Su voz contiene datos biométricos únicos
+                </h4>
+                <p className="text-sm">
+                  Las grabaciones de voz son consideradas <strong>datos biométricos</strong> 
+                  bajo el Artículo 4(14) del RGPD porque permiten su identificación única 
+                  mediante características físicas y fisiológicas específicas.
+                </p>
+              </div>
+
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Datos Biométricos</h4>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Sus grabaciones de voz pueden contener características biométricas únicas:
+                  <h4 className="font-semibold mb-2">Características Biométricas Presentes</h4>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <h5 className="font-medium text-sm">Parámetros Acústicos</h5>
+                      <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
+                        <li>Frecuencia fundamental (F0)</li>
+                        <li>Formantes vocales (F1-F4)</li>
+                        <li>Espectrograma único</li>
+                      </ul>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <h5 className="font-medium text-sm">Patrones Temporales</h5>
+                      <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
+                        <li>Ritmo del habla</li>
+                        <li>Pausas características</li>
+                        <li>Entonación personal</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2 text-destructive">
+                    🚨 Información Sanitaria Implícita Potencial
+                  </h4>
+                  <p className="text-sm mb-3">
+                    Su voz puede revelar involuntariamente información sobre su estado de salud:
                   </p>
-                  <ul className="list-disc pl-6 space-y-1 text-sm">
-                    <li>Patrones de voz únicos y características vocales</li>
-                    <li>Tono, ritmo y entonación específicos</li>
-                    <li>Características acústicas identificables</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Datos Técnicos</h4>
-                  <ul className="list-disc pl-6 space-y-1 text-sm">
-                    <li>Archivos de audio enviados para transcripción</li>
-                    <li>Metadatos de audio (duración, formato, calidad)</li>
-                    <li>Texto transcrito resultante</li>
-                    <li>Información técnica del dispositivo (tipo de navegador, sistema operativo)</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Datos de Uso (Opcionales)</h4>
-                  <ul className="list-disc pl-6 space-y-1 text-sm">
-                    <li>Estadísticas anónimas de uso del servicio</li>
-                    <li>Métricas de rendimiento y calidad</li>
-                    <li>Datos de mejora del servicio (solo con consentimiento)</li>
-                  </ul>
+                  <div className="grid gap-2 md:grid-cols-2 text-xs">
+                    <div>
+                      <strong>Trastornos Neurológicos:</strong>
+                      <ul className="list-disc pl-4 text-muted-foreground">
+                        <li>Parkinson (monotonía, temblor vocal)</li>
+                        <li>Alzheimer (pérdida de fluidez)</li>
+                        <li>Esclerosis múltiple (disartria)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <strong>Condiciones Físicas:</strong>
+                      <ul className="list-disc pl-4 text-muted-foreground">
+                        <li>Problemas respiratorios</li>
+                        <li>Fatiga vocal</li>
+                        <li>Estados emocionales</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -135,149 +192,293 @@ export const PrivacyPolicy = () => {
             </CardContent>
           </Card>
 
-          {/* Base Legal */}
+          {/* Base Legal y Consentimiento */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                4. Base Legal del Tratamiento
+                <UserCheck className="h-5 w-5 text-primary" />
+                3. Base Legal y Consentimiento Explícito Requerido
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p>
-                El tratamiento de sus datos se basa en su <strong>consentimiento explícito</strong>, 
-                especialmente requerido para datos biométricos bajo el RGPD:
-              </p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Art. 6.1.a RGPD:</strong> Consentimiento para el tratamiento de datos personales</li>
-                <li><strong>Art. 9.2.a RGPD:</strong> Consentimiento explícito para datos biométricos</li>
-                <li><strong>Art. 22 RGPD:</strong> Decisiones automatizadas y elaboración de perfiles</li>
-              </ul>
-              <p className="text-sm text-muted-foreground mt-4">
-                Puede retirar su consentimiento en cualquier momento a través de nuestro 
-                <Link to="/privacy-center" className="text-primary hover:underline ml-1">
-                  Centro de Privacidad
-                </Link>.
-              </p>
-            </CardContent>
-          </Card>
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">Doble Consentimiento Explícito Requerido</h4>
+                <p className="text-sm mb-3">
+                  Debido a la naturaleza biométrica de su voz y la posible información sanitaria 
+                  implícita, requerimos su consentimiento explícito bajo dos bases legales:
+                </p>
+              </div>
 
-          {/* Conservación de Datos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-primary" />
-                5. Conservación y Seguridad
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
               <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Períodos de Conservación</h4>
-                  <ul className="list-disc pl-6 space-y-2 text-sm">
-                    <li><strong>Grabaciones de entrenamiento:</strong> Hasta la retirada del consentimiento</li>
-                    <li><strong>Grabaciones personales:</strong> Hasta que solicite su eliminación</li>
-                    <li><strong>Transcripciones:</strong> Mientras mantenga activa su cuenta</li>
-                    <li><strong>Datos técnicos:</strong> 30 días después del procesamiento</li>
-                  </ul>
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">
+                    📋 Art. 9.2.a RGPD - Consentimiento para Datos Biométricos
+                  </h4>
+                  <div className="bg-card border rounded p-3 text-sm italic">
+                    "Consiento expresamente el tratamiento de mis datos biométricos de voz, 
+                    incluyendo características físicas y fisiológicas únicas contenidas en 
+                    mi patrón vocal, para los fines específicos de transcripción automática 
+                    y entrenamiento de modelos de IA."
+                  </div>
                 </div>
 
-                <div>
-                  <h4 className="font-semibold mb-2">Medidas de Seguridad</h4>
-                  <ul className="list-disc pl-6 space-y-2 text-sm">
-                    <li>Cifrado de extremo a extremo para todas las grabaciones</li>
-                    <li>Almacenamiento seguro con claves rotativas</li>
-                    <li>Acceso restringido solo a personal autorizado</li>
-                    <li>Auditorías regulares de seguridad y cumplimiento</li>
-                    <li>Protección WORM (Write Once, Read Many) para datos críticos</li>
-                  </ul>
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">
+                    🏥 Art. 9.2.a RGPD - Consentimiento para Datos de Salud Implícitos
+                  </h4>
+                  <div className="bg-card border rounded p-3 text-sm italic">
+                    "Comprendo y consiento que mi grabación de voz puede contener información 
+                    implícita sobre mi estado de salud. Autorizo el tratamiento de esta 
+                    información potencial exclusivamente para los fines declarados del 
+                    servicio de transcripción."
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">⚖️ Requisitos Legales del Consentimiento</h4>
+                <p className="text-sm mb-2">Según el Artículo 7 RGPD, su consentimiento debe ser:</p>
+                <div className="grid gap-2 md:grid-cols-2 text-sm">
+                  <div>✅ <strong>Libre:</strong> Sin coacción, con alternativas</div>
+                  <div>✅ <strong>Específico:</strong> Para fines claramente definidos</div>
+                  <div>✅ <strong>Informado:</strong> Con comprensión completa</div>
+                  <div>✅ <strong>Inequívoco:</strong> Mediante acto afirmativo claro</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Derechos del Usuario */}
+          {/* Evaluación de Impacto (EIPD) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                4. Evaluación de Impacto en la Protección de Datos (EIPD)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">📊 EIPD Obligatoria Completada</h4>
+                <p className="text-sm">
+                  Hemos realizado una Evaluación de Impacto completa según el Art. 35 RGPD 
+                  debido al alto riesgo que representa el tratamiento de datos biométricos 
+                  y la posible información sanitaria implícita.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold">Factores de Alto Riesgo Evaluados:</h4>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="bg-destructive/5 border border-destructive/20 rounded p-3">
+                    <h5 className="font-medium text-sm text-destructive">🔴 Riesgo Biométrico</h5>
+                    <ul className="list-disc pl-4 text-xs text-muted-foreground">
+                      <li>Identificación permanente</li>
+                      <li>Datos inmutables</li>
+                      <li>Compromiso irreversible</li>
+                    </ul>
+                  </div>
+                  <div className="bg-warning/5 border border-warning/20 rounded p-3">
+                    <h5 className="font-medium text-sm text-warning-foreground">🟡 Riesgo Sanitario</h5>
+                    <ul className="list-disc pl-4 text-xs text-muted-foreground">
+                      <li>Inferencia de patologías</li>
+                      <li>Estigmatización médica</li>
+                      <li>Discriminación sanitaria</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-success/5 border border-success/20 rounded-lg p-4">
+                <h4 className="font-semibold mb-2 text-success">✅ Conclusión de la EIPD</h4>
+                <p className="text-sm">
+                  <strong>Riesgo Residual: MEDIO-BAJO</strong> - El tratamiento puede proceder 
+                  con las medidas de protección implementadas y supervisión continua.
+                </p>
+                <div className="mt-2">
+                  <a 
+                    href="/docs/DPIA_SUMMARY.md" 
+                    target="_blank"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    📄 Consultar resumen completo de la EIPD
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Conservación y Seguridad Reforzada */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-primary" />
+                5. Conservación y Medidas de Seguridad Reforzadas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+                <h4 className="font-semibold mb-2">🛡️ Seguridad Especializada para Datos Biométricos</h4>
+                <p className="text-sm">
+                  Implementamos medidas de seguridad especializadas debido a la naturaleza 
+                  irreversible e inmutable de los datos biométricos de voz.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Períodos de Conservación Específicos</h4>
+                  <div className="space-y-2">
+                    <div className="bg-muted/50 p-3 rounded border-l-4 border-primary">
+                      <div className="font-medium text-sm">Datos Biométricos de Voz</div>
+                      <div className="text-xs text-muted-foreground">
+                        Conservación hasta retirada explícita del consentimiento + 30 días para verificación de eliminación
+                      </div>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded border-l-4 border-warning">
+                      <div className="font-medium text-sm">Información Sanitaria Inferida</div>
+                      <div className="text-xs text-muted-foreground">
+                        Eliminación inmediata tras transcripción - No almacenamiento persistente
+                      </div>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded border-l-4 border-success">
+                      <div className="font-medium text-sm">Transcripciones Resultantes</div>
+                      <div className="text-xs text-muted-foreground">
+                        Mientras mantenga activa su cuenta o hasta solicitud de eliminación
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Medidas de Seguridad Técnicas</h4>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <h5 className="font-medium text-sm mb-2">🔐 Cifrado y Protección</h5>
+                      <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
+                        <li>AES-256-GCM extremo a extremo</li>
+                        <li>Claves rotativas cada 24h</li>
+                        <li>HSM para gestión de claves</li>
+                        <li>Zero-knowledge architecture</li>
+                      </ul>
+                    </div>
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <h5 className="font-medium text-sm mb-2">🎭 Anonimización</h5>
+                      <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
+                        <li>Perturbación de características F0</li>
+                        <li>Normalización de formantes</li>
+                        <li>Eliminación de metadatos</li>
+                        <li>Agregación temporal mínima</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Medidas de Seguridad Organizativas</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="text-primary">🔑</span>
+                      <div>
+                        <strong>Control de Acceso Estricto:</strong> Autenticación multifactor, 
+                        principio de menor privilegio, segregación de funciones
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-primary">👥</span>
+                      <div>
+                        <strong>Formación Especializada:</strong> 40h anuales en protección 
+                        de datos biométricos, certificación obligatoria
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-primary">📊</span>
+                      <div>
+                        <strong>Auditoría Continua:</strong> Monitorización 24/7, logs 
+                        inmutables, alertas de anomalías
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Derechos Reforzados para Datos Biométricos */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-primary" />
-                6. Sus Derechos bajo el RGPD
+                6. Derechos Reforzados para Datos Biométricos y Sanitarios
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p>Como titular de los datos, tiene los siguientes derechos:</p>
+              <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">⚖️ Derechos Especiales para Categorías Especiales</h4>
+                <p className="text-sm">
+                  Como titular de datos biométricos y potencialmente sanitarios, 
+                  disfruta de derechos reforzados bajo el RGPD.
+                </p>
+              </div>
               
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Derechos de Acceso</h4>
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">🔍 Derechos de Información</h4>
                   <ul className="list-disc pl-4 space-y-1 text-sm">
-                    <li>Acceder a sus datos personales</li>
-                    <li>Obtener copia de sus grabaciones</li>
-                    <li>Conocer el uso de sus datos</li>
+                    <li><strong>Transparencia Biométrica:</strong> Qué características se extraen</li>
+                    <li><strong>Explicación de IA:</strong> Cómo funcionan los algoritmos</li>
+                    <li><strong>Inferencias de Salud:</strong> Qué se puede detectar automáticamente</li>
+                    <li><strong>Medidas de Protección:</strong> Salvaguardias implementadas</li>
                   </ul>
                 </div>
 
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Derechos de Control</h4>
+                <div className="bg-success/5 border border-success/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">📥 Derechos de Acceso</h4>
                   <ul className="list-disc pl-4 space-y-1 text-sm">
-                    <li>Rectificar datos inexactos</li>
-                    <li>Eliminar sus datos (derecho al olvido)</li>
-                    <li>Limitar el tratamiento</li>
+                    <li><strong>Grabaciones Originales:</strong> Descarga en formato original</li>
+                    <li><strong>Características Extraídas:</strong> Datos biométricos procesados</li>
+                    <li><strong>Historial de Uso:</strong> Cuándo y para qué se procesaron</li>
+                    <li><strong>Consentimientos:</strong> Registro completo de autorizaciones</li>
                   </ul>
                 </div>
 
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Derechos de Oposición</h4>
+                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">🗑️ Derecho de Supresión Inmediata</h4>
                   <ul className="list-disc pl-4 space-y-1 text-sm">
-                    <li>Oponerse al tratamiento</li>
-                    <li>Retirar el consentimiento</li>
-                    <li>Portabilidad de datos</li>
+                    <li><strong>Eliminación en 24h:</strong> Datos biométricos y derivados</li>
+                    <li><strong>Verificación Técnica:</strong> Confirmación criptográfica</li>
+                    <li><strong>Purga de Backups:</strong> Eliminación de copias de seguridad</li>
+                    <li><strong>Desvinculación de Modelos:</strong> Retiro del entrenamiento</li>
                   </ul>
                 </div>
 
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Derechos Especiales</h4>
+                <div className="bg-warning/5 border border-warning/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2">🚫 Derechos de Oposición</h4>
                   <ul className="list-disc pl-4 space-y-1 text-sm">
-                    <li>No estar sujeto a decisiones automatizadas</li>
-                    <li>Reclamación ante autoridad de control</li>
-                    <li>Explicación de decisiones de IA</li>
+                    <li><strong>Retirada de Consentimiento:</strong> Efecto inmediato</li>
+                    <li><strong>Oposición a Inferencias:</strong> No análisis de salud</li>
+                    <li><strong>Limitación de Uso:</strong> Solo transcripción básica</li>
+                    <li><strong>Opt-out Granular:</strong> Por tipo de procesamiento</li>
                   </ul>
                 </div>
               </div>
 
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-4">
-                <p className="text-sm">
-                  <strong>Para ejercer sus derechos:</strong> Visite nuestro 
-                  <Link to="/privacy-center" className="text-primary hover:underline mx-1">
-                    Centro de Privacidad
+                <h4 className="font-semibold mb-2">🛠️ Herramientas de Ejercicio de Derechos</h4>
+                <div className="grid gap-2 md:grid-cols-3 text-sm">
+                  <Link to="/privacy-center" className="flex items-center gap-2 p-2 bg-card rounded hover:bg-muted/50 transition-colors">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <span>Centro de Privacidad</span>
                   </Link>
-                  o acceda a 
-                  <Link to="/my-data" className="text-primary hover:underline mx-1">
-                    Mis Datos
+                  <Link to="/my-data" className="flex items-center gap-2 p-2 bg-card rounded hover:bg-muted/50 transition-colors">
+                    <Database className="h-4 w-4 text-primary" />
+                    <span>Mis Datos</span>
                   </Link>
-                  para gestionar su información personal.
-                </p>
+                  <a href="mailto:dpo@adagio.es" className="flex items-center gap-2 p-2 bg-card rounded hover:bg-muted/50 transition-colors">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span>Contactar DPO</span>
+                  </a>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Transferencias Internacionales */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-primary" />
-                7. Transferencias de Datos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>
-                <strong>No realizamos transferencias internacionales</strong> de sus datos 
-                biométricos fuera del Espacio Económico Europeo (EEE).
-              </p>
-              <p>
-                Todos los datos se procesan y almacenan en servidores ubicados dentro de la UE, 
-                garantizando el pleno cumplimiento del RGPD.
-              </p>
             </CardContent>
           </Card>
 
