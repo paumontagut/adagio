@@ -14,7 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      consent_logs: {
+        Row: {
+          consent_store: boolean
+          consent_timestamp: string
+          consent_train: boolean
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          session_id: string
+          updated_at: string
+          user_agent: string | null
+          withdrawn_at: string | null
+        }
+        Insert: {
+          consent_store?: boolean
+          consent_timestamp?: string
+          consent_train?: boolean
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          session_id: string
+          updated_at?: string
+          user_agent?: string | null
+          withdrawn_at?: string | null
+        }
+        Update: {
+          consent_store?: boolean
+          consent_timestamp?: string
+          consent_train?: boolean
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          session_id?: string
+          updated_at?: string
+          user_agent?: string | null
+          withdrawn_at?: string | null
+        }
+        Relationships: []
+      }
+      unlearning_jobs: {
+        Row: {
+          completed_at: string | null
+          consent_log_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          consent_log_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          consent_log_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unlearning_jobs_consent_log_id_fkey"
+            columns: ["consent_log_id"]
+            isOneToOne: false
+            referencedRelation: "consent_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
