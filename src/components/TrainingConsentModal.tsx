@@ -16,12 +16,12 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
   const [consentStore, setConsentStore] = useState(false);
 
   const handleAccept = () => {
-    if (consentTrain || consentStore) {
+    if (consentTrain) {
       onConsentGiven(consentTrain, consentStore);
     }
   };
 
-  const isValid = consentTrain || consentStore;
+  const isValid = consentTrain;
 
   return (
     <Dialog open={isOpen} modal onOpenChange={() => {}}>
@@ -54,7 +54,7 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
 
           {/* Consent Options */}
           <div className="space-y-4">
-            <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+            <div className="flex items-start space-x-3 p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5">
               <Checkbox
                 id="consent-train"
                 checked={consentTrain}
@@ -62,8 +62,9 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
                 className="mt-1"
               />
               <div className="flex-1">
-                <label htmlFor="consent-train" className="text-sm font-medium cursor-pointer">
+                <label htmlFor="consent-train" className="text-sm font-medium cursor-pointer flex items-center gap-2">
                   Usar mi audio para entrenar el modelo de IA
+                  <span className="text-xs bg-adagio-primary text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
                 </label>
                 <p className="text-xs text-muted-foreground mt-1">
                   Tu voz será utilizada para mejorar la precisión del reconocimiento de voz mediante 
@@ -95,7 +96,7 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
           {!isValid && (
             <Alert variant="destructive">
               <AlertDescription>
-                Debes seleccionar al menos una opción para continuar con el entrenamiento.
+                Debes aceptar el uso de tu audio para entrenar el modelo de IA para continuar.
               </AlertDescription>
             </Alert>
           )}
