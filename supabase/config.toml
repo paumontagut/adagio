@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.data-deletion-handler]
 verify_jwt = false
+
+[functions.storage-manager]
+verify_jwt = false

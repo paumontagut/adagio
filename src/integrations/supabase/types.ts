@@ -296,12 +296,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_worm_backup: {
+        Args: {
+          backup_name: string
+          retention_years?: number
+          source_bucket: string
+        }
+        Returns: string
+      }
       generate_pseudonym: {
         Args: { original_session_id: string }
         Returns: string
       }
       rotate_encryption_key: {
         Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      rotate_storage_key: {
+        Args: { target_bucket_id: string }
         Returns: number
       }
     }
