@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TranscribeView } from '@/components/TranscribeView';
 import { TrainView } from '@/components/TrainView';
-import { Shield } from 'lucide-react';
+import { Shield, HardDrive } from 'lucide-react';
 import { Link } from 'react-router-dom';
 const Index = () => {
   const [activeTab, setActiveTab] = useState('transcribe');
@@ -22,7 +22,13 @@ const Index = () => {
                 Facilitando la comunicación para personas con habla atípica
               </p>
             </div>
-            <div className="flex-1 flex justify-end">
+            <div className="flex-1 flex justify-end space-x-2">
+              <Link to="/my-data">
+                <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+                  <HardDrive className="h-4 w-4 mr-2" />
+                  Mis Datos
+                </Button>
+              </Link>
               <Link to="/privacy-center">
                 <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
                   <Shield className="h-4 w-4 mr-2" />

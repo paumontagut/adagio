@@ -149,6 +149,14 @@ class SessionManager {
   trainUploadError(error: string): void {
     this.trackEvent('train_upload_error', { error_type: error });
   }
+
+  // Clear session data (for data deletion compliance)
+  clearSession(): void {
+    this.sessionData = null;
+    localStorage.removeItem(this.STORAGE_KEY);
+    localStorage.removeItem('adagio_encryption_key');
+    console.log('Session data cleared for GDPR compliance');
+  }
 }
 
 export const sessionManager = new SessionManager();

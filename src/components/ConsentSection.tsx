@@ -3,7 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Shield, ExternalLink, FileText, Database } from 'lucide-react';
+import { Shield, ExternalLink, FileText, Database, HardDrive } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface ConsentSectionProps {
@@ -112,6 +112,11 @@ export const ConsentSection = ({ onConsentChange, isValid }: ConsentSectionProps
             </p>
             
             <div className="pt-2 flex flex-wrap gap-3">
+              <Link to="/my-data" className="inline-flex items-center gap-1 text-primary hover:text-primary/80 underline">
+                <HardDrive className="h-3 w-3" />
+                Mis Datos
+                <ExternalLink className="h-3 w-3" />
+              </Link>
               <Link 
                 to="/privacy-center" 
                 className="inline-flex items-center gap-1 text-primary hover:text-primary/80 underline"
