@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      audio_metadata: {
+        Row: {
+          audio_format: string
+          consent_store: boolean
+          consent_train: boolean
+          created_at: string
+          device_info: string | null
+          duration_ms: number
+          encryption_key_version: number
+          id: string
+          phrase_text: string
+          quality_score: number | null
+          sample_rate: number
+          session_pseudonym: string
+        }
+        Insert: {
+          audio_format?: string
+          consent_store?: boolean
+          consent_train?: boolean
+          created_at?: string
+          device_info?: string | null
+          duration_ms: number
+          encryption_key_version?: number
+          id?: string
+          phrase_text: string
+          quality_score?: number | null
+          sample_rate: number
+          session_pseudonym: string
+        }
+        Update: {
+          audio_format?: string
+          consent_store?: boolean
+          consent_train?: boolean
+          created_at?: string
+          device_info?: string | null
+          duration_ms?: number
+          encryption_key_version?: number
+          id?: string
+          phrase_text?: string
+          quality_score?: number | null
+          sample_rate?: number
+          session_pseudonym?: string
+        }
+        Relationships: []
+      }
       consent_logs: {
         Row: {
           consent_store: boolean
@@ -50,6 +95,98 @@ export type Database = {
           updated_at?: string
           user_agent?: string | null
           withdrawn_at?: string | null
+        }
+        Relationships: []
+      }
+      encrypted_audio_files: {
+        Row: {
+          created_at: string
+          encrypted_blob: string
+          id: string
+          iv: string
+          metadata_id: string
+          salt: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_blob: string
+          id?: string
+          iv: string
+          metadata_id: string
+          salt: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_blob?: string
+          id?: string
+          iv?: string
+          metadata_id?: string
+          salt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encrypted_audio_files_metadata_id_fkey"
+            columns: ["metadata_id"]
+            isOneToOne: false
+            referencedRelation: "audio_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      encryption_keys: {
+        Row: {
+          created_at: string
+          expires_at: string
+          is_active: boolean
+          key_hash: string
+          rotation_reason: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          is_active?: boolean
+          key_hash: string
+          rotation_reason?: string | null
+          version: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          is_active?: boolean
+          key_hash?: string
+          rotation_reason?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      session_mapping: {
+        Row: {
+          created_at: string
+          encrypted_session_id: string
+          id: string
+          last_accessed: string | null
+          mapping_iv: string
+          mapping_salt: string
+          session_pseudonym: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_session_id: string
+          id?: string
+          last_accessed?: string | null
+          mapping_iv: string
+          mapping_salt: string
+          session_pseudonym: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_session_id?: string
+          id?: string
+          last_accessed?: string | null
+          mapping_iv?: string
+          mapping_salt?: string
+          session_pseudonym?: string
         }
         Relationships: []
       }
@@ -99,7 +236,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_pseudonym: {
+        Args: { original_session_id: string }
+        Returns: string
+      }
+      rotate_encryption_key: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

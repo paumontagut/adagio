@@ -1,1 +1,4 @@
 project_id = "cydqkoohhzesogvctvhy"
+
+[functions.encrypted-audio-handler]
+verify_jwt = false

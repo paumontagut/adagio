@@ -12,7 +12,8 @@ import { ConsentSection } from '@/components/ConsentSection';
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
 import { sessionManager } from '@/lib/sessionManager';
-import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3 } from 'lucide-react';
+import { AudioEncryption } from '@/lib/encryption';
+import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Placeholder phrases - will be replaced with API call later
@@ -37,6 +38,8 @@ export const TrainView = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [encryptionKey, setEncryptionKey] = useState<string>('');
+  const [currentKeyVersion, setCurrentKeyVersion] = useState<number>(1);
   const {
     toast
   } = useToast();
@@ -48,7 +51,36 @@ export const TrainView = () => {
       setHasConsented(session.consentGiven);
     }
     sessionManager.pageView('train');
+    
+    // Generate or retrieve encryption key
+    initializeEncryption();
   }, []);
+
+  const initializeEncryption = async () => {
+    try {
+      // Get current key version from server
+      const { data, error } = await supabase.functions.invoke('encrypted-audio-handler/key-version');
+      
+      if (error) {
+        console.error('Error getting key version:', error);
+      } else {
+        setCurrentKeyVersion(data.currentKeyVersion);
+      }
+
+      // Generate client-side master key (in production, this should be derived securely)
+      let masterKey = localStorage.getItem('adagio_encryption_key');
+      if (!masterKey) {
+        masterKey = AudioEncryption.generateMasterKey();
+        localStorage.setItem('adagio_encryption_key', masterKey);
+      }
+      setEncryptionKey(masterKey);
+    } catch (error) {
+      console.error('Error initializing encryption:', error);
+      // Fallback to generated key
+      const fallbackKey = AudioEncryption.generateMasterKey();
+      setEncryptionKey(fallbackKey);
+    }
+  };
   const getNewPhrase = useCallback(() => {
     const newPhrase = samplePhrases[Math.floor(Math.random() * samplePhrases.length)];
     setCurrentPhrase(newPhrase);
@@ -95,74 +127,77 @@ export const TrainView = () => {
       });
       return;
     }
+    
     setIsSubmitting(true);
     setError(null);
     try {
+      if (!encryptionKey) {
+        throw new Error('Encryption key not available');
+      }
+
       const session = sessionManager.getSession();
       if (!session) {
         throw new Error('No session found');
       }
 
-      // Record consent in database
-      const { error: consentError } = await supabase
-        .from('consent_logs')
-        .insert({
-          session_id: session.sessionId,
-          consent_train: consentTrain,
-          consent_store: consentStore,
-          ip_address: null, // Could be collected if needed
-          user_agent: navigator.userAgent
-        });
-
-      if (consentError) {
-        console.error('Error recording consent:', consentError);
-        // Continue with submission even if consent logging fails
-      }
       // Use processed audio if available, otherwise use original
       const audioToUpload = processingResult?.blob || audioBlob;
 
-      // Create FormData to upload audio file
-      const formData = new FormData();
-      formData.append('audio_file', audioToUpload, 'recording.wav');
-      formData.append('phrase_text', currentPhrase);
-      formData.append('session_id', session.sessionId);
-      formData.append('consent_train', consentTrain.toString());
-      formData.append('consent_store', consentStore.toString());
+      console.log('Starting client-side encryption...');
+      
+      // Encrypt audio on client-side using AES-256
+      const encryptionResult = await AudioEncryption.encryptAudio(
+        audioToUpload, 
+        encryptionKey, 
+        currentKeyVersion
+      );
 
       // Get audio metadata
-      const duration_ms = processingResult?.metrics.duration ? Math.round(processingResult.metrics.duration * 1000) : 5000; // Fallback
+      const duration_ms = processingResult?.metrics.duration ? 
+        Math.round(processingResult.metrics.duration * 1000) : 5000;
 
-      formData.append('duration_ms', duration_ms.toString());
-      formData.append('sample_rate', processingResult?.metrics.sampleRate?.toString() || '16000');
-      formData.append('format', 'wav');
-      formData.append('device_label', 'Browser MediaRecorder');
+      // Prepare encrypted audio data for secure transmission
+      const encryptedAudioData = {
+        sessionId: session.sessionId,
+        phraseText: currentPhrase,
+        encryptedBlob: AudioEncryption.arrayBufferToBase64(encryptionResult.encryptedData),
+        iv: AudioEncryption.uint8ArrayToBase64(encryptionResult.iv),
+        salt: AudioEncryption.uint8ArrayToBase64(encryptionResult.salt),
+        durationMs: duration_ms,
+        sampleRate: processingResult?.metrics.sampleRate || 16000,
+        audioFormat: 'wav',
+        deviceInfo: `Browser MediaRecorder - ${navigator.userAgent.substring(0, 100)}`,
+        qualityScore: processingResult?.isValid ? 0.95 : 0.70,
+        consentTrain: consentTrain,
+        consentStore: consentStore
+      };
+
+      console.log('Sending encrypted audio to secure storage...');
+
+      // Send encrypted data to secure edge function
+      const { data: responseData, error: uploadError } = await supabase.functions.invoke(
+        'encrypted-audio-handler/store-audio',
+        {
+          body: encryptedAudioData
+        }
+      );
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      console.log('Encrypted audio stored successfully:', responseData);
 
       // Track analytics
       sessionManager.trainUpload();
+      sessionManager.trainUploadSuccess();
 
-      // This would be replaced with actual backend endpoint
-      const response = await fetch('/api/recordings', {
-        method: 'POST',
-        body: formData
-      });
-      if (!response.ok) {
-        if (response.status === 413) {
-          throw new Error('LARGE_FILE');
-        }
-        if (response.status === 507) {
-          throw new Error('STORAGE_FULL');
-        }
-        throw new Error(`HTTP_${response.status}`);
-      }
-      const data: RecordingData = await response.json();
       setIsSuccess(true);
       toast({
-        title: "¡Gracias por tu ayuda!",
-        description: "Tu grabación ha sido guardada correctamente"
+        title: "¡Grabación cifrada y guardada!",
+        description: "Tu audio ha sido cifrado con AES-256 y almacenado de forma segura"
       });
-
-      // Track success analytics
-      sessionManager.trainUploadSuccess();
 
       // Reset for next recording after a delay
       setTimeout(() => {
@@ -170,17 +205,17 @@ export const TrainView = () => {
         setProcessingResult(null);
         setIsSuccess(false);
         getNewPhrase();
-      }, 2000);
+      }, 3000);
+
     } catch (error) {
-      console.error('Error uploading recording:', error);
-      const errorMessage = error instanceof Error ? error.message : 'UNKNOWN';
+      console.error('Error in encrypted upload:', error);
+      const errorMessage = error instanceof Error ? error.message : 'ENCRYPTION_ERROR';
       setError(errorMessage);
 
-      // Track error analytics
       sessionManager.trainUploadError(errorMessage);
       toast({
-        title: "Error al guardar",
-        description: "No se pudo guardar la grabación",
+        title: "Error de cifrado",
+        description: "No se pudo cifrar y guardar la grabación",
         variant: "destructive"
       });
     } finally {
@@ -261,7 +296,15 @@ export const TrainView = () => {
       {/* Current Phrase */}
       <Card className="p-8 text-center bg-[#f5f8de]">
         <div className="flex justify-between items-start mb-4">
-          <h3 className="text-lg font-medium text-foreground">Frase a grabar:</h3>
+          <div>
+            <h3 className="text-lg font-medium text-foreground">Frase a grabar:</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <Shield className="h-4 w-4 text-primary" />
+              <span className="text-xs text-muted-foreground">
+                Cifrado AES-256 • Clave v{currentKeyVersion}
+              </span>
+            </div>
+          </div>
           <Button variant="outline" size="sm" onClick={getNewPhrase} className="flex items-center gap-2 bg-[#0d0c1d] text-white">
             <RefreshCw className="h-4 w-4" />
             Nueva frase
@@ -322,9 +365,14 @@ export const TrainView = () => {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enviando...
+                Cifrando y enviando...
               </>
-            ) : 'Enviar Grabación'}
+            ) : (
+              <>
+                <Shield className="mr-2 h-4 w-4" />
+                Enviar Cifrado (AES-256)
+              </>
+            )}
           </Button>
         </div>
       )}
