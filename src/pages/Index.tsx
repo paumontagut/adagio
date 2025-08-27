@@ -4,12 +4,14 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TranscribeView } from '@/components/TranscribeView';
 import { TrainView } from '@/components/TrainView';
+import { Footer } from '@/components/Footer';
 import { Shield, HardDrive } from 'lucide-react';
 import { Link } from 'react-router-dom';
 const Index = () => {
   const [activeTab, setActiveTab] = useState('transcribe');
-  return <div className="min-h-screen bg-[#005c64]">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+  return (
+    <div className="min-h-screen bg-[#005c64] flex flex-col">
+      <div className="container mx-auto px-4 py-8 max-w-4xl flex-1">
         {/* Header */}
         <header className="text-center mb-8">
           <div className="flex justify-between items-start mb-4">
@@ -61,6 +63,8 @@ const Index = () => {
           </Tabs>
         </Card>
       </div>
-    </div>;
+      <Footer />
+    </div>
+  );
 };
 export default Index;

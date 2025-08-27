@@ -103,8 +103,15 @@ export const ConsentModal = ({ isOpen, onConsentGiven }: ConsentModalProps) => {
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Al continuar, aceptas que tus grabaciones se utilicen para mejorar el sistema.
-            Puedes cambiar tu preferencia sobre estadísticas anónimas en cualquier momento.
+            Al continuar, aceptas nuestros{" "}
+            <a href="/terms-and-conditions" target="_blank" className="text-primary hover:underline">
+              Términos y Condiciones
+            </a>
+            {" "}y{" "}
+            <a href="/privacy-policy" target="_blank" className="text-primary hover:underline">
+              Política de Privacidad
+            </a>
+            . Puedes cambiar tus preferencias en cualquier momento.
           </p>
         </div>
       </DialogContent>

@@ -125,14 +125,22 @@ export const ConsentSection = ({ onConsentChange, isValid }: ConsentSectionProps
                 Centro de Privacidad
                 <ExternalLink className="h-3 w-3" />
               </Link>
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs">
+              <Link 
+                to="/privacy-policy"
+                className="inline-flex items-center gap-1 text-primary hover:text-primary/80 underline text-xs"
+              >
+                <Shield className="h-3 w-3" />
                 Política de Privacidad
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </Button>
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs">
-                Información Biométrica
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </Button>
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+              <Link 
+                to="/terms-and-conditions"
+                className="inline-flex items-center gap-1 text-primary hover:text-primary/80 underline text-xs"
+              >
+                <FileText className="h-3 w-3" />
+                Términos y Condiciones
+                <ExternalLink className="h-3 w-3" />
+              </Link>
             </div>
           </div>
         </div>
