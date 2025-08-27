@@ -226,57 +226,89 @@ export const TranscribeView = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="main" aria-labelledby="transcribe-heading">
+      {/* Skip link for screen readers */}
+      <a href="#transcribe-controls" className="skip-link">
+        Saltar a controles de transcripción
+      </a>
+
+      {/* Accessibility status announcements */}
+      <div 
+        aria-live="polite" 
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+      >
+        {state === 'uploading' && 'Subiendo archivo de audio al servidor'}
+        {state === 'transcribing' && 'Transcribiendo audio, por favor espere'}
+        {state === 'completed' && 'Transcripción completada exitosamente'}
+        {state === 'error' && `Error en la transcripción: ${error?.message}`}
+      </div>
+
       {/* Header */}
       <div className="text-center space-y-4">
         <div>
-          <h2 className="text-2xl font-semibold text-foreground mb-2">
+          <h2 id="transcribe-heading" className="text-2xl font-semibold text-foreground mb-2">
             Transcripción de Audio
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground" id="transcribe-description">
             Graba tu voz o sube un archivo para transcribir a texto
           </p>
         </div>
       </div>
 
       {/* Audio Input Section */}
-      <Card className="p-6">
+      <Card className="p-6" role="region" aria-labelledby="audio-input-heading">
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-foreground">
+          <h3 id="audio-input-heading" className="text-lg font-medium text-foreground">
             Entrada de Audio
           </h3>
           <RecorderUploader
             onAudioReady={handleAudioReady}
             disabled={isProcessing}
             maxDuration={20}
+            aria-describedby="transcribe-description"
           />
         </div>
       </Card>
 
       {/* Processing State */}
       {stateConfig && (
-        <Card className="p-6">
+        <Card className="p-6" role="region" aria-labelledby="processing-heading">
           <div className="flex flex-col items-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <stateConfig.icon className={`h-8 w-8 text-primary ${state === 'transcribing' ? 'animate-pulse' : ''}`} />
+            <div 
+              className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center"
+              role="img"
+              aria-label={`Estado: ${stateConfig.title}`}
+            >
+              <stateConfig.icon 
+                className={`h-8 w-8 text-primary ${state === 'transcribing' ? 'animate-pulse' : ''}`}
+                aria-hidden="true"
+              />
             </div>
             <div className="text-center">
-              <h3 className="font-medium text-lg">{stateConfig.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h3 id="processing-heading" className="font-medium text-lg">
+                {stateConfig.title}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1" role="status">
                 {stateConfig.description}
               </p>
             </div>
             {stateConfig.showProgress && (
-              <div className="w-full max-w-md space-y-2">
-                <Progress value={uploadProgress} className="h-2" />
-                <p className="text-xs text-muted-foreground text-center">
+              <div className="w-full max-w-md space-y-2" role="progressbar" aria-valuenow={uploadProgress} aria-valuemin={0} aria-valuemax={100}>
+                <Progress 
+                  value={uploadProgress} 
+                  className="h-2"
+                  aria-label={`Progreso de subida: ${uploadProgress}%`}
+                />
+                <p className="text-xs text-muted-foreground text-center" aria-live="polite">
                   {uploadProgress}% completado
                 </p>
               </div>
             )}
             {state === 'transcribing' && (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
+              <div className="flex items-center space-x-2" role="status" aria-live="polite">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 <span className="text-sm text-muted-foreground">
                   Esto puede tomar algunos segundos...
                 </span>
@@ -285,27 +317,33 @@ export const TranscribeView = () => {
             
             {/* Show transcription directly in the same widget when completed */}
             {state === 'completed' && transcription && (
-              <div className="w-full space-y-4 mt-6">
+              <div className="w-full space-y-4 mt-6" role="region" aria-labelledby="transcription-results">
                 <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
+                  <h4 id="transcription-results" className="sr-only">Resultados de la transcripción</h4>
+                  <div className="flex flex-col sm:flex-row justify-center items-center gap-2" role="toolbar" aria-label="Acciones de transcripción">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleCopyTranscription}
                       className="w-full sm:w-auto"
+                      aria-describedby="copy-description"
                     >
-                      <Copy className="h-4 w-4 mr-2" />
+                      <Copy className="h-4 w-4 mr-2" aria-hidden="true" />
                       Copiar
                     </Button>
+                    <div id="copy-description" className="sr-only">Copiar transcripción al portapapeles</div>
+                    
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleDownloadTranscription}
                       className="w-full sm:w-auto"
+                      aria-describedby="download-description"
                     >
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="h-4 w-4 mr-2" aria-hidden="true" />
                       Descargar
                     </Button>
+                    <div id="download-description" className="sr-only">Descargar transcripción como archivo de texto</div>
                   </div>
                   
                   <Textarea
@@ -313,10 +351,17 @@ export const TranscribeView = () => {
                     readOnly
                     className="min-h-[120px] resize-none bg-muted/30 text-center"
                     placeholder="La transcripción aparecerá aquí..."
+                    aria-label="Texto transcrito"
+                    aria-describedby="transcription-info"
                   />
                   
                   {audioMetadata && (
-                    <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-muted/20 p-3 rounded-md gap-2">
+                    <div 
+                      id="transcription-info"
+                      className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-muted/20 p-3 rounded-md gap-2"
+                      role="complementary"
+                      aria-label="Información del archivo de audio"
+                    >
                       <span className="text-center sm:text-left">
                         Procesado: {audioMetadata.format.toUpperCase()} • 
                         {audioMetadata.sampleRate}Hz • 
@@ -332,9 +377,13 @@ export const TranscribeView = () => {
                     <Button
                       variant="outline"
                       onClick={handleReset}
+                      aria-describedby="reset-description"
                     >
                       Transcribir otro audio
                     </Button>
+                    <div id="reset-description" className="sr-only">
+                      Limpiar el audio actual y comenzar una nueva transcripción
+                    </div>
                   </div>
                 </div>
               </div>
@@ -355,19 +404,28 @@ export const TranscribeView = () => {
 
       {/* Transcribe Button */}
       {!isProcessing && !transcription && audioBlob && (
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center space-y-4" id="transcribe-controls">
           <Button 
             onClick={handleTranscribe}
             disabled={!canTranscribe}
             size="xl"
             variant="default"
             className="min-w-[200px]"
+            aria-describedby="transcribe-button-description"
+            tabIndex={0}
           >
-            <FileAudio className="mr-2 h-4 w-4" />
+            <FileAudio className="mr-2 h-4 w-4" aria-hidden="true" />
             Transcribir Audio
           </Button>
+          <div id="transcribe-button-description" className="sr-only">
+            Iniciar transcripción del audio grabado o subido
+          </div>
           {!backendOnline && (
-            <p className="text-sm text-muted-foreground mt-2 text-center">
+            <p 
+              className="text-sm text-muted-foreground mt-2 text-center"
+              role="status"
+              aria-live="polite"
+            >
               Esperando conexión al servidor...
             </p>
           )}

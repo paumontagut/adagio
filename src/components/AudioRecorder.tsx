@@ -311,18 +311,42 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" role="region" aria-labelledby="audio-recorder-heading">
+      <h3 id="audio-recorder-heading" className="sr-only">Grabadora de audio</h3>
+      
+      {/* Recording status announcements */}
+      <div 
+        aria-live="polite" 
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+      >
+        {isRecording && `Grabando audio, ${formatTime(recordingTime)} transcurridos`}
+        {isProcessing && 'Procesando grabación de audio'}
+        {recordedBlob && !isProcessing && 'Grabación completada y lista para transcripción'}
+      </div>
+
       {/* Device Selection */}
       {availableDevices.length > 1 && (
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">
+          <label 
+            htmlFor="microphone-select" 
+            className="text-sm font-medium text-foreground mb-2 block"
+          >
             Seleccionar micrófono:
           </label>
-          <Select value={selectedDevice} onValueChange={setSelectedDevice} disabled={isRecording}>
-            <SelectTrigger>
+          <Select 
+            value={selectedDevice} 
+            onValueChange={setSelectedDevice} 
+            disabled={isRecording}
+          >
+            <SelectTrigger 
+              id="microphone-select"
+              aria-describedby="microphone-help"
+            >
               <SelectValue placeholder="Selecciona un micrófono" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent role="listbox">
               <SelectItem value="default">Micrófono por defecto</SelectItem>
               {availableDevices.map((device) => (
                 <SelectItem key={device.deviceId} value={device.deviceId}>
@@ -331,18 +355,27 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
               ))}
             </SelectContent>
           </Select>
+          <div id="microphone-help" className="sr-only">
+            Selecciona el micrófono a usar para la grabación
+          </div>
         </div>
       )}
 
       {/* Recording Controls */}
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex items-center justify-center gap-4" role="toolbar" aria-label="Controles de grabación">
         <Button
           onClick={isRecording ? stopRecording : startRecording}
           size="icon"
           variant={isRecording ? "destructive" : "accent"}
           className="h-20 w-20 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+          aria-label={isRecording ? "Detener grabación" : "Iniciar grabación"}
+          aria-describedby="recording-status"
+          tabIndex={0}
         >
-          {isRecording ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
+          {isRecording ? 
+            <MicOff className="h-8 w-8" aria-hidden="true" /> : 
+            <Mic className="h-8 w-8" aria-hidden="true" />
+          }
         </Button>
 
         {recordedBlob && (
@@ -351,43 +384,73 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
               onClick={togglePlayback}
               variant="outline"
               className="h-12 w-12 rounded-full hover:shadow-md transition-shadow"
+              aria-label={isPlaying ? "Pausar reproducción" : "Reproducir grabación"}
+              aria-describedby="playback-status"
             >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {isPlaying ? 
+                <Pause className="h-4 w-4" aria-hidden="true" /> : 
+                <Play className="h-4 w-4" aria-hidden="true" />
+              }
             </Button>
             
             <Button
               onClick={resetRecording}
               variant="outline"
               className="h-12 w-12 rounded-full hover:shadow-md transition-shadow"
+              aria-label="Limpiar grabación y empezar de nuevo"
+              aria-describedby="reset-help"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
             </Button>
+            <div id="reset-help" className="sr-only">
+              Elimina la grabación actual y permite hacer una nueva
+            </div>
           </>
         )}
       </div>
 
       {/* Recording Status */}
       <div className="text-center space-y-2">
-        <div className="text-sm text-muted-foreground">
+        <div 
+          id="recording-status"
+          className="text-sm text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
           {isProcessing ? 'Procesando audio...' 
             : isRecording ? 'Grabando...' 
             : recordedBlob ? 'Grabación completada' 
             : 'Listo para grabar'}
         </div>
         
-        <div className="text-lg font-mono text-foreground">
+        <div 
+          className="text-lg font-mono text-foreground"
+          aria-live="polite"
+          aria-label={`Tiempo de grabación: ${formatTime(recordingTime)} de ${formatTime(maxDuration)} máximo`}
+        >
           {formatTime(recordingTime)} / {formatTime(maxDuration)}
         </div>
 
         {/* Audio Level Indicator */}
         {isRecording && (
-          <div className="mx-auto w-48 h-2 bg-audio-inactive rounded-full overflow-hidden">
+          <div 
+            className="mx-auto w-48 h-2 bg-audio-inactive rounded-full overflow-hidden"
+            role="progressbar"
+            aria-valuenow={audioLevel}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Nivel de audio: ${Math.round(audioLevel)}%`}
+          >
             <div 
               className="h-full bg-audio-level transition-all duration-100 ease-out"
               style={{ width: `${audioLevel}%` }}
+              aria-hidden="true"
             />
           </div>
         )}
+        <div id="playback-status" className="sr-only">
+          {isPlaying ? 'Reproduciendo grabación' : 'Reproducción pausada'}
+        </div>
       </div>
 
       {/* Audio Metrics Display */}
@@ -406,6 +469,7 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
           src={audioUrl}
           onEnded={() => setIsPlaying(false)}
           className="hidden"
+          aria-label="Reproducción de la grabación de audio"
         />
       )}
     </div>
