@@ -9,7 +9,6 @@ import { ArrowLeft, Shield, FileText, Database, Trash2, Download, Eye, AlertTria
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { sessionManager } from '@/lib/sessionManager';
-
 interface ConsentRecord {
   id: string;
   session_id: string;
@@ -18,28 +17,26 @@ interface ConsentRecord {
   consent_timestamp: string;
   withdrawn_at: string | null;
 }
-
 export const PrivacyCenter = () => {
   const [consentRecords, setConsentRecords] = useState<ConsentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     loadConsentRecords();
   }, []);
-
   const loadConsentRecords = async () => {
     try {
       const session = sessionManager.getSession();
       if (!session) return;
-
-      const { data, error } = await supabase
-        .from('consent_logs')
-        .select('*')
-        .eq('session_id', session.sessionId)
-        .order('consent_timestamp', { ascending: false });
-
+      const {
+        data,
+        error
+      } = await supabase.from('consent_logs').select('*').eq('session_id', session.sessionId).order('consent_timestamp', {
+        ascending: false
+      });
       if (error) throw error;
       setConsentRecords(data || []);
     } catch (error) {
@@ -53,35 +50,32 @@ export const PrivacyCenter = () => {
       setIsLoading(false);
     }
   };
-
   const handleWithdrawConsent = async (recordId: string) => {
     setIsWithdrawing(true);
     try {
       // Withdraw consent (logical deletion)
-      const { error: updateError } = await supabase
-        .from('consent_logs')
-        .update({ withdrawn_at: new Date().toISOString() })
-        .eq('id', recordId);
-
+      const {
+        error: updateError
+      } = await supabase.from('consent_logs').update({
+        withdrawn_at: new Date().toISOString()
+      }).eq('id', recordId);
       if (updateError) throw updateError;
 
       // Create unlearning job
-      const { error: jobError } = await supabase
-        .from('unlearning_jobs')
-        .insert({
-          consent_log_id: recordId,
-          status: 'pending',
-          metadata: { 
-            withdrawal_timestamp: new Date().toISOString(),
-            user_agent: navigator.userAgent 
-          }
-        });
-
+      const {
+        error: jobError
+      } = await supabase.from('unlearning_jobs').insert({
+        consent_log_id: recordId,
+        status: 'pending',
+        metadata: {
+          withdrawal_timestamp: new Date().toISOString(),
+          user_agent: navigator.userAgent
+        }
+      });
       if (jobError) throw jobError;
-
       toast({
         title: "Consentimiento retirado",
-        description: "Se ha iniciado el proceso de eliminación de tus datos del modelo",
+        description: "Se ha iniciado el proceso de eliminación de tus datos del modelo"
       });
 
       // Reload records
@@ -97,7 +91,6 @@ export const PrivacyCenter = () => {
       setIsWithdrawing(false);
     }
   };
-
   const exportData = async () => {
     try {
       const session = sessionManager.getSession();
@@ -106,8 +99,9 @@ export const PrivacyCenter = () => {
         consent_records: consentRecords,
         export_timestamp: new Date().toISOString()
       };
-
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json'
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -116,10 +110,9 @@ export const PrivacyCenter = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-
       toast({
         title: "Datos exportados",
-        description: "Se ha descargado un archivo con todos tus datos",
+        description: "Se ha descargado un archivo con todos tus datos"
       });
     } catch (error) {
       console.error('Error exporting data:', error);
@@ -130,9 +123,7 @@ export const PrivacyCenter = () => {
       });
     }
   };
-
-  return (
-    <div className="min-h-screen bg-[#005c64]">
+  return <div className="min-h-screen bg-[#005c64]">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <header className="mb-8">
@@ -194,19 +185,13 @@ export const PrivacyCenter = () => {
               </Button>
             </div>
 
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">
+            {isLoading ? <div className="text-center py-8 text-muted-foreground">
                 Cargando registros...
-              </div>
-            ) : consentRecords.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              </div> : consentRecords.length === 0 ? <div className="text-center py-8 text-muted-foreground">
                 <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No hay registros de consentimiento</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {consentRecords.map((record) => (
-                  <div key={record.id} className="border rounded-lg p-4">
+              </div> : <div className="space-y-4">
+                {consentRecords.map(record => <div key={record.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
@@ -228,31 +213,20 @@ export const PrivacyCenter = () => {
                           </div>
                         </div>
                       </div>
-                      {!record.withdrawn_at && (
-                        <Button
-                          onClick={() => handleWithdrawConsent(record.id)}
-                          disabled={isWithdrawing}
-                          variant="destructive"
-                          size="sm"
-                        >
+                      {!record.withdrawn_at && <Button onClick={() => handleWithdrawConsent(record.id)} disabled={isWithdrawing} variant="destructive" size="sm">
                           <Trash2 className="h-4 w-4 mr-2" />
                           Retirar
-                        </Button>
-                      )}
+                        </Button>}
                     </div>
-                    {record.withdrawn_at && (
-                      <Alert>
+                    {record.withdrawn_at && <Alert>
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>
                           Consentimiento retirado el {new Date(record.withdrawn_at).toLocaleString('es-ES')}. 
                           Se ha iniciado el proceso de eliminación de datos.
                         </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                      </Alert>}
+                  </div>)}
+              </div>}
           </Card>
 
           {/* Legal Information */}
@@ -296,13 +270,12 @@ export const PrivacyCenter = () => {
                 <h3 className="font-medium mb-2">Contacto</h3>
                 <p className="text-muted-foreground">
                   Para ejercer tus derechos o realizar consultas sobre privacidad, 
-                  contacta con nosotros en: <strong>privacy@adagio.app</strong>
+                  contacta con nosotros en: <strong>a</strong>
                 </p>
               </div>
             </div>
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
