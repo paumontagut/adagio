@@ -270,7 +270,7 @@ export const PrivacyCenter = () => {
                 <h3 className="font-medium mb-2">Contacto</h3>
                 <p className="text-muted-foreground">
                   Para ejercer tus derechos o realizar consultas sobre privacidad, 
-                  contacta con nosotros en: <strong>a</strong>
+                  contacta con nosotros en: <strong>adagio@symplia.es</strong>
                 </p>
               </div>
             </div>
