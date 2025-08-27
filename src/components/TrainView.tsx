@@ -8,10 +8,12 @@ import { AudioRecorder } from '@/components/AudioRecorder';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { ConsentModal } from '@/components/ConsentModal';
+import { ConsentSection } from '@/components/ConsentSection';
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
 import { sessionManager } from '@/lib/sessionManager';
 import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Placeholder phrases - will be replaced with API call later
 const samplePhrases = ["Buenos días, ¿cómo está usted?", "Necesito ayuda con esto, por favor", "El clima está muy agradable hoy", "Me gustaría hacer una reservación", "¿Puede repetir eso, por favor?", "Muchas gracias por su ayuda", "Hasta luego, que tenga un buen día", "¿Dónde está la estación más cercana?"];
@@ -30,6 +32,8 @@ export const TrainView = () => {
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [hasConsented, setHasConsented] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
+  const [consentTrain, setConsentTrain] = useState(false);
+  const [consentStore, setConsentStore] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -57,6 +61,11 @@ export const TrainView = () => {
     setProcessingResult(result || null);
     setError(null);
   };
+  const handleConsentChange = (consentTrainValue: boolean, consentStoreValue: boolean) => {
+    setConsentTrain(consentTrainValue);
+    setConsentStore(consentStoreValue);
+  };
+
   const handleSubmit = async () => {
     if (!audioBlob) {
       toast({
@@ -67,10 +76,13 @@ export const TrainView = () => {
       return;
     }
 
-    // Check if user has given consent
-    const session = sessionManager.getSession();
-    if (!session?.consentGiven) {
-      setShowConsentModal(true);
+    // Check if user has given at least one consent
+    if (!consentTrain && !consentStore) {
+      toast({
+        title: "Consentimiento requerido",
+        description: "Debes seleccionar al menos una opción de consentimiento",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -86,6 +98,26 @@ export const TrainView = () => {
     setIsSubmitting(true);
     setError(null);
     try {
+      const session = sessionManager.getSession();
+      if (!session) {
+        throw new Error('No session found');
+      }
+
+      // Record consent in database
+      const { error: consentError } = await supabase
+        .from('consent_logs')
+        .insert({
+          session_id: session.sessionId,
+          consent_train: consentTrain,
+          consent_store: consentStore,
+          ip_address: null, // Could be collected if needed
+          user_agent: navigator.userAgent
+        });
+
+      if (consentError) {
+        console.error('Error recording consent:', consentError);
+        // Continue with submission even if consent logging fails
+      }
       // Use processed audio if available, otherwise use original
       const audioToUpload = processingResult?.blob || audioBlob;
 
@@ -94,6 +126,8 @@ export const TrainView = () => {
       formData.append('audio_file', audioToUpload, 'recording.wav');
       formData.append('phrase_text', currentPhrase);
       formData.append('session_id', session.sessionId);
+      formData.append('consent_train', consentTrain.toString());
+      formData.append('consent_store', consentStore.toString());
 
       // Get audio metadata
       const duration_ms = processingResult?.metrics.duration ? Math.round(processingResult.metrics.duration * 1000) : 5000; // Fallback
@@ -273,41 +307,16 @@ export const TrainView = () => {
         />
       )}
 
-      {/* Consent and Privacy */}
+      {/* Consent Section */}
       {audioBlob && !isSuccess && (
-        <Card className="p-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-foreground">
-              Consentimiento y Privacidad
-            </h3>
-            
-            <div className="flex items-start space-x-3">
-              <Checkbox 
-                id="consent" 
-                checked={hasConsented} 
-                onCheckedChange={checked => setHasConsented(checked === true)} 
-              />
-              <label htmlFor="consent" className="text-sm text-foreground leading-relaxed cursor-pointer">
-                Autorizo el uso de esta grabación para mejorar el sistema de reconocimiento 
-                de voz de Adagio. Entiendo que mis datos serán tratados de forma confidencial 
-                y utilizados únicamente para fines de investigación y desarrollo.
-              </label>
-            </div>
-
-            <div className="bg-muted p-4 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                <strong>Aviso de Privacidad:</strong> Tu grabación se almacenará de forma 
-                segura y anónima. No se recopilan datos personales identificables. 
-                Puedes retirar tu consentimiento en cualquier momento contactando 
-                con el equipo de Adagio.
-              </p>
-            </div>
-          </div>
-        </Card>
+        <ConsentSection 
+          onConsentChange={handleConsentChange}
+          isValid={consentTrain || consentStore}
+        />
       )}
 
       {/* Submit Button */}
-      {audioBlob && hasConsented && !isSuccess && (
+      {audioBlob && (consentTrain || consentStore) && !isSuccess && (
         <div className="flex justify-center gap-4">
           <Button onClick={handleSubmit} disabled={isSubmitting} size="xl" variant="accent">
             {isSubmitting ? (
