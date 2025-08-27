@@ -8,6 +8,7 @@ import { AudioRecorder } from '@/components/AudioRecorder';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { ConsentModal } from '@/components/ConsentModal';
+import { TrainingConsentModal } from '@/components/TrainingConsentModal';
 import { ConsentSection } from '@/components/ConsentSection';
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
@@ -33,6 +34,7 @@ export const TrainView = () => {
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [hasConsented, setHasConsented] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
+  const [showTrainingConsentModal, setShowTrainingConsentModal] = useState(true);
   const [consentTrain, setConsentTrain] = useState(false);
   const [consentStore, setConsentStore] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -263,8 +265,20 @@ export const TrainView = () => {
         };
     }
   };
+  const handleTrainingConsentGiven = (consentTrainValue: boolean, consentStoreValue: boolean) => {
+    setConsentTrain(consentTrainValue);
+    setConsentStore(consentStoreValue);
+    setShowTrainingConsentModal(false);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Training Consent Modal - Must appear first */}
+      <TrainingConsentModal 
+        isOpen={showTrainingConsentModal} 
+        onConsentGiven={handleTrainingConsentGiven} 
+      />
+      
       {/* Consent Modal */}
       <ConsentModal isOpen={showConsentModal} onConsentGiven={handleConsentGiven} />
 
@@ -335,11 +349,13 @@ export const TrainView = () => {
       {/* Error State */}
       {error && <ErrorState {...getErrorDetails(error)} onRetry={() => setError(null)} />}
 
-      {/* Audio Recording */}
-      <Card className="p-6">
-        <h3 className="text-lg font-medium mb-4 text-foreground">Grabación</h3>
-        <AudioRecorder onRecordingComplete={handleRecordingComplete} maxDuration={30} />
-      </Card>
+      {/* Audio Recording - Only show if training consent given */}
+      {!showTrainingConsentModal && (
+        <Card className="p-6">
+          <h3 className="text-lg font-medium mb-4 text-foreground">Grabación</h3>
+          <AudioRecorder onRecordingComplete={handleRecordingComplete} maxDuration={30} />
+        </Card>
+      )}
 
       {/* Empty State when no recording */}
       {!audioBlob && !error && !isSuccess && (

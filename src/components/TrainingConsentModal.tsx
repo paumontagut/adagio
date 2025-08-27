@@ -1,0 +1,146 @@
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Shield, Info, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+interface TrainingConsentModalProps {
+  isOpen: boolean;
+  onConsentGiven: (consentTrain: boolean, consentStore: boolean) => void;
+}
+
+export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsentModalProps) => {
+  const [consentTrain, setConsentTrain] = useState(false);
+  const [consentStore, setConsentStore] = useState(false);
+
+  const handleAccept = () => {
+    if (consentTrain || consentStore) {
+      onConsentGiven(consentTrain, consentStore);
+    }
+  };
+
+  const isValid = consentTrain || consentStore;
+
+  return (
+    <Dialog open={isOpen} modal onOpenChange={() => {}}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto [&>button]:hidden">
+        <DialogHeader className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-adagio-primary/10 flex items-center justify-center">
+              <Shield className="h-5 w-5 text-adagio-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-semibold">
+                Consentimiento y Privacidad - Entrenamiento
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Antes de comenzar a grabar, necesitamos tu consentimiento explícito
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Biometric Data Warning */}
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Tu voz es un dato biométrico</strong> que puede contener información sanitaria implícita. 
+              Este procesamiento requiere tu consentimiento explícito según el RGPD (Art. 9).
+            </AlertDescription>
+          </Alert>
+
+          {/* Consent Options */}
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+              <Checkbox
+                id="consent-train"
+                checked={consentTrain}
+                onCheckedChange={(checked) => setConsentTrain(checked as boolean)}
+                className="mt-1"
+              />
+              <div className="flex-1">
+                <label htmlFor="consent-train" className="text-sm font-medium cursor-pointer">
+                  Usar mi audio para entrenar el modelo de IA
+                </label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tu voz será utilizada para mejorar la precisión del reconocimiento de voz mediante 
+                  técnicas de aprendizaje automático. Los datos se procesarán de forma pseudonimizada.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+              <Checkbox
+                id="consent-store"
+                checked={consentStore}
+                onCheckedChange={(checked) => setConsentStore(checked as boolean)}
+                className="mt-1"
+              />
+              <div className="flex-1">
+                <label htmlFor="consent-store" className="text-sm font-medium cursor-pointer">
+                  Guardar mi audio en mi cuenta
+                </label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  El audio se almacenará cifrado con AES-256 en tu cuenta para futuras referencias 
+                  y mejoras personalizadas del servicio.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Validation Error */}
+          {!isValid && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                Debes seleccionar al menos una opción para continuar con el entrenamiento.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Legal Information */}
+          <div className="text-xs text-muted-foreground space-y-2 p-4 bg-muted/30 rounded-lg">
+            <p><strong>Información RGPD:</strong></p>
+            <ul className="space-y-1 ml-4">
+              <li>• <strong>Responsable:</strong> Symplia (adagio@symplia.es)</li>
+              <li>• <strong>Finalidad:</strong> Entrenamiento de modelos de IA y mejora del servicio</li>
+              <li>• <strong>Base legal:</strong> Consentimiento explícito (Art. 6.1.a y 9.2.a RGPD)</li>
+              <li>• <strong>Conservación:</strong> Hasta revocación del consentimiento</li>
+              <li>• <strong>Destinatarios:</strong> No se ceden a terceros</li>
+              <li>• <strong>Derechos:</strong> Acceso, rectificación, supresión, portabilidad y oposición</li>
+            </ul>
+            
+            <div className="flex flex-wrap gap-4 mt-3 pt-2 border-t border-border/50">
+              <Link to="/my-data" className="text-adagio-primary hover:text-adagio-accent text-xs flex items-center gap-1">
+                Mis Datos <ExternalLink className="h-3 w-3" />
+              </Link>
+              <Link to="/privacy-center" className="text-adagio-primary hover:text-adagio-accent text-xs flex items-center gap-1">
+                Centro de Privacidad <ExternalLink className="h-3 w-3" />
+              </Link>
+              <Link to="/privacy-policy" className="text-adagio-primary hover:text-adagio-accent text-xs flex items-center gap-1">
+                Política de Privacidad <ExternalLink className="h-3 w-3" />
+              </Link>
+              <Link to="/terms" className="text-adagio-primary hover:text-adagio-accent text-xs flex items-center gap-1">
+                Términos y Condiciones <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Accept Button */}
+          <div className="flex justify-end pt-4">
+            <Button 
+              onClick={handleAccept} 
+              disabled={!isValid}
+              className="w-full sm:w-auto"
+            >
+              <Shield className="mr-2 h-4 w-4" />
+              Acepto y quiero continuar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
