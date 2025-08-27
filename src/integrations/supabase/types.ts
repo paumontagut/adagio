@@ -59,6 +59,30 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          created_at: string
+          details: Json
+          event_type: string
+          id: string
+          retention_until: string
+        }
+        Insert: {
+          created_at?: string
+          details: Json
+          event_type: string
+          id?: string
+          retention_until?: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          event_type?: string
+          id?: string
+          retention_until?: string
+        }
+        Relationships: []
+      }
       consent_logs: {
         Row: {
           consent_store: boolean
@@ -187,6 +211,42 @@ export type Database = {
           mapping_iv?: string
           mapping_salt?: string
           session_pseudonym?: string
+        }
+        Relationships: []
+      }
+      storage_keys: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          encryption_algorithm: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_version: number
+          rotation_reason: string | null
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          encryption_algorithm?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_version: number
+          rotation_reason?: string | null
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          encryption_algorithm?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_version?: number
+          rotation_reason?: string | null
         }
         Relationships: []
       }
