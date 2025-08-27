@@ -184,6 +184,56 @@ export type Database = {
         }
         Relationships: []
       }
+      membership_tests: {
+        Row: {
+          actual_membership: boolean
+          audit_id: string
+          correct_prediction: boolean
+          created_at: string
+          id: string
+          is_member_prediction: boolean
+          membership_score: number
+          sample_id: string
+          session_pseudonym: string
+          shadow_model_confidence: number
+          target_model_confidence: number
+        }
+        Insert: {
+          actual_membership: boolean
+          audit_id: string
+          correct_prediction: boolean
+          created_at?: string
+          id?: string
+          is_member_prediction: boolean
+          membership_score: number
+          sample_id: string
+          session_pseudonym: string
+          shadow_model_confidence: number
+          target_model_confidence: number
+        }
+        Update: {
+          actual_membership?: boolean
+          audit_id?: string
+          correct_prediction?: boolean
+          created_at?: string
+          id?: string
+          is_member_prediction?: boolean
+          membership_score?: number
+          sample_id?: string
+          session_pseudonym?: string
+          shadow_model_confidence?: number
+          target_model_confidence?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_tests_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "training_audits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_mapping: {
         Row: {
           created_at: string
@@ -250,6 +300,108 @@ export type Database = {
         }
         Relationships: []
       }
+      training_audits: {
+        Row: {
+          audit_results: Json
+          audit_type: string
+          calculated_risk: number | null
+          completed_at: string | null
+          created_at: string
+          eipd_report: Json | null
+          id: string
+          pipeline_blocked: boolean
+          review_notes: string | null
+          reviewed_by: string | null
+          risk_level: string | null
+          risk_threshold: number
+          sample_size: number
+          training_batch_id: string
+        }
+        Insert: {
+          audit_results: Json
+          audit_type?: string
+          calculated_risk?: number | null
+          completed_at?: string | null
+          created_at?: string
+          eipd_report?: Json | null
+          id?: string
+          pipeline_blocked?: boolean
+          review_notes?: string | null
+          reviewed_by?: string | null
+          risk_level?: string | null
+          risk_threshold?: number
+          sample_size: number
+          training_batch_id: string
+        }
+        Update: {
+          audit_results?: Json
+          audit_type?: string
+          calculated_risk?: number | null
+          completed_at?: string | null
+          created_at?: string
+          eipd_report?: Json | null
+          id?: string
+          pipeline_blocked?: boolean
+          review_notes?: string | null
+          reviewed_by?: string | null
+          risk_level?: string | null
+          risk_threshold?: number
+          sample_size?: number
+          training_batch_id?: string
+        }
+        Relationships: []
+      }
+      training_pipelines: {
+        Row: {
+          audit_passed: boolean
+          batch_count: number
+          blocked_reason: string | null
+          completed_at: string | null
+          consent_verified: boolean
+          created_at: string
+          dpo_approval: string | null
+          eipd_approved: boolean
+          id: string
+          pipeline_name: string
+          started_at: string | null
+          status: string
+          total_samples: number
+          training_config: Json
+        }
+        Insert: {
+          audit_passed?: boolean
+          batch_count?: number
+          blocked_reason?: string | null
+          completed_at?: string | null
+          consent_verified?: boolean
+          created_at?: string
+          dpo_approval?: string | null
+          eipd_approved?: boolean
+          id?: string
+          pipeline_name: string
+          started_at?: string | null
+          status?: string
+          total_samples?: number
+          training_config: Json
+        }
+        Update: {
+          audit_passed?: boolean
+          batch_count?: number
+          blocked_reason?: string | null
+          completed_at?: string | null
+          consent_verified?: boolean
+          created_at?: string
+          dpo_approval?: string | null
+          eipd_approved?: boolean
+          id?: string
+          pipeline_name?: string
+          started_at?: string | null
+          status?: string
+          total_samples?: number
+          training_config?: Json
+        }
+        Relationships: []
+      }
       unlearning_jobs: {
         Row: {
           completed_at: string | null
@@ -296,6 +448,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_membership_risk: {
+        Args: { audit_id_param: string }
+        Returns: number
+      }
       create_worm_backup: {
         Args: {
           backup_name: string
@@ -304,8 +460,16 @@ export type Database = {
         }
         Returns: string
       }
+      evaluate_pipeline_risk: {
+        Args: { audit_id_param: string; threshold?: number }
+        Returns: boolean
+      }
       generate_pseudonym: {
         Args: { original_session_id: string }
+        Returns: string
+      }
+      get_risk_level: {
+        Args: { risk_score: number }
         Returns: string
       }
       rotate_encryption_key: {
