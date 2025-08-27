@@ -10,7 +10,6 @@ import { ArrowLeft, Download, Trash2, Shield, Mail, FileText, HardDrive, AlertTr
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { sessionManager } from '@/lib/sessionManager';
-
 export const MyData = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -18,8 +17,9 @@ export const MyData = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletionCompleted, setDeletionCompleted] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const handleDownloadData = async () => {
     setIsDownloading(true);
     try {
@@ -27,20 +27,20 @@ export const MyData = () => {
       if (!session) {
         throw new Error('No session found');
       }
-
       toast({
         title: "Preparando descarga",
-        description: "Recopilando tus datos y grabaciones cifradas...",
+        description: "Recopilando tus datos y grabaciones cifradas..."
       });
 
       // Call edge function to prepare data export
-      const { data: exportData, error } = await supabase.functions.invoke(
-        'data-export-handler/export',
-        {
-          body: { sessionId: session.sessionId }
+      const {
+        data: exportData,
+        error
+      } = await supabase.functions.invoke('data-export-handler/export', {
+        body: {
+          sessionId: session.sessionId
         }
-      );
-
+      });
       if (error) {
         console.error('Export error:', error);
         throw new Error(`Export failed: ${error.message}`);
@@ -55,12 +55,10 @@ export const MyData = () => {
         link.click();
         document.body.removeChild(link);
       }
-
       toast({
         title: "Descarga iniciada",
-        description: `Se han incluido ${exportData.recordCount} grabaciones y metadatos completos.`,
+        description: `Se han incluido ${exportData.recordCount} grabaciones y metadatos completos.`
       });
-
     } catch (error) {
       console.error('Error downloading data:', error);
       toast({
@@ -72,7 +70,6 @@ export const MyData = () => {
       setIsDownloading(false);
     }
   };
-
   const handleDeleteAllData = async () => {
     if (deleteConfirmEmail !== 'eliminar@adagio.app' || deleteConfirmText !== 'ELIMINAR TODOS MIS DATOS') {
       toast({
@@ -82,33 +79,30 @@ export const MyData = () => {
       });
       return;
     }
-
     setIsDeleting(true);
     try {
       const session = sessionManager.getSession();
       if (!session) {
         throw new Error('No session found');
       }
-
       toast({
         title: "Iniciando eliminación",
-        description: "Este proceso puede tardar varios minutos...",
+        description: "Este proceso puede tardar varios minutos..."
       });
 
       // Call edge function for complete data deletion
-      const { data: deletionResult, error } = await supabase.functions.invoke(
-        'data-deletion-handler/delete-all',
-        {
-          body: { 
-            sessionId: session.sessionId,
-            confirmationEmail: deleteConfirmEmail,
-            confirmationText: deleteConfirmText,
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString()
-          }
+      const {
+        data: deletionResult,
+        error
+      } = await supabase.functions.invoke('data-deletion-handler/delete-all', {
+        body: {
+          sessionId: session.sessionId,
+          confirmationEmail: deleteConfirmEmail,
+          confirmationText: deleteConfirmText,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString()
         }
-      );
-
+      });
       if (error) {
         console.error('Deletion error:', error);
         throw new Error(`Deletion failed: ${error.message}`);
@@ -117,15 +111,12 @@ export const MyData = () => {
       // Clear local session data
       localStorage.removeItem('adagio_encryption_key');
       sessionManager.clearSession();
-
       setDeletionCompleted(true);
       setShowDeleteDialog(false);
-
       toast({
         title: "Datos eliminados completamente",
-        description: "Se ha enviado un correo de confirmación con los detalles del proceso.",
+        description: "Se ha enviado un correo de confirmación con los detalles del proceso."
       });
-
     } catch (error) {
       console.error('Error deleting data:', error);
       toast({
@@ -137,10 +128,8 @@ export const MyData = () => {
       setIsDeleting(false);
     }
   };
-
   if (deletionCompleted) {
-    return (
-      <div className="min-h-screen bg-[#005c64] flex items-center justify-center">
+    return <div className="min-h-screen bg-[#005c64] flex items-center justify-center">
         <Card className="max-w-md p-8 text-center">
           <div className="space-y-4">
             <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
@@ -160,12 +149,9 @@ export const MyData = () => {
             </div>
           </div>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-[#005c64]">
+  return <div className="min-h-screen bg-[#005c64]">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <header className="mb-8">
@@ -228,23 +214,14 @@ export const MyData = () => {
                   <li>• Historial de interacciones</li>
                 </ul>
               </div>
-              <Button 
-                onClick={handleDownloadData}
-                disabled={isDownloading}
-                size="lg"
-                className="min-w-[140px]"
-              >
-                {isDownloading ? (
-                  <>
+              <Button onClick={handleDownloadData} disabled={isDownloading} size="lg" className="min-w-[140px]">
+                {isDownloading ? <>
                     <Download className="mr-2 h-4 w-4 animate-pulse" />
                     Preparando...
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <Download className="mr-2 h-4 w-4" />
                     Descargar
-                  </>
-                )}
+                  </>}
               </Button>
             </div>
           </Card>
@@ -277,11 +254,7 @@ export const MyData = () => {
               </div>
               <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogTrigger asChild>
-                  <Button 
-                    variant="destructive"
-                    size="lg"
-                    className="min-w-[140px]"
-                  >
+                  <Button variant="destructive" size="lg" className="min-w-[140px]">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Eliminar Todo
                   </Button>
@@ -302,23 +275,13 @@ export const MyData = () => {
                       <Label htmlFor="delete-email">
                         Escribe: <code>eliminar@adagio.app</code>
                       </Label>
-                      <Input
-                        id="delete-email"
-                        value={deleteConfirmEmail}
-                        onChange={(e) => setDeleteConfirmEmail(e.target.value)}
-                        placeholder="eliminar@adagio.app"
-                      />
+                      <Input id="delete-email" value={deleteConfirmEmail} onChange={e => setDeleteConfirmEmail(e.target.value)} placeholder="eliminar@adagio.app" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="delete-text">
                         Escribe: <code>ELIMINAR TODOS MIS DATOS</code>
                       </Label>
-                      <Input
-                        id="delete-text"
-                        value={deleteConfirmText}
-                        onChange={(e) => setDeleteConfirmText(e.target.value)}
-                        placeholder="ELIMINAR TODOS MIS DATOS"
-                      />
+                      <Input id="delete-text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder="ELIMINAR TODOS MIS DATOS" />
                     </div>
                     <Alert>
                       <Mail className="h-4 w-4" />
@@ -329,28 +292,17 @@ export const MyData = () => {
                     </Alert>
                   </div>
                   <div className="flex justify-end space-x-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowDeleteDialog(false)}
-                    >
+                    <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
                       Cancelar
                     </Button>
-                    <Button 
-                      variant="destructive"
-                      onClick={handleDeleteAllData}
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? (
-                        <>
+                    <Button variant="destructive" onClick={handleDeleteAllData} disabled={isDeleting}>
+                      {isDeleting ? <>
                           <Trash2 className="mr-2 h-4 w-4 animate-spin" />
                           Eliminando...
-                        </>
-                      ) : (
-                        <>
+                        </> : <>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Eliminar Todo
-                        </>
-                      )}
+                        </>}
                     </Button>
                   </div>
                 </DialogContent>
@@ -375,12 +327,11 @@ export const MyData = () => {
               </p>
               <p>
                 <strong>Contacto:</strong> Para consultas adicionales, contacta con 
-                nuestro DPO en <strong>dpo@adagio.app</strong>
+                nuestro DPO en <strong>adagio@symplia.es </strong>
               </p>
             </div>
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
