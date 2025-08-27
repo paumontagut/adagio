@@ -57,6 +57,8 @@ export default {
 					DEFAULT: 'hsl(var(--popover))',
 					foreground: 'hsl(var(--popover-foreground))'
 				},
+				'focus-ring': 'hsl(var(--focus-ring))',
+				'focus-ring-offset': 'hsl(var(--focus-ring-offset))',
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
