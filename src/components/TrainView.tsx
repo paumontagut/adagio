@@ -19,6 +19,10 @@ import { AudioEncryption } from '@/lib/encryption';
 import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Get constants for direct fetch calls
+const SUPABASE_URL = "https://cydqkoohhzesogvctvhy.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5ZHFrb29oaHplc29ndmN0dmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMDE2NzEsImV4cCI6MjA3MTc3NzY3MX0.UP09-Y6AqFsmVQLAx6qkRqNjqXNG4FFt7dgYvuIFzN8";
+
 // Placeholder phrases - will be replaced with API call later
 const samplePhrases = ["Buenos días, ¿cómo está usted?", "Necesito ayuda con esto, por favor", "El clima está muy agradable hoy", "Me gustaría hacer una reservación", "¿Puede repetir eso, por favor?", "Muchas gracias por su ayuda", "Hasta luego, que tenga un buen día", "¿Dónde está la estación más cercana?"];
 interface RecordingData {
@@ -64,12 +68,20 @@ export const TrainView = () => {
   const initializeEncryption = async () => {
     try {
       // Get current key version from server
-      const { data, error } = await supabase.functions.invoke('encrypted-audio-handler/key-version');
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/encrypted-audio-handler/key-version`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': SUPABASE_PUBLISHABLE_KEY,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      if (error) {
-        console.error('Error getting key version:', error);
-      } else {
+      if (response.ok) {
+        const data = await response.json();
         setCurrentKeyVersion(data.currentKeyVersion);
+      } else {
+        console.error('Error getting key version:', response.statusText);
       }
 
       // Generate client-side master key (in production, this should be derived securely)
@@ -168,17 +180,22 @@ export const TrainView = () => {
       console.log('Sending encrypted audio to secure storage...');
 
       // Send encrypted data to secure edge function
-      const { data: responseData, error: uploadError } = await supabase.functions.invoke(
-        'encrypted-audio-handler/store-audio',
-        {
-          body: encryptedAudioData
-        }
-      );
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/encrypted-audio-handler/store-audio`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': SUPABASE_PUBLISHABLE_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(encryptedAudioData)
+      });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Upload failed: ${errorData.error || response.statusText}`);
       }
+
+      const responseData = await response.json();
 
       console.log('Encrypted audio stored successfully:', responseData);
 
