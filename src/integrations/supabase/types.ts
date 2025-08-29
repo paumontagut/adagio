@@ -89,11 +89,14 @@ export type Database = {
           consent_timestamp: string
           consent_train: boolean
           created_at: string
+          email: string | null
+          full_name: string | null
           id: string
           ip_address: unknown | null
           session_id: string
           updated_at: string
           user_agent: string | null
+          verification_token: string | null
           withdrawn_at: string | null
         }
         Insert: {
@@ -101,11 +104,14 @@ export type Database = {
           consent_timestamp?: string
           consent_train?: boolean
           created_at?: string
+          email?: string | null
+          full_name?: string | null
           id?: string
           ip_address?: unknown | null
           session_id: string
           updated_at?: string
           user_agent?: string | null
+          verification_token?: string | null
           withdrawn_at?: string | null
         }
         Update: {
@@ -113,12 +119,69 @@ export type Database = {
           consent_timestamp?: string
           consent_train?: boolean
           created_at?: string
+          email?: string | null
+          full_name?: string | null
           id?: string
           ip_address?: unknown | null
           session_id?: string
           updated_at?: string
           user_agent?: string | null
+          verification_token?: string | null
           withdrawn_at?: string | null
+        }
+        Relationships: []
+      }
+      data_deletion_requests: {
+        Row: {
+          additional_info: Json | null
+          completed_at: string | null
+          deletion_summary: Json | null
+          email: string | null
+          full_name: string | null
+          id: string
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          request_type: string
+          requested_at: string
+          session_pseudonym: string
+          status: string
+          verification_token: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          additional_info?: Json | null
+          completed_at?: string | null
+          deletion_summary?: Json | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type: string
+          requested_at?: string
+          session_pseudonym: string
+          status?: string
+          verification_token?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          additional_info?: Json | null
+          completed_at?: string | null
+          deletion_summary?: Json | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type?: string
+          requested_at?: string
+          session_pseudonym?: string
+          status?: string
+          verification_token?: string | null
+          verified_at?: string | null
         }
         Relationships: []
       }
@@ -181,6 +244,54 @@ export type Database = {
           key_hash?: string
           rotation_reason?: string | null
           version?: number
+        }
+        Relationships: []
+      }
+      guest_verification_tokens: {
+        Row: {
+          created_at: string
+          deletion_requested_at: string | null
+          device_info: string | null
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          ip_address: unknown | null
+          session_pseudonym: string
+          used_for_deletion: boolean | null
+          user_agent: string | null
+          verification_token: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          deletion_requested_at?: string | null
+          device_info?: string | null
+          email: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          ip_address?: unknown | null
+          session_pseudonym: string
+          used_for_deletion?: boolean | null
+          user_agent?: string | null
+          verification_token: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          deletion_requested_at?: string | null
+          device_info?: string | null
+          email?: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          ip_address?: unknown | null
+          session_pseudonym?: string
+          used_for_deletion?: boolean | null
+          user_agent?: string | null
+          verification_token?: string
+          verified_at?: string | null
         }
         Relationships: []
       }
