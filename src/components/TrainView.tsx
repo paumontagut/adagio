@@ -18,10 +18,12 @@ import { sessionManager } from '@/lib/sessionManager';
 import { AudioEncryption } from '@/lib/encryption';
 import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 // Get constants for direct fetch calls
 const SUPABASE_URL = "https://cydqkoohhzesogvctvhy.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5ZHFrb29oaHplc29ndmN0dmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMDE2NzEsImV4cCI6MjA3MTc3NzY3MX0.UP09-Y6AqFsmVQLAx6qkRqNjqXNG4FFt7dgYvuIFzN8";
+
 
 // Placeholder phrases - will be replaced with API call later
 const samplePhrases = ["Buenos días, ¿cómo está usted?", "Necesito ayuda con esto, por favor", "El clima está muy agradable hoy", "Me gustaría hacer una reservación", "¿Puede repetir eso, por favor?", "Muchas gracias por su ayuda", "Hasta luego, que tenga un buen día", "¿Dónde está la estación más cercana?"];
@@ -52,6 +54,7 @@ export const TrainView = () => {
   const {
     toast
   } = useToast();
+  const navigate = useNavigate();
 
   // Check if user already gave consent and track page view
   useEffect(() => {
@@ -286,7 +289,8 @@ export const TrainView = () => {
       {/* Training Consent Modal - Must appear first */}
       <TrainingConsentModal 
         isOpen={showTrainingConsentModal} 
-        onConsentGiven={handleTrainingConsentGiven} 
+        onConsentGiven={handleTrainingConsentGiven}
+        onCancel={() => navigate('/?tab=transcribe')}
       />
       
       {/* Consent Modal */}
