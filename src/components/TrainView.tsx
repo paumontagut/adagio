@@ -290,7 +290,7 @@ export const TrainView = () => {
       <TrainingConsentModal 
         isOpen={showTrainingConsentModal} 
         onConsentGiven={handleTrainingConsentGiven}
-        onCancel={() => navigate('/?tab=transcribe')}
+        onCancel={() => { setShowTrainingConsentModal(false); navigate('/?tab=transcribe'); }}
       />
       
       {/* Consent Modal */}
