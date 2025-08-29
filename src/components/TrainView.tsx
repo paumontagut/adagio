@@ -11,6 +11,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { ConsentModal } from '@/components/ConsentModal';
 import { TrainingConsentModal } from '@/components/TrainingConsentModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { getGuestSessionId } from '@/lib/guestSession';
 
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
@@ -36,7 +38,7 @@ interface RecordingData {
   device_label: string;
   created_at: string;
 }
-export const TrainView = () => {
+const TrainView = () => {
   const [currentPhrase, setCurrentPhrase] = useState(() => samplePhrases[Math.floor(Math.random() * samplePhrases.length)]);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
@@ -51,10 +53,9 @@ export const TrainView = () => {
   const [encryptionKey, setEncryptionKey] = useState<string>('');
   const [currentKeyVersion, setCurrentKeyVersion] = useState<number>(1);
   const [fullName, setFullName] = useState<string>('');
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Check if user already gave consent and track page view
   useEffect(() => {
@@ -189,6 +190,36 @@ export const TrainView = () => {
 
       console.log('Encrypted audio stored successfully:', responseData);
 
+      // Save recording to database (if user is logged in or as guest)
+      try {
+        const recordingData = {
+          user_id: user?.id || null,
+          session_id: user ? null : getGuestSessionId(),
+          phrase_text: currentPhrase,
+          audio_url: responseData?.fileUrl || 'encrypted_storage',
+          duration_ms: duration_ms,
+          sample_rate: processingResult?.metrics.sampleRate || 16000,
+          format: 'wav',
+          device_label: `Browser MediaRecorder - ${navigator.userAgent.substring(0, 100)}`,
+          consent_train: consentTrain,
+          consent_store: consentStore
+        };
+
+        const { error: dbError } = await supabase
+          .from('recordings')
+          .insert([recordingData]);
+
+        if (dbError) {
+          console.error('Database save error:', dbError);
+          // Don't throw here, as the main upload succeeded
+        } else {
+          console.log('Recording saved to database successfully');
+        }
+      } catch (dbError) {
+        console.error('Error saving to database:', dbError);
+        // Don't throw here, as the main upload succeeded
+      }
+
       // Track analytics
       sessionManager.trainUpload();
       sessionManager.trainUploadSuccess();
@@ -196,7 +227,9 @@ export const TrainView = () => {
       setIsSuccess(true);
       toast({
         title: "¡Grabación cifrada y guardada!",
-        description: "Tu audio ha sido cifrado con AES-256 y almacenado de forma segura"
+        description: user ? 
+          "Tu audio ha sido cifrado y guardado en tu cuenta" :
+          "Tu audio ha sido cifrado y almacenado de forma segura"
       });
 
       // Reset for next recording after a delay
@@ -289,6 +322,11 @@ export const TrainView = () => {
         </h2>
         <p className="text-muted-foreground">
           Ayúdanos a mejorar el reconocimiento grabando esta frase
+          {!user && (
+            <span className="block text-sm mt-1 text-muted-foreground/80">
+              💡 Inicia sesión para guardar tu progreso y ver tu historial
+            </span>
+          )}
         </p>
       </div>
 
@@ -389,3 +427,5 @@ export const TrainView = () => {
     </div>
   );
 };
+
+export { TrainView };

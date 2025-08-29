@@ -234,6 +234,51 @@ export type Database = {
           },
         ]
       }
+      recordings: {
+        Row: {
+          audio_url: string
+          consent_store: boolean | null
+          consent_train: boolean | null
+          created_at: string | null
+          device_label: string | null
+          duration_ms: number | null
+          format: string | null
+          id: string
+          phrase_text: string | null
+          sample_rate: number | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          audio_url: string
+          consent_store?: boolean | null
+          consent_train?: boolean | null
+          created_at?: string | null
+          device_label?: string | null
+          duration_ms?: number | null
+          format?: string | null
+          id?: string
+          phrase_text?: string | null
+          sample_rate?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          audio_url?: string
+          consent_store?: boolean | null
+          consent_train?: boolean | null
+          created_at?: string | null
+          device_label?: string | null
+          duration_ms?: number | null
+          format?: string | null
+          id?: string
+          phrase_text?: string | null
+          sample_rate?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       session_mapping: {
         Row: {
           created_at: string

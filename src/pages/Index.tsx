@@ -5,12 +5,16 @@ import { Button } from '@/components/ui/button';
 import { TranscribeView } from '@/components/TranscribeView';
 import { TrainView } from '@/components/TrainView';
 import { Footer } from '@/components/Footer';
+import { AuthButton } from '@/components/AuthButton';
+import { UserMenu } from '@/components/UserMenu';
+import { useAuth } from '@/contexts/AuthContext';
 import { Shield, HardDrive } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('transcribe');
+  const { user, loading } = useAuth();
 
   // Handle URL tab parameter
   useEffect(() => {
@@ -48,35 +52,47 @@ const Index = () => {
               role="navigation" 
               aria-label="Navegación principal"
             >
-              <Link to="/my-data">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                  aria-describedby="my-data-description"
-                >
-                  <HardDrive className="h-4 w-4 mr-2" aria-hidden="true" />
-                  Mis Datos
-                </Button>
-              </Link>
-              <div id="my-data-description" className="sr-only">
-                Acceder a tus datos personales y grabaciones
-              </div>
+              {user && (
+                <>
+                  <Link to="/my-recordings">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                    >
+                      <HardDrive className="h-4 w-4 mr-2" aria-hidden="true" />
+                      Mis Grabaciones
+                    </Button>
+                  </Link>
+                  <Link to="/my-data">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                    >
+                      <HardDrive className="h-4 w-4 mr-2" aria-hidden="true" />
+                      Mis Datos
+                    </Button>
+                  </Link>
+                </>
+              )}
               
               <Link to="/privacy-center">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                  aria-describedby="privacy-description"
                 >
                   <Shield className="h-4 w-4 mr-2" aria-hidden="true" />
                   Privacidad
                 </Button>
               </Link>
-              <div id="privacy-description" className="sr-only">
-                Gestionar configuración de privacidad y consentimientos
-              </div>
+
+              {user ? (
+                <UserMenu />
+              ) : (
+                !loading && <AuthButton />
+              )}
             </nav>
           </div>
         </header>
