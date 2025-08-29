@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { AudioRecorder } from '@/components/AudioRecorder';
 import { EmptyState } from '@/components/EmptyState';
@@ -42,6 +44,7 @@ export const TrainView = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [encryptionKey, setEncryptionKey] = useState<string>('');
   const [currentKeyVersion, setCurrentKeyVersion] = useState<number>(1);
+  const [fullName, setFullName] = useState<string>('');
   const {
     toast
   } = useToast();
@@ -110,11 +113,21 @@ export const TrainView = () => {
       return;
     }
 
-    // Check if user has given at least one consent
-    if (!consentTrain && !consentStore) {
+    // Check if user has given both consents
+    if (!consentTrain || !consentStore) {
       toast({
         title: "Consentimiento requerido",
-        description: "Debes seleccionar al menos una opción de consentimiento",
+        description: "Debes aceptar ambas opciones de consentimiento",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if full name is provided
+    if (!fullName.trim()) {
+      toast({
+        title: "Nombre requerido",
+        description: "Debes proporcionar tu nombre completo",
         variant: "destructive"
       });
       return;
@@ -171,7 +184,8 @@ export const TrainView = () => {
         deviceInfo: `Browser MediaRecorder - ${navigator.userAgent.substring(0, 100)}`,
         qualityScore: processingResult?.isValid ? 0.95 : 0.70,
         consentTrain: consentTrain,
-        consentStore: consentStore
+        consentStore: consentStore,
+        fullName: fullName.trim()
       };
 
       console.log('Sending encrypted audio to secure storage...');
@@ -206,6 +220,7 @@ export const TrainView = () => {
         setAudioBlob(null);
         setProcessingResult(null);
         setIsSuccess(false);
+        setFullName('');
         getNewPhrase();
       }, 3000);
 
@@ -368,14 +383,38 @@ export const TrainView = () => {
 
       {/* Consent Section */}
       {audioBlob && !isSuccess && (
-        <ConsentSection 
-          onConsentChange={handleConsentChange}
-          isValid={consentTrain || consentStore}
-        />
+        <>
+          <ConsentSection 
+            onConsentChange={handleConsentChange}
+            isValid={consentTrain && consentStore}
+          />
+          
+          {/* Full Name Field */}
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="fullName" className="text-sm font-medium">
+                  Nombre completo <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Ingresa tu nombre completo"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tu nombre será asociado con esta grabación para fines de entrenamiento
+                </p>
+              </div>
+            </div>
+          </Card>
+        </>
       )}
 
       {/* Submit Button */}
-      {audioBlob && (consentTrain || consentStore) && !isSuccess && (
+      {audioBlob && consentTrain && consentStore && fullName.trim() && !isSuccess && (
         <div className="flex justify-center gap-4">
           <Button onClick={handleSubmit} disabled={isSubmitting} size="xl" variant="accent">
             {isSubmitting ? (

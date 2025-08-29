@@ -16,12 +16,12 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
   const [consentStore, setConsentStore] = useState(false);
 
   const handleAccept = () => {
-    if (consentTrain) {
+    if (consentTrain && consentStore) {
       onConsentGiven(consentTrain, consentStore);
     }
   };
 
-  const isValid = consentTrain;
+  const isValid = consentTrain && consentStore;
 
   return (
     <Dialog open={isOpen} modal onOpenChange={() => {}}>
@@ -73,7 +73,7 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
               </div>
             </div>
 
-            <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+            <div className="flex items-start space-x-3 p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5">
               <Checkbox
                 id="consent-store"
                 checked={consentStore}
@@ -81,8 +81,9 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
                 className="mt-1"
               />
               <div className="flex-1">
-                <label htmlFor="consent-store" className="text-sm font-medium cursor-pointer">
+                <label htmlFor="consent-store" className="text-sm font-medium cursor-pointer flex items-center gap-2">
                   Guardar mi audio en mi cuenta
+                  <span className="text-xs bg-adagio-primary text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
                 </label>
                 <p className="text-xs text-muted-foreground mt-1">
                   El audio se almacenará cifrado con AES-256 en tu cuenta para futuras referencias 
@@ -96,7 +97,7 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
           {!isValid && (
             <Alert variant="destructive">
               <AlertDescription>
-                Debes aceptar el uso de tu audio para entrenar el modelo de IA para continuar.
+                Debes aceptar ambas opciones para continuar con el entrenamiento.
               </AlertDescription>
             </Alert>
           )}
