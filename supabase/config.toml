@@ -3,6 +3,9 @@ project_id = "cydqkoohhzesogvctvhy"
 [functions.encrypted-audio-handler]
 verify_jwt = false
 
+[functions.encrypted-audio-api]
+verify_jwt = false
+
 [functions.data-export-handler]
 verify_jwt = false
 

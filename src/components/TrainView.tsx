@@ -72,7 +72,7 @@ const TrainView = () => {
   const initializeEncryption = async () => {
     try {
       // Get current key version from server
-      const { data, error } = await supabase.functions.invoke('encrypted-audio-handler', {
+      const { data, error } = await supabase.functions.invoke('encrypted-audio-api', {
         body: { action: 'get-key-version' }
       });
       
@@ -179,7 +179,7 @@ const TrainView = () => {
 
       // Send encrypted data to secure edge function
       const { data: responseData, error: uploadError } = await supabase.functions.invoke(
-        'encrypted-audio-handler',
+        'encrypted-audio-api',
         {
           body: {
             action: 'store-audio',
