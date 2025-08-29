@@ -324,6 +324,44 @@ export const PrivacyCenter = () => {
             </div>
           </Card>
 
+          {/* Guest Data Information */}
+          {!user && (
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-semibold flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Gestión de Datos - Usuarios Invitados
+                </h2>
+              </div>
+              
+              <div className="space-y-4">
+                <Alert>
+                  <Shield className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>¿Necesitas eliminar tus datos?</strong>
+                    <br />
+                    Si has grabado como usuario invitado y deseas eliminar tus datos personales, 
+                    contacta directamente a <strong>adagio@symplia.es</strong> con tu documentación 
+                    de identidad y detalles de las grabaciones.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="text-sm space-y-2">
+                  <h3 className="font-medium">Para solicitar eliminación de datos necesitarás:</h3>
+                  <ul className="text-muted-foreground space-y-1 ml-4">
+                    <li>• Copia de DNI o documento de identidad</li>
+                    <li>• Fecha aproximada de las grabaciones</li>
+                    <li>• Descripción del contenido grabado</li>
+                    <li>• Cualquier información adicional que ayude a identificar tus datos</li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Procesaremos tu solicitud en un plazo máximo de 30 días conforme al GDPR.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* User Data Management (only for authenticated users) */}
           {user && (
             <Card className="p-6">

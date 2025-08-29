@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface TrainingConsentModalProps {
   isOpen: boolean;
-  onConsentGiven: (consentTrain: boolean, consentStore: boolean, fullName: string, email?: string, wantsVerificationToken?: boolean) => void;
+  onConsentGiven: (consentTrain: boolean, consentStore: boolean, fullName: string) => void;
   onCancel?: () => void;
 }
 
@@ -21,8 +21,6 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: Train
   const [consentTrain, setConsentTrain] = useState(false);
   const [consentStore, setConsentStore] = useState(false);
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [wantsVerificationToken, setWantsVerificationToken] = useState(false);
 
   const handleCancel = () => {
     if (onCancel) {

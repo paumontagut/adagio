@@ -300,53 +300,12 @@ const TrainView = () => {
   const handleTrainingConsentGiven = async (
     consentTrainValue: boolean, 
     consentStoreValue: boolean, 
-    fullNameValue: string, 
-    emailValue?: string, 
-    wantsVerificationToken?: boolean
+    fullNameValue: string
   ) => {
     setConsentTrain(consentTrainValue);
     setConsentStore(consentStoreValue);
     setFullName(fullNameValue);
     setShowTrainingConsentModal(false);
-
-    // Generate verification token if requested
-    if (wantsVerificationToken && emailValue) {
-      try {
-        const sessionPseudonym = user?.id || getGuestSessionId();
-        const response = await supabase.functions.invoke('guest-data-manager', {
-          body: {
-            action: 'generate_token',
-            sessionPseudonym,
-            email: emailValue,
-            fullName: fullNameValue,
-            deviceInfo: navigator.userAgent,
-            userAgent: navigator.userAgent
-          }
-        });
-
-        if (response.error) {
-          console.error('Error generating verification token:', response.error);
-          toast({
-            title: 'Error',
-            description: 'No se pudo generar el token de verificación, pero puedes continuar grabando.',
-            variant: 'destructive'
-          });
-        } else {
-          toast({
-            title: 'Token enviado',
-            description: 'Hemos enviado tu token de verificación por email. Úsalo para gestionar tus datos.',
-            duration: 5000
-          });
-        }
-      } catch (error) {
-        console.error('Error in verification token generation:', error);
-        toast({
-          title: 'Error',
-          description: 'Error al procesar token de verificación.',
-          variant: 'destructive'
-        });
-      }
-    }
   };
 
   return (
