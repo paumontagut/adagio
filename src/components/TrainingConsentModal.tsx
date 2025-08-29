@@ -8,15 +8,28 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, Info, ExternalLink, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { useNavigate } from 'react-router-dom';
+
 interface TrainingConsentModalProps {
   isOpen: boolean;
   onConsentGiven: (consentTrain: boolean, consentStore: boolean, fullName: string) => void;
+  onCancel?: () => void;
 }
 
-export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsentModalProps) => {
+export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: TrainingConsentModalProps) => {
+  const navigate = useNavigate();
   const [consentTrain, setConsentTrain] = useState(false);
   const [consentStore, setConsentStore] = useState(false);
   const [fullName, setFullName] = useState('');
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      // Default behavior: navigate to home page with transcribe tab
+      navigate('/?tab=transcribe');
+    }
+  };
 
   const handleAccept = () => {
     if (consentTrain && consentStore && fullName.trim()) {
@@ -154,12 +167,19 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
             </div>
           </div>
 
-          {/* Accept Button */}
-          <div className="flex justify-end pt-4">
+          {/* Action Buttons */}
+          <div className="flex justify-between pt-4 gap-3">
+            <Button 
+              variant="outline"
+              onClick={handleCancel}
+              className="flex-1 sm:flex-none"
+            >
+              Cancelar
+            </Button>
             <Button 
               onClick={handleAccept} 
               disabled={!isValid}
-              className="w-full sm:w-auto"
+              className="flex-1 sm:flex-none"
             >
               <Shield className="mr-2 h-4 w-4" />
               Acepto y quiero continuar

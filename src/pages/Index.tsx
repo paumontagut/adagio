@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,9 +6,19 @@ import { TranscribeView } from '@/components/TranscribeView';
 import { TrainView } from '@/components/TrainView';
 import { Footer } from '@/components/Footer';
 import { Shield, HardDrive } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+
 const Index = () => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('transcribe');
+
+  // Handle URL tab parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'train' || tabParam === 'transcribe') {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   return (
     <div className="min-h-screen bg-[#005c64] flex flex-col">
       {/* Skip links for keyboard navigation */}
