@@ -10,6 +10,7 @@ import { PrivacyCenter } from "./pages/PrivacyCenter";
 import { MyData } from "./pages/MyData";
 import { MyRecordings } from "./pages/MyRecordings";
 import { AuthCallback } from "./pages/AuthCallback";
+import { Auth } from "./pages/Auth";
 import { TermsAndConditions } from "./pages/TermsAndConditions";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 
@@ -24,11 +25,13 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/privacy-center" element={<PrivacyCenter />} />
             <Route path="/my-data" element={<MyData />} />
             <Route path="/my-recordings" element={<MyRecordings />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+            <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
