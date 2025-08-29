@@ -9,7 +9,7 @@ import { Shield, HardDrive } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 const Index = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('transcribe');
 
   // Handle URL tab parameter
@@ -86,7 +86,7 @@ const Index = () => {
           <Card className="p-6 shadow-lg border-border bg-card">
             <Tabs 
               value={activeTab} 
-              onValueChange={setActiveTab} 
+              onValueChange={(value) => { setActiveTab(value); setSearchParams({ tab: value }); }} 
               className="w-full"
               aria-label="Funciones principales de Adagio"
             >

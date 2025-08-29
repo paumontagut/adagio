@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     }
 
     // Route: Get current key version
-    if (req.method === 'GET' && path === '/key-version') {
+    if ((req.method === 'GET' || req.method === 'POST') && path === '/key-version') {
       return await handleGetKeyVersion(supabase);
     }
 

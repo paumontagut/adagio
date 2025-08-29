@@ -70,21 +70,13 @@ export const TrainView = () => {
 
   const initializeEncryption = async () => {
     try {
-      // Get current key version from server
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/encrypted-audio-handler/key-version`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-          'apikey': SUPABASE_PUBLISHABLE_KEY,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Get current key version from server (POST via invoke)
+      const { data, error } = await supabase.functions.invoke('encrypted-audio-handler/key-version');
       
-      if (response.ok) {
-        const data = await response.json();
+      if (error) {
+        console.error('Error getting key version:', error);
+      } else if (data && typeof data.currentKeyVersion === 'number') {
         setCurrentKeyVersion(data.currentKeyVersion);
-      } else {
-        console.error('Error getting key version:', response.statusText);
       }
 
       // Generate client-side master key (in production, this should be derived securely)
@@ -182,23 +174,18 @@ export const TrainView = () => {
 
       console.log('Sending encrypted audio to secure storage...');
 
-      // Send encrypted data to secure edge function
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/encrypted-audio-handler/store-audio`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-          'apikey': SUPABASE_PUBLISHABLE_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(encryptedAudioData)
-      });
+      // Send encrypted data to secure edge function (POST via invoke)
+      const { data: responseData, error: uploadError } = await supabase.functions.invoke(
+        'encrypted-audio-handler/store-audio',
+        {
+          body: encryptedAudioData
+        }
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Upload failed: ${errorData.error || response.statusText}`);
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
-
-      const responseData = await response.json();
 
       console.log('Encrypted audio stored successfully:', responseData);
 
