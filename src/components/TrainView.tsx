@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { ConsentModal } from '@/components/ConsentModal';
 import { TrainingConsentModal } from '@/components/TrainingConsentModal';
-import { ConsentSection } from '@/components/ConsentSection';
+
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
 import { sessionManager } from '@/lib/sessionManager';
@@ -98,10 +98,6 @@ export const TrainView = () => {
     setProcessingResult(result || null);
     setError(null);
   };
-  const handleConsentChange = (consentTrainValue: boolean, consentStoreValue: boolean) => {
-    setConsentTrain(consentTrainValue);
-    setConsentStore(consentStoreValue);
-  };
 
   const handleSubmit = async () => {
     if (!audioBlob) {
@@ -113,25 +109,6 @@ export const TrainView = () => {
       return;
     }
 
-    // Check if user has given both consents
-    if (!consentTrain || !consentStore) {
-      toast({
-        title: "Consentimiento requerido",
-        description: "Debes aceptar ambas opciones de consentimiento",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Check if full name is provided
-    if (!fullName.trim()) {
-      toast({
-        title: "Nombre requerido",
-        description: "Debes proporcionar tu nombre completo",
-        variant: "destructive"
-      });
-      return;
-    }
 
     // Validate audio quality if processing result exists
     if (processingResult && !processingResult.isValid) {
@@ -382,18 +359,9 @@ export const TrainView = () => {
         />
       )}
 
-      {/* Consent Section */}
-      {audioBlob && !isSuccess && (
-        <>
-          <ConsentSection 
-            onConsentChange={handleConsentChange}
-            isValid={consentTrain && consentStore}
-          />
-        </>
-      )}
 
       {/* Submit Button */}
-      {audioBlob && consentTrain && consentStore && fullName.trim() && !isSuccess && (
+      {audioBlob && !isSuccess && (
         <div className="flex justify-center gap-4">
           <Button onClick={handleSubmit} disabled={isSubmitting} size="xl" variant="accent">
             {isSubmitting ? (
