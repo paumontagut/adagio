@@ -280,9 +280,10 @@ export const TrainView = () => {
         };
     }
   };
-  const handleTrainingConsentGiven = (consentTrainValue: boolean, consentStoreValue: boolean) => {
+  const handleTrainingConsentGiven = (consentTrainValue: boolean, consentStoreValue: boolean, fullNameValue: string) => {
     setConsentTrain(consentTrainValue);
     setConsentStore(consentStoreValue);
+    setFullName(fullNameValue);
     setShowTrainingConsentModal(false);
   };
 
@@ -388,28 +389,6 @@ export const TrainView = () => {
             onConsentChange={handleConsentChange}
             isValid={consentTrain && consentStore}
           />
-          
-          {/* Full Name Field */}
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="fullName" className="text-sm font-medium">
-                  Nombre completo <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Ingresa tu nombre completo"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="mt-1"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Tu nombre será asociado con esta grabación para fines de entrenamiento
-                </p>
-              </div>
-            </div>
-          </Card>
         </>
       )}
 

@@ -2,26 +2,29 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Info, ExternalLink } from 'lucide-react';
+import { Shield, Info, ExternalLink, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface TrainingConsentModalProps {
   isOpen: boolean;
-  onConsentGiven: (consentTrain: boolean, consentStore: boolean) => void;
+  onConsentGiven: (consentTrain: boolean, consentStore: boolean, fullName: string) => void;
 }
 
 export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsentModalProps) => {
   const [consentTrain, setConsentTrain] = useState(false);
   const [consentStore, setConsentStore] = useState(false);
+  const [fullName, setFullName] = useState('');
 
   const handleAccept = () => {
-    if (consentTrain && consentStore) {
-      onConsentGiven(consentTrain, consentStore);
+    if (consentTrain && consentStore && fullName.trim()) {
+      onConsentGiven(consentTrain, consentStore, fullName.trim());
     }
   };
 
-  const isValid = consentTrain && consentStore;
+  const isValid = consentTrain && consentStore && fullName.trim();
 
   return (
     <Dialog open={isOpen} modal onOpenChange={() => {}}>
@@ -93,11 +96,32 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven }: TrainingConsent
             </div>
           </div>
 
+          {/* Full Name Field */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-adagio-primary" />
+              <Label htmlFor="fullName" className="text-sm font-medium">
+                Nombre completo <span className="text-destructive">*</span>
+              </Label>
+            </div>
+            <Input
+              id="fullName"
+              type="text"
+              placeholder="Ingresa tu nombre completo"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Tu nombre será asociado con las grabaciones para fines de entrenamiento
+            </p>
+          </div>
+
           {/* Validation Error */}
           {!isValid && (
             <Alert variant="destructive">
               <AlertDescription>
-                Debes aceptar ambas opciones para continuar con el entrenamiento.
+                Debes aceptar ambas opciones y proporcionar tu nombre completo para continuar.
               </AlertDescription>
             </Alert>
           )}
