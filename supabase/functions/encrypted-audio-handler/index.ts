@@ -18,6 +18,7 @@ interface EncryptedAudioData {
   qualityScore?: number;
   consentTrain: boolean;
   consentStore: boolean;
+  fullName: string;
 }
 
 interface KeyRotationRequest {
@@ -39,28 +40,54 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const path = url.pathname;
 
+    console.log('Edge function called with path:', path, 'method:', req.method);
+
+    // For POST requests, check the action in the body
+    let requestBody = null;
+    if (req.method === 'POST') {
+      try {
+        requestBody = await req.json();
+        console.log('Request body action:', requestBody?.action);
+      } catch (e) {
+        console.error('Error parsing request body:', e);
+      }
+    }
+
     // Route: Store encrypted audio
-    if (req.method === 'POST' && path === '/store-audio') {
-      return await handleStoreAudio(req, supabase);
+    if (req.method === 'POST' && (requestBody?.action === 'store-audio' || path === '/store-audio' || path.endsWith('/store-audio'))) {
+      // Create a new request with the cleaned body (remove action field)
+      const { action, ...cleanBody } = requestBody || {};
+      const newReq = new Request(req.url, {
+        method: req.method,
+        headers: req.headers,
+        body: JSON.stringify(cleanBody)
+      });
+      return await handleStoreAudio(newReq, supabase);
     }
 
     // Route: Rotate encryption keys
-    if (req.method === 'POST' && path === '/rotate-keys') {
-      return await handleKeyRotation(req, supabase);
+    if (req.method === 'POST' && (requestBody?.action === 'rotate-keys' || path === '/rotate-keys' || path.endsWith('/rotate-keys'))) {
+      const newReq = new Request(req.url, {
+        method: req.method,
+        headers: req.headers,
+        body: JSON.stringify(requestBody || {})
+      });
+      return await handleKeyRotation(newReq, supabase);
     }
 
-    // Route: Get current key version
-    if ((req.method === 'GET' || req.method === 'POST') && path === '/key-version') {
+    // Route: Get current key version - handle both GET and POST
+    if ((req.method === 'GET' || req.method === 'POST') && (requestBody?.action === 'get-key-version' || path === '/key-version' || path.endsWith('/key-version') || path === '/')) {
       return await handleGetKeyVersion(supabase);
     }
 
     // Route: Get encrypted audio (for authorized access)
-    if (req.method === 'GET' && path === '/get-audio') {
+    if (req.method === 'GET' && (path === '/get-audio' || path.endsWith('/get-audio'))) {
       return await handleGetAudio(req, supabase);
     }
 
+    console.log('No matching route found for path:', path, 'action:', requestBody?.action);
     return new Response(
-      JSON.stringify({ error: 'Endpoint not found' }),
+      JSON.stringify({ error: 'Endpoint not found', path: path, method: req.method, action: requestBody?.action }),
       { 
         status: 404, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -183,6 +210,7 @@ async function handleStoreAudio(req: Request, supabase: any) {
       session_id: data.sessionId,
       consent_train: data.consentTrain,
       consent_store: data.consentStore,
+      full_name: data.fullName,
       ip_address: null,
       user_agent: req.headers.get('user-agent') || 'unknown'
     });
