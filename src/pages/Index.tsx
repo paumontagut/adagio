@@ -35,65 +35,66 @@ const Index = () => {
 
       <div className="container mx-auto px-4 py-8 max-w-4xl flex-1">
         {/* Header */}
-        <header className="text-center mb-8" role="banner">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1" />
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold mb-2 text-white">
-                Adagio
-              </h1>
-              <p className="text-lg text-white" role="doc-subtitle">
-                Facilitando la comunicación para personas con habla atípica
-              </p>
-            </div>
-            <nav 
-              id="navigation" 
-              className="flex-1 flex justify-end space-x-2" 
-              role="navigation" 
-              aria-label="Navegación principal"
-            >
-              {user && (
-                <>
-                  <Link to="/my-recordings">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                    >
-                      <HardDrive className="h-4 w-4 mr-2" aria-hidden="true" />
-                      Mis Grabaciones
-                    </Button>
-                  </Link>
-                  <Link to="/my-data">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                    >
-                      <HardDrive className="h-4 w-4 mr-2" aria-hidden="true" />
-                      Mis Datos
-                    </Button>
-                  </Link>
-                </>
-              )}
-              
-              <Link to="/privacy-center">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                >
-                  <Shield className="h-4 w-4 mr-2" aria-hidden="true" />
-                  Privacidad
-                </Button>
-              </Link>
+        <header className="mb-8" role="banner">
+          {/* Navigation - Mobile First */}
+          <nav 
+            id="navigation" 
+            className="flex justify-end items-center mb-6 gap-2 flex-wrap" 
+            role="navigation" 
+            aria-label="Navegación principal"
+          >
+            {user && (
+              <>
+                <Link to="/my-recordings" className="hidden sm:block">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs"
+                  >
+                    <HardDrive className="h-3 w-3 mr-1" aria-hidden="true" />
+                    Grabaciones
+                  </Button>
+                </Link>
+                <Link to="/my-data" className="hidden sm:block">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs"
+                  >
+                    <HardDrive className="h-3 w-3 mr-1" aria-hidden="true" />
+                    Datos
+                  </Button>
+                </Link>
+              </>
+            )}
+            
+            <Link to="/privacy-center">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs"
+              >
+                <Shield className="h-3 w-3 mr-1 sm:mr-2" aria-hidden="true" />
+                <span className="hidden sm:inline">Privacidad</span>
+                <span className="sm:hidden">Priv.</span>
+              </Button>
+            </Link>
 
-              {user ? (
-                <UserMenu />
-              ) : (
-                !loading && <AuthButton />
-              )}
-            </nav>
+            {user ? (
+              <UserMenu />
+            ) : (
+              !loading && <AuthButton />
+            )}
+          </nav>
+
+          {/* Title and Subtitle - Centered */}
+          <div className="text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-3 text-white">
+              Adagio
+            </h1>
+            <p className="text-base sm:text-lg text-white px-4" role="doc-subtitle">
+              Facilitando la comunicación para personas con habla atípica
+            </p>
           </div>
         </header>
 
