@@ -97,7 +97,13 @@ serve(async (req) => {
       const filename = `${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
 
       return json({ base64, filename, mimeType: 'audio/wav' }, 200);
-    } catch (_e) {
+    } catch (e) {
+      console.error('Decryption failed:', e);
+      // Check if this is a legacy client-encrypted file by looking at the error pattern
+      const errorMsg = e?.message || '';
+      if (errorMsg.includes('OperationError') || meta.encryption_key_version === 1) {
+        return json({ error: 'LEGACY_CLIENT_ENCRYPTED', details: 'This recording was encrypted client-side and cannot be decrypted by the server' }, 422);
+      }
       return json({ error: 'DECRYPTION_FAILED' }, 422);
     }
   } catch (e) {

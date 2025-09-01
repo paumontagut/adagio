@@ -361,7 +361,17 @@ export const AdminRecordings: React.FC = () => {
           }
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message?.includes('LEGACY_CLIENT_ENCRYPTED')) {
+            toast({
+              title: "Archivo legado",
+              description: "Esta grabación fue cifrada en el cliente y no puede ser descifrada por el servidor. Use la función 'Crear Muestra Cifrada' para probar con archivos nuevos.",
+              variant: "destructive"
+            });
+            return;
+          }
+          throw error;
+        }
         if (!data) throw new Error('Respuesta vacía del servidor');
 
         // Expect JSON with base64 data
@@ -447,6 +457,89 @@ export const AdminRecordings: React.FC = () => {
     }
   };
 
+  const createTestSample = async () => {
+    try {
+      toast({
+        title: "Creando muestra",
+        description: "Generando archivo de audio de prueba cifrado...",
+      });
+
+      // Generate a silent 2-second WAV file
+      const sampleRate = 16000;
+      const duration = 2; // seconds
+      const samples = sampleRate * duration;
+      const audioBuffer = new ArrayBuffer(44 + samples * 2); // WAV header + 16-bit samples
+      const view = new DataView(audioBuffer);
+
+      // WAV header
+      const writeString = (offset: number, string: string) => {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      };
+
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + samples * 2, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, samples * 2, true);
+
+      // Silent audio data (all zeros)
+      for (let i = 0; i < samples; i++) {
+        view.setInt16(44 + i * 2, 0, true);
+      }
+
+      const audioBlob = new Blob([audioBuffer], { type: 'audio/wav' });
+
+      // Send to encrypted-audio-api for server-side encryption
+      const { data, error } = await supabase.functions.invoke('encrypted-audio-handler', {
+        body: {
+          action: 'store-audio-raw',
+          audioData: await arrayBufferToBase64(audioBuffer),
+          sessionId: `test_${Date.now()}`,
+          phraseText: 'Muestra de prueba cifrada en servidor',
+          consentStore: true,
+          consentTrain: false,
+          deviceInfo: 'Admin Test Generator'
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Muestra creada",
+        description: "Se ha creado una grabación de prueba cifrada. Actualizando lista...",
+      });
+
+      // Reload recordings to show the new test sample
+      await loadRecordings();
+    } catch (error: any) {
+      console.error('Error creating test sample:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo crear la muestra de prueba",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const arrayBufferToBase64 = async (buffer: ArrayBuffer): Promise<string> => {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
+
   const formatDuration = (ms?: number) => {
     if (!ms) return '-';
     const seconds = Math.floor(ms / 1000);
@@ -479,6 +572,10 @@ export const AdminRecordings: React.FC = () => {
           <Button variant="outline" onClick={loadRecordings}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualizar
+          </Button>
+          <Button variant="outline" onClick={createTestSample}>
+            <Volume2 className="h-4 w-4 mr-2" />
+            Crear Muestra Cifrada
           </Button>
         </div>
       </div>
