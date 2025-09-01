@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
-import { decode as b64decode, encode as b64encode } from "https://deno.land/std@0.224.0/encoding/base64.ts";
+import { decodeBase64 as b64decode, encodeBase64 as b64encode } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -127,12 +127,12 @@ function toUint8(input: string | Uint8Array): Uint8Array {
 }
 
 async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint8Array): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey('raw', keyRaw, { name: 'AES-GCM' }, false, ['decrypt']);
   try {
-    const key = await crypto.subtle.importKey('raw', keyRaw, { name: 'AES-GCM' }, false, ['decrypt']);
     const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted);
     return new Uint8Array(decrypted);
   } catch (e) {
-    console.error('Decryption failed; returning original bytes (will not play):', e);
-    return encrypted;
+    console.error('Decryption failed:', e);
+    throw new Error('DECRYPTION_FAILED');
   }
 }

@@ -64,6 +64,16 @@ Deno.serve(async (req) => {
       return await handleStoreAudio(newReq, supabase)
     }
 
+    if (req.method === 'POST' && action === 'store-audio-raw') {
+      const { action: _a, ...clean } = body || {}
+      const newReq = new Request(req.url, {
+        method: 'POST',
+        headers: req.headers,
+        body: JSON.stringify(clean)
+      })
+      return await handleStoreAudioRaw(newReq, supabase)
+    }
+
     if ((req.method === 'GET' || req.method === 'POST') && (action === 'get-audio' || path.endsWith('/get-audio'))) {
       return await handleGetAudio(req, supabase)
     }
@@ -179,6 +189,131 @@ async function handleStoreAudio(req: Request, supabase: any) {
     JSON.stringify({ success: true, metadataId: meta.id, sessionPseudonym, keyVersion: currentKeyVersion }),
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
+}
+
+// New: Server-side encryption of raw audio (platform-managed decryption)
+async function handleStoreAudioRaw(req: Request, supabase: any) {
+  const data = await req.json() as {
+    sessionId: string;
+    phraseText: string;
+    rawBlob: string; // base64
+    durationMs: number;
+    sampleRate: number;
+    audioFormat: string;
+    deviceInfo: string;
+    qualityScore?: number;
+    consentTrain: boolean;
+    consentStore: boolean;
+    fullName: string;
+  };
+
+  if (!data?.rawBlob) return jsonError('Missing raw audio data', 400);
+
+  // Generate pseudonym
+  const { data: pseudo, error: pseudoErr } = await supabase
+    .rpc('generate_pseudonym', { original_session_id: data.sessionId })
+
+  if (pseudoErr) {
+    console.error('Pseudonym error', pseudoErr)
+    return jsonError('Failed to generate session pseudonym', 500)
+  }
+  const sessionPseudonym = pseudo
+
+  // Get active key (use key_hash bytes directly as AES-256 key)
+  const { data: keyRow, error: keyErr } = await supabase
+    .from('encryption_keys')
+    .select('version, key_hash')
+    .eq('is_active', true)
+    .single();
+
+  if (keyErr || !keyRow) {
+    console.error('Key read error', keyErr)
+    return jsonError('Failed to get encryption key', 500)
+  }
+
+  const keyBytes = base64ToUint8(keyRow.key_hash);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const salt = crypto.getRandomValues(new Uint8Array(16)); // kept for schema consistency
+
+  // Decode raw audio
+  const rawBytes = base64ToUint8(data.rawBlob);
+
+  // Encrypt server-side
+  const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt']);
+  const encryptedBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, rawBytes);
+  const encryptedBytes = new Uint8Array(encryptedBuf);
+
+  // Insert metadata
+  const { data: meta, error: metaErr } = await supabase
+    .from('audio_metadata')
+    .insert({
+      session_pseudonym: sessionPseudonym,
+      phrase_text: data.phraseText,
+      duration_ms: data.durationMs,
+      sample_rate: data.sampleRate,
+      audio_format: data.audioFormat,
+      device_info: data.deviceInfo,
+      quality_score: data.qualityScore,
+      consent_train: data.consentTrain,
+      consent_store: data.consentStore,
+      encryption_key_version: keyRow.version
+    })
+    .select()
+    .single();
+
+  if (metaErr) {
+    console.error('Metadata error', metaErr)
+    return jsonError('Failed to store audio metadata', 500)
+  }
+
+  // Insert encrypted payload
+  const { error: fileErr } = await supabase.from('encrypted_audio_files').insert({
+    metadata_id: meta.id,
+    encrypted_blob: uint8ToBase64(encryptedBytes),
+    iv: uint8ToBase64(iv),
+    salt: uint8ToBase64(salt)
+  });
+
+  if (fileErr) {
+    console.error('Encrypted file error', fileErr)
+    return jsonError('Failed to store encrypted audio file', 500)
+  }
+
+  // Consent log
+  const { error: consentErr } = await supabase.from('consent_logs').insert({
+    session_id: data.sessionId,
+    consent_train: data.consentTrain,
+    consent_store: data.consentStore,
+    full_name: data.fullName,
+    user_agent: req.headers.get('user-agent') || 'unknown'
+  })
+  if (consentErr) console.warn('Consent log warning', consentErr)
+
+  return new Response(
+    JSON.stringify({ success: true, metadataId: meta.id, sessionPseudonym, keyVersion: keyRow.version }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+function base64ToUint8(b64: string): Uint8Array {
+  try {
+    const binary = atob(b64);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  } catch (_e) {
+    // If already Uint8Array in some environments
+    // @ts-ignore
+    if (b64?.byteLength !== undefined && b64.constructor?.name === 'Uint8Array') return b64 as Uint8Array;
+    return new Uint8Array();
+  }
+}
+
+function uint8ToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
 }
 
 async function handleGetKeyVersion(supabase: any) {

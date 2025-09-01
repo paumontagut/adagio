@@ -17,7 +17,7 @@ import { getGuestSessionId } from '@/lib/guestSession';
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
 import { sessionManager } from '@/lib/sessionManager';
-import { AudioEncryption } from '@/lib/encryption';
+// Removed client-side encryption (now server-side)
 import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -50,7 +50,7 @@ const TrainView = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [encryptionKey, setEncryptionKey] = useState<string>('');
+  // const [encryptionKey, setEncryptionKey] = useState<string>(''); // removed
   const [currentKeyVersion, setCurrentKeyVersion] = useState<number>(1);
   const [fullName, setFullName] = useState<string>('');
   const { toast } = useToast();
@@ -71,29 +71,15 @@ const TrainView = () => {
 
   const initializeEncryption = async () => {
     try {
-      // Get current key version from server
+      // Get current key version from server (for display only)
       const { data, error } = await supabase.functions.invoke('encrypted-audio-api', {
         body: { action: 'get-key-version' }
       });
-      
-      if (error) {
-        console.error('Error getting key version:', error);
-      } else if (data && typeof data.currentKeyVersion === 'number') {
+      if (!error && data && typeof data.currentKeyVersion === 'number') {
         setCurrentKeyVersion(data.currentKeyVersion);
       }
-
-      // Generate client-side master key (in production, this should be derived securely)
-      let masterKey = localStorage.getItem('adagio_encryption_key');
-      if (!masterKey) {
-        masterKey = AudioEncryption.generateMasterKey();
-        localStorage.setItem('adagio_encryption_key', masterKey);
-      }
-      setEncryptionKey(masterKey);
     } catch (error) {
       console.error('Error initializing encryption:', error);
-      // Fallback to generated key
-      const fallbackKey = AudioEncryption.generateMasterKey();
-      setEncryptionKey(fallbackKey);
     }
   };
   const getNewPhrase = useCallback(() => {
@@ -133,9 +119,7 @@ const TrainView = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      if (!encryptionKey) {
-        throw new Error('Encryption key not available');
-      }
+      // Server-side encryption: no client key needed
 
       const session = sessionManager.getSession();
       if (!session) {
@@ -145,45 +129,36 @@ const TrainView = () => {
       // Use processed audio if available, otherwise use original
       const audioToUpload = processingResult?.blob || audioBlob;
 
-      console.log('Starting client-side encryption...');
-      
-      // Encrypt audio on client-side using AES-256
-      const encryptionResult = await AudioEncryption.encryptAudio(
-        audioToUpload, 
-        encryptionKey, 
-        currentKeyVersion
-      );
-
       // Get audio metadata
       const duration_ms = processingResult?.metrics.duration ? 
         Math.round(processingResult.metrics.duration * 1000) : 5000;
 
-      // Prepare encrypted audio data for secure transmission
-      const encryptedAudioData = {
-        sessionId: session.sessionId,
-        phraseText: currentPhrase,
-        encryptedBlob: AudioEncryption.arrayBufferToBase64(encryptionResult.encryptedData),
-        iv: AudioEncryption.uint8ArrayToBase64(encryptionResult.iv),
-        salt: AudioEncryption.uint8ArrayToBase64(encryptionResult.salt),
-        durationMs: duration_ms,
-        sampleRate: processingResult?.metrics.sampleRate || 16000,
-        audioFormat: 'wav',
-        deviceInfo: `Browser MediaRecorder - ${navigator.userAgent.substring(0, 100)}`,
-        qualityScore: processingResult?.isValid ? 0.95 : 0.70,
-        consentTrain: consentTrain,
-        consentStore: consentStore,
-        fullName: fullName.trim()
-      };
+      // Convert raw audio to base64 for server-side encryption
+      const buffer = await audioToUpload.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      const rawBase64 = btoa(binary);
 
-      console.log('Sending encrypted audio to secure storage...');
+      console.log('Sending raw audio for server-side encryption...');
 
-      // Send encrypted data to secure edge function
+      // Send RAW data to secure edge function (server encrypts & stores)
       const { data: responseData, error: uploadError } = await supabase.functions.invoke(
         'encrypted-audio-api',
         {
           body: {
-            action: 'store-audio',
-            ...encryptedAudioData
+            action: 'store-audio-raw',
+            sessionId: session.sessionId,
+            phraseText: currentPhrase,
+            rawBlob: rawBase64,
+            durationMs: duration_ms,
+            sampleRate: processingResult?.metrics.sampleRate || 16000,
+            audioFormat: 'wav',
+            deviceInfo: `Browser MediaRecorder - ${navigator.userAgent.substring(0, 100)}`,
+            qualityScore: processingResult?.isValid ? 0.95 : 0.70,
+            consentTrain: consentTrain,
+            consentStore: consentStore,
+            fullName: fullName.trim()
           }
         }
       );
