@@ -203,12 +203,7 @@ export class RealtimeTranscriber {
       // Commit the audio buffer and request response
       if (this.dc && this.dc.readyState === 'open') {
         this.dc.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
-        this.dc.send(JSON.stringify({ 
-          type: 'response.create',
-          response: {
-            modalities: ["text"]
-          }
-        }));
+        this.dc.send(JSON.stringify({ type: 'response.create' }));
       }
       
       console.log('Audio file processing completed');
@@ -287,7 +282,9 @@ export class RealtimeTranscriber {
               type: "server_vad",
               threshold: 0.5,
               prefix_padding_ms: 300,
-              silence_duration_ms: 1000
+              silence_duration_ms: 1000,
+              create_response: false,
+              interrupt_response: true
             },
             temperature: 0.6
           }
