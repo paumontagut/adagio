@@ -219,6 +219,8 @@ export const TranscribeView = () => {
     setState('idle');
   };
 
+  const [resetKey, setResetKey] = useState(0);
+
   const handleReset = () => {
     setAudioBlob(null);
     setAudioMetadata(null);
@@ -228,6 +230,7 @@ export const TranscribeView = () => {
     setState('idle');
     setUploadProgress(0);
     setCurrentlyProcessing(null);
+    setResetKey(prev => prev + 1); // Force RecorderUploader to reset
   };
 
   const getStateConfig = () => {
@@ -326,6 +329,7 @@ export const TranscribeView = () => {
             Entrada de Audio
           </h3>
           <RecorderUploader
+            key={resetKey}
             onAudioReady={handleAudioReady}
             disabled={isProcessing}
             maxDuration={20}
