@@ -75,30 +75,31 @@ serve(async (req) => {
     if (encErr) return json({ error: encErr.message }, 404);
     if (!enc) return json({ error: 'Encrypted file not found' }, 404);
 
-    // 4) Load key (placeholder derivation)
+    // 4) Load key by version (may be inactive but must match recording version)
     const { data: keyRec, error: keyErr } = await supabase
       .from('encryption_keys')
       .select('key_hash')
       .eq('version', meta.encryption_key_version)
-      .eq('is_active', true)
       .maybeSingle();
 
     if (keyErr) return json({ error: keyErr.message }, 404);
-    if (!keyRec) return json({ error: 'Encryption key not found' }, 404);
+    if (!keyRec) return json({ error: 'Encryption key not found for version ' + meta.encryption_key_version }, 404);
 
     // Convert base64 (bytea) to Uint8Array
     const encBlob = toUint8(enc.encrypted_blob);
     const iv = toUint8(enc.iv);
-    const keyRawFull = toUint8(keyRec.key_hash);
-    const keyRaw = keyRawFull.slice(0, 32); // demo: use first 32 bytes
+    const keyRaw = toUint8(keyRec.key_hash);
 
-    // Decrypt (AES-GCM demo)
-    const decrypted = await decryptAesGcm(encBlob, iv, keyRaw);
+    // Decrypt (AES-GCM)
+    try {
+      const decrypted = await decryptAesGcm(encBlob, iv, keyRaw);
+      const base64 = b64encode(decrypted);
+      const filename = `${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
 
-    const base64 = b64encode(decrypted);
-    const filename = `${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
-
-    return json({ base64, filename, mimeType: 'audio/wav' }, 200);
+      return json({ base64, filename, mimeType: 'audio/wav' }, 200);
+    } catch (_e) {
+      return json({ error: 'DECRYPTION_FAILED' }, 422);
+    }
   } catch (e) {
     console.error('decrypt-download error:', e);
     return json({ error: e?.message || 'Internal server error' }, 500);
