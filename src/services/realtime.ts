@@ -172,7 +172,7 @@ export class RealtimeTranscriber {
 
       await this.pc.setRemoteDescription({
         type: "answer",
-        sdp: answerSdp,
+        sdp: answerSdp as string,
       });
 
       console.log('WebRTC connection established successfully');
@@ -357,7 +357,24 @@ export class RealtimeTranscriber {
         break;
       
       case 'response.done':
-        // Response completed
+        // Response completed - ensure we extract text if deltas didn't arrive
+        try {
+          if (!this.accumulatedText && message.response?.output?.length) {
+            for (const item of message.response.output) {
+              const contents = item?.content || [];
+              for (const c of contents) {
+                if (c?.type === 'text' && typeof c.text === 'string') {
+                  this.accumulatedText += c.text;
+                }
+                if (c?.type === 'output_text' && typeof c.text === 'string') {
+                  this.accumulatedText += c.text;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to parse response.done output text', e);
+        }
         console.log('Response completed');
         if (!this.isCompleted) {
           this.completeTranscription();
