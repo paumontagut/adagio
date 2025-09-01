@@ -60,7 +60,7 @@ serve(async (req) => {
     const formData = new FormData();
     const blob = new Blob([binaryAudio], { type: 'audio/wav' });
     formData.append('file', blob, 'audio.wav');
-    formData.append('model', 'whisper-1');
+    formData.append('model', 'gpt-4o-transcribe');
     formData.append('language', 'es');
 
     // Send to OpenAI Whisper API
