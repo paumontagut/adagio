@@ -61,6 +61,7 @@ serve(async (req) => {
     const blob = new Blob([binaryAudio], { type: 'audio/wav' });
     formData.append('file', blob, 'audio.wav');
     formData.append('model', 'whisper-1');
+    formData.append('language', 'es');
 
     // Send to OpenAI Whisper API
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -72,8 +73,23 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await response.text().catch(() => '');
       console.error('OpenAI API error:', errorText);
+      
+      if (response.status === 429) {
+        // Handle quota exceeded specifically
+        return new Response(
+          JSON.stringify({ 
+            error: 'INSUFFICIENT_QUOTA',
+            message: 'OpenAI quota exceeded'
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      
       throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 

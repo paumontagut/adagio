@@ -140,22 +140,44 @@ export const TranscribeView = () => {
       } else {
         if (openAIResult.status === 'rejected') {
           console.error('OpenAI transcription failed:', openAIResult.reason);
+          setTranscriptionOpenAI('Error: No se pudo transcribir con OpenAI');
+        } else if (openAIResult.value.error) {
+          // Handle specific error types from the edge function
+          const errorData = openAIResult.value.data;
+          if (errorData?.error === 'INSUFFICIENT_QUOTA') {
+            setTranscriptionOpenAI('Error: Cuota de OpenAI agotada o sin facturación');
+          } else {
+            setTranscriptionOpenAI('Error: No se pudo transcribir con OpenAI');
+          }
         } else {
           console.error('OpenAI transcription failed: Invalid response format');
+          setTranscriptionOpenAI('Error: Respuesta inválida de OpenAI');
         }
-        setTranscriptionOpenAI('Error: No se pudo transcribir con ChatGPT 4o');
       }
 
       setState('completed');
 
-      // Track success analytics
-      const duration = audioMetadata?.duration || 0;
-      sessionManager.transcribeSuccess(duration);
-
-      toast({
-        title: "Transcripción completada",
-        description: "Audio transcrito con ambos servicios"
-      });
+      // Track success analytics - only if at least one transcription succeeded
+      const hasValidTranscription = (transcriptionAdagio && !transcriptionAdagio.includes('Error:')) || 
+                                  (transcriptionOpenAI && !transcriptionOpenAI.includes('Error:'));
+      
+      if (hasValidTranscription) {
+        const duration = audioMetadata?.duration || 0;
+        sessionManager.transcribeSuccess(duration);
+        
+        toast({
+          title: "Transcripción completada",
+          description: "Audio transcrito con ambos servicios"
+        });
+      } else {
+        sessionManager.transcribeError('Both services failed');
+        
+        toast({
+          title: "Error de transcripción",
+          description: "Ambos servicios fallaron en la transcripción",
+          variant: "destructive"
+        });
+      }
 
     } catch (error) {
       const transcribeError = error as TranscribeError;

@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.decrypt-download]
 verify_jwt = false
+
+[functions.openai-transcribe]
+verify_jwt = false

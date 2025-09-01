@@ -15,8 +15,25 @@ export interface TranscribeError {
   details?: string;
 }
 
-const TRANSCRIBE_URL = import.meta.env.VITE_TRANSCRIBE_URL || import.meta.env.NEXT_PUBLIC_TRANSCRIBE_URL || '';
-const HEALTH_URL = import.meta.env.VITE_HEALTH_URL || import.meta.env.NEXT_PUBLIC_HEALTH_URL || '';
+// Normalize URLs to handle malformed env variables
+const normalizeUrl = (url: string): string => {
+  if (!url) return '';
+  return url.trim().replace(/['"]/g, ''); // Remove quotes and spaces
+};
+
+const getTranscribeEndpoint = (): string => {
+  const baseUrl = normalizeUrl(import.meta.env.VITE_TRANSCRIBE_URL || import.meta.env.NEXT_PUBLIC_TRANSCRIBE_URL || '');
+  if (!baseUrl) return '';
+  
+  // Ensure it ends with /transcribe if not already present
+  if (!baseUrl.endsWith('/transcribe')) {
+    return baseUrl.endsWith('/') ? baseUrl + 'transcribe' : baseUrl + '/transcribe';
+  }
+  return baseUrl;
+};
+
+const TRANSCRIBE_URL = getTranscribeEndpoint();
+const HEALTH_URL = normalizeUrl(import.meta.env.VITE_HEALTH_URL || import.meta.env.NEXT_PUBLIC_HEALTH_URL || '');
 const TIMEOUT_MS = (parseInt(import.meta.env.VITE_TRANSCRIBE_TIMEOUT || import.meta.env.NEXT_PUBLIC_TRANSCRIBE_TIMEOUT) || 90) * 1000;
 
 class TranscribeService {
