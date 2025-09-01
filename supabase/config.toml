@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.storage-manager]
 verify_jwt = false
+
+[functions.admin-bulk-download]
+verify_jwt = false
+
+[functions.decrypt-download]
+verify_jwt = false

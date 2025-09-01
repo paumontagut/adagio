@@ -348,24 +348,24 @@ export const AdminRecordings: React.FC = () => {
       const filename = `${phraseStr}_${dateStr}.${formatExt}`;
 
       if (recording.is_encrypted) {
-        toast({
-          title: "Grabación cifrada",
-          description: "Las grabaciones cifradas requieren descifrado adicional. Use descarga masiva.",
-          variant: "destructive"
-        });
-        return;
-      }
+        // Use decrypt-download edge function for encrypted files
+        const adminToken = localStorage.getItem('admin_token');
+        if (!adminToken) {
+          throw new Error('Token de admin no disponible');
+        }
 
-      // Download from Supabase Storage for unencrypted files
-      if (recording.audio_url && recording.audio_url !== 'encrypted_storage') {
-        const { data, error } = await supabase.storage
-          .from('audio_raw')
-          .download(recording.audio_url);
+        const { data, error } = await supabase.functions.invoke('decrypt-download', {
+          body: { 
+            recordingId: recording.id,
+            sessionToken: adminToken
+          }
+        });
 
         if (error) throw error;
 
-        // Create download link
-        const url = window.URL.createObjectURL(data);
+        // The edge function returns the decrypted blob directly
+        const blob = new Blob([data], { type: 'audio/wav' });
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = filename;
@@ -376,10 +376,34 @@ export const AdminRecordings: React.FC = () => {
 
         toast({
           title: "Descarga completada",
-          description: `Archivo ${filename} descargado correctamente`,
+          description: `Archivo cifrado ${filename} descifrado y descargado correctamente`,
         });
       } else {
-        throw new Error('URL de audio no disponible');
+        // Download from Supabase Storage for unencrypted files
+        if (recording.audio_url && recording.audio_url !== 'encrypted_storage') {
+          const { data, error } = await supabase.storage
+            .from('audio_raw')
+            .download(recording.audio_url);
+
+          if (error) throw error;
+
+          // Create download link
+          const url = window.URL.createObjectURL(data);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          toast({
+            title: "Descarga completada",
+            description: `Archivo ${filename} descargado correctamente`,
+          });
+        } else {
+          throw new Error('URL de audio no disponible');
+        }
       }
     } catch (error: any) {
       console.error('Error downloading recording:', error);
@@ -654,12 +678,12 @@ export const AdminRecordings: React.FC = () => {
                         size="sm" 
                         variant="outline"
                         onClick={() => handleDownloadSingle(recording)}
-                        disabled={!hasPermission('viewer') || !recording.consent_store || !recording.audio_url || recording.audio_url === 'encrypted_storage'}
+                        disabled={!hasPermission('viewer') || !recording.consent_store}
                       >
                         <Download className="h-3 w-3" />
                       </Button>
                       {recording.audio_url && (
-                        <Button size="sm" variant="outline" onClick={() => handlePlaySingle(recording)} disabled={!recording.audio_url || recording.audio_url === 'encrypted_storage'}>
+                        <Button size="sm" variant="outline" onClick={() => handlePlaySingle(recording)} disabled={recording.is_encrypted}>
                           <Play className="h-3 w-3" />
                         </Button>
                       )}

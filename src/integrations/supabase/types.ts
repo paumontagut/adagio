@@ -772,6 +772,10 @@ export type Database = {
           session_token: string
         }[]
       }
+      create_admin_user: {
+        Args: { email: string; full_name?: string; password: string }
+        Returns: string
+      }
       create_worm_backup: {
         Args: {
           backup_name: string
@@ -799,6 +803,14 @@ export type Database = {
       rotate_storage_key: {
         Args: { target_bucket_id: string }
         Returns: number
+      }
+      validate_admin_login: {
+        Args: { login_email: string; login_password: string }
+        Returns: {
+          admin_user: Database["public"]["Tables"]["admin_users"]["Row"]
+          expires_at: string
+          session_token: string
+        }[]
       }
       validate_admin_session: {
         Args: { token: string }

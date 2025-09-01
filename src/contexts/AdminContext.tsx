@@ -81,11 +81,14 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      // Note: For now we're using a simplified approach
-      // In production, you'd implement proper password hashing and verification
-      const { data, error } = await supabase.rpc('create_admin_session', {
-        admin_email: email,
-        session_duration_hours: 8
+      // Validate credentials for adminpau specifically
+      if (email !== 'adminpau@admin.local') {
+        return { success: false, error: 'Usuario no autorizado' };
+      }
+      
+      const { data, error } = await supabase.rpc('validate_admin_login', {
+        login_email: email,
+        login_password: password
       });
 
       if (error) {
@@ -107,7 +110,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         
         return { success: true };
       } else {
-        return { success: false, error: 'Credenciales inválidas' };
+        return { success: false, error: 'Credenciales incorrectas' };
       }
     } catch (error: any) {
       console.error('Login error:', error);

@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield } from 'lucide-react';
 
 export const AdminLogin: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('adminpau@admin.local');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,7 +79,7 @@ export const AdminLogin: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@ejemplo.com"
                 required
-                disabled={isSubmitting}
+                disabled={true}
               />
             </div>
             
@@ -107,8 +107,8 @@ export const AdminLogin: React.FC = () => {
           </form>
           
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Usuario por defecto: admin@example.com</p>
-            <p>Contacta al administrador del sistema para obtener acceso</p>
+            <p>Usuario: adminpau@admin.local</p>
+            <p>Solo el administrador autorizado puede acceder</p>
           </div>
         </CardContent>
       </Card>
