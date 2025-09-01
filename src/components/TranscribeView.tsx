@@ -285,10 +285,14 @@ export const TranscribeView = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="adagio" className="w-full">
-        <TabsList className="grid w-full grid-cols-1">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="adagio" className="flex items-center gap-2">
             <Server className="h-4 w-4" />
             Transcripción Adagio
+          </TabsTrigger>
+          <TabsTrigger value="comparison" className="flex items-center gap-2">
+            <GitCompare className="h-4 w-4" />
+            ChatGPT vs Adagio
           </TabsTrigger>
         </TabsList>
 
@@ -476,21 +480,11 @@ export const TranscribeView = () => {
         />
       </div>
         </TabsContent>
-      </Tabs>
 
-      {/* Comparison Section */}
-      <div className="mt-8">
-        <div className="text-center space-y-2 mb-6">
-          <h2 className="text-2xl font-semibold text-foreground flex items-center justify-center gap-2">
-            <GitCompare className="h-6 w-6" />
-            ChatGPT vs Adagio
-          </h2>
-          <p className="text-muted-foreground">
-            Compara la transcripción en tiempo real de ChatGPT con el procesamiento por lotes de Adagio
-          </p>
-        </div>
-        <ComparisonView />
-      </div>
+        <TabsContent value="comparison" className="space-y-6">
+          <ComparisonView />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
