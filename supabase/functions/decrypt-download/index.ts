@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.56.0";
-import { encode as b64encode } from "https://deno.land/std@0.224.0/encoding/base64.ts";
+import { decode as b64decode, encode as b64encode } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,32 +20,50 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !supabaseKey) {
+      return json({ error: 'Missing Supabase env vars' }, 500);
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
     const { recordingId, sessionToken }: DecryptRequest = await req.json();
+    if (!recordingId || !sessionToken) {
+      return json({ error: 'recordingId and sessionToken are required' }, 400);
+    }
 
-    // 1) Validate admin session
+    // 1) Validate session
     const { data: session, error: sessionErr } = await supabase
       .from('admin_sessions')
-      .select('admin_user_id, expires_at, admin_users(role, is_active)')
+      .select('admin_user_id, expires_at')
       .eq('session_token', sessionToken)
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
 
-    if (sessionErr || !session || !session.admin_users?.is_active || session.admin_users.role !== 'admin') {
+    if (sessionErr) return json({ error: sessionErr.message }, 401);
+    if (!session) return json({ error: 'Invalid session' }, 401);
+
+    const { data: admin, error: adminErr } = await supabase
+      .from('admin_users')
+      .select('id, role, is_active')
+      .eq('id', session.admin_user_id)
+      .maybeSingle();
+
+    if (adminErr) return json({ error: adminErr.message }, 401);
+    if (!admin || !admin.is_active || admin.role !== 'admin') {
       return json({ error: 'Unauthorized' }, 401);
     }
 
-    // 2) Load encrypted metadata
+    // 2) Load metadata
     const { data: meta, error: metaErr } = await supabase
       .from('audio_metadata')
       .select('*')
       .eq('id', recordingId)
       .maybeSingle();
 
-    if (metaErr || !meta) return json({ error: 'Recording not found' }, 404);
+    if (metaErr) return json({ error: metaErr.message }, 404);
+    if (!meta) return json({ error: 'Recording not found' }, 404);
 
     // 3) Load encrypted file
     const { data: enc, error: encErr } = await supabase
@@ -54,9 +72,10 @@ serve(async (req) => {
       .eq('metadata_id', recordingId)
       .maybeSingle();
 
-    if (encErr || !enc) return json({ error: 'Encrypted file not found' }, 404);
+    if (encErr) return json({ error: encErr.message }, 404);
+    if (!enc) return json({ error: 'Encrypted file not found' }, 404);
 
-    // 4) Load key (placeholder: using key_hash as derivation material)
+    // 4) Load key (placeholder derivation)
     const { data: keyRec, error: keyErr } = await supabase
       .from('encryption_keys')
       .select('key_hash')
@@ -64,23 +83,25 @@ serve(async (req) => {
       .eq('is_active', true)
       .maybeSingle();
 
-    if (keyErr || !keyRec) return json({ error: 'Encryption key not found' }, 404);
+    if (keyErr) return json({ error: keyErr.message }, 404);
+    if (!keyRec) return json({ error: 'Encryption key not found' }, 404);
 
-    // 5) Decrypt (simplified demo — replace with your actual AES-GCM key + KDF)
-    const decrypted = await decryptAesGcm(
-      enc.encrypted_blob as Uint8Array,
-      enc.iv as Uint8Array,
-      (keyRec.key_hash as Uint8Array).slice(0, 32)
-    );
+    // Convert base64 (bytea) to Uint8Array
+    const encBlob = toUint8(enc.encrypted_blob);
+    const iv = toUint8(enc.iv);
+    const keyRawFull = toUint8(keyRec.key_hash);
+    const keyRaw = keyRawFull.slice(0, 32); // demo: use first 32 bytes
 
-    // 6) Return as base64 JSON for easy download client-side
+    // Decrypt (AES-GCM demo)
+    const decrypted = await decryptAesGcm(encBlob, iv, keyRaw);
+
     const base64 = b64encode(decrypted);
     const filename = `${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
 
     return json({ base64, filename, mimeType: 'audio/wav' }, 200);
   } catch (e) {
     console.error('decrypt-download error:', e);
-    return json({ error: 'Internal server error' }, 500);
+    return json({ error: e?.message || 'Internal server error' }, 500);
   }
 });
 
@@ -89,7 +110,20 @@ function json(body: unknown, status = 200) {
 }
 
 function sanitize(s: string): string {
-  return (s || 'audio').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30);
+  return (s || 'audio').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 40);
+}
+
+function toUint8(input: string | Uint8Array): Uint8Array {
+  if (input instanceof Uint8Array) return input;
+  // PostgREST returns base64 for bytea
+  try {
+    return b64decode(input);
+  } catch {
+    // If not base64, try to interpret as binary string
+    const arr = new Uint8Array(input.length);
+    for (let i = 0; i < input.length; i++) arr[i] = input.charCodeAt(i);
+    return arr;
+  }
 }
 
 async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint8Array): Promise<Uint8Array> {
@@ -98,7 +132,7 @@ async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint
     const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted);
     return new Uint8Array(decrypted);
   } catch (e) {
-    console.error('Decryption failed, returning original bytes as fallback (will not play):', e);
+    console.error('Decryption failed; returning original bytes (will not play):', e);
     return encrypted;
   }
 }
