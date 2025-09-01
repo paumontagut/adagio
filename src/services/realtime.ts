@@ -333,6 +333,29 @@ export class RealtimeTranscriber {
         this.completeTranscription();
         break;
         
+      case 'response.output_item.added':
+        // Sometimes items are created without deltas; we wait for 'done' to get full text
+        break;
+      
+      case 'response.output_item.done':
+        // Finalized assistant message may include text content here
+        try {
+          const contents = message.item?.content || [];
+          for (const c of contents) {
+            if (c?.type === 'text' && typeof c.text === 'string') {
+              if (!this.firstDeltaTime) {
+                this.firstDeltaTime = performance.now();
+              }
+              this.accumulatedText += c.text;
+            }
+          }
+          const ttfb = this.firstDeltaTime ? this.firstDeltaTime - this.startTime : undefined;
+          this.callbacks.onPartial(this.accumulatedText, ttfb);
+        } catch (e) {
+          console.warn('Failed to parse output_item.done content', e);
+        }
+        break;
+      
       case 'response.done':
         // Response completed
         console.log('Response completed');
