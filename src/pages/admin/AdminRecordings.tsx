@@ -349,7 +349,7 @@ export const AdminRecordings: React.FC = () => {
 
       if (recording.is_encrypted) {
         // Use decrypt-download edge function for encrypted files
-        const adminToken = localStorage.getItem('admin_token');
+        const adminToken = localStorage.getItem('admin_session_token');
         if (!adminToken) {
           throw new Error('Token de admin no disponible');
         }
@@ -362,13 +362,21 @@ export const AdminRecordings: React.FC = () => {
         });
 
         if (error) throw error;
+        if (!data) throw new Error('Respuesta vacía del servidor');
 
-        // The edge function returns the decrypted blob directly
-        const blob = new Blob([data], { type: 'audio/wav' });
+        // Expect JSON with base64 data
+        const { base64, mimeType, filename: fnFromServer } = data as any;
+        const byteCharacters = atob(base64);
+        const byteNumbers = new Array(byteCharacters.length)
+          .fill(0)
+          .map((_, i) => byteCharacters.charCodeAt(i));
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimeType || 'audio/wav' });
+
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = filename;
+        link.download = fnFromServer || filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -376,7 +384,7 @@ export const AdminRecordings: React.FC = () => {
 
         toast({
           title: "Descarga completada",
-          description: `Archivo cifrado ${filename} descifrado y descargado correctamente`,
+          description: `Archivo cifrado ${(fnFromServer || filename)} descifrado y descargado correctamente`,
         });
       } else {
         // Download from Supabase Storage for unencrypted files
