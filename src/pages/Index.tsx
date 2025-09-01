@@ -8,13 +8,15 @@ import { Footer } from '@/components/Footer';
 import { AuthButton } from '@/components/AuthButton';
 import { UserMenu } from '@/components/UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, Database } from 'lucide-react';
+import { Shield, HardDrive } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('transcribe');
-  const { user, loading } = useAuth();
+  const {
+    user,
+    loading
+  } = useAuth();
 
   // Handle URL tab parameter
   useEffect(() => {
@@ -23,8 +25,7 @@ const Index = () => {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
-  return (
-    <div className="min-h-screen bg-[#005c64] flex flex-col">
+  return <div className="min-h-screen bg-[#005c64] flex flex-col">
       {/* Skip links for keyboard navigation */}
       <a href="#main-content" className="skip-link">
         Saltar al contenido principal
@@ -37,54 +38,28 @@ const Index = () => {
         {/* Header */}
         <header className="mb-8" role="banner">
           {/* Navigation - Mobile First */}
-          <nav 
-            id="navigation" 
-            className="flex justify-end items-center mb-6 gap-2 flex-wrap" 
-            role="navigation" 
-            aria-label="Navegación principal"
-          >
-            {user && (
-              <>
-                <Link to="/privacy-center" className="hidden sm:block">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs"
-                  >
-                    <Shield className="h-3 w-3 mr-1" aria-hidden="true" />
-                    Privacidad
-                  </Button>
+          <nav id="navigation" className="flex justify-end items-center mb-6 gap-2 flex-wrap" role="navigation" aria-label="Navegación principal">
+            {user && <>
+                <Link to="/my-recordings" className="hidden sm:block">
+                  
                 </Link>
                 <Link to="/my-data" className="hidden sm:block">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs"
-                  >
-                    <Database className="h-3 w-3 mr-1" aria-hidden="true" />
+                  <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs">
+                    <HardDrive className="h-3 w-3 mr-1" aria-hidden="true" />
                     Datos
                   </Button>
                 </Link>
-              </>
-            )}
+              </>}
             
             <Link to="/privacy-center">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs"
-              >
+              <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs">
                 <Shield className="h-3 w-3 mr-1 sm:mr-2" aria-hidden="true" />
                 <span className="hidden sm:inline">Privacidad</span>
                 <span className="sm:hidden">Priv.</span>
               </Button>
             </Link>
 
-            {user ? (
-              <UserMenu />
-            ) : (
-              !loading && <AuthButton />
-            )}
+            {user ? <UserMenu /> : !loading && <AuthButton />}
           </nav>
 
           {/* Title and Subtitle - Centered */}
@@ -101,58 +76,26 @@ const Index = () => {
         {/* Main Tabs */}
         <main id="main-content" role="main">
           <Card className="p-6 shadow-lg border-border bg-card">
-            <Tabs 
-              value={activeTab} 
-              onValueChange={(value) => { setActiveTab(value); setSearchParams({ tab: value }); }} 
-              className="w-full"
-              aria-label="Funciones principales de Adagio"
-            >
-              <TabsList 
-                className="grid w-full grid-cols-2 mb-8 bg-muted p-1 h-12"
-                role="tablist"
-                aria-label="Seleccionar función"
-              >
-                <TabsTrigger 
-                  value="transcribe" 
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md"
-                  role="tab"
-                  aria-selected={activeTab === 'transcribe'}
-                  aria-controls="transcribe-panel"
-                  id="transcribe-tab"
-                >
+            <Tabs value={activeTab} onValueChange={value => {
+            setActiveTab(value);
+            setSearchParams({
+              tab: value
+            });
+          }} className="w-full" aria-label="Funciones principales de Adagio">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted p-1 h-12" role="tablist" aria-label="Seleccionar función">
+                <TabsTrigger value="transcribe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md" role="tab" aria-selected={activeTab === 'transcribe'} aria-controls="transcribe-panel" id="transcribe-tab">
                   Transcribir
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="train" 
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md"
-                  role="tab"
-                  aria-selected={activeTab === 'train'}
-                  aria-controls="train-panel"
-                  id="train-tab"
-                >
+                <TabsTrigger value="train" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md" role="tab" aria-selected={activeTab === 'train'} aria-controls="train-panel" id="train-tab">
                   Entrenar
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent 
-                value="transcribe" 
-                className="mt-0"
-                role="tabpanel"
-                aria-labelledby="transcribe-tab"
-                id="transcribe-panel"
-                tabIndex={0}
-              >
+              <TabsContent value="transcribe" className="mt-0" role="tabpanel" aria-labelledby="transcribe-tab" id="transcribe-panel" tabIndex={0}>
                 <TranscribeView />
               </TabsContent>
               
-              <TabsContent 
-                value="train" 
-                className="mt-0"
-                role="tabpanel"
-                aria-labelledby="train-tab"
-                id="train-panel"
-                tabIndex={0}
-              >
+              <TabsContent value="train" className="mt-0" role="tabpanel" aria-labelledby="train-tab" id="train-panel" tabIndex={0}>
                 <TrainView />
               </TabsContent>
             </Tabs>
@@ -160,7 +103,6 @@ const Index = () => {
         </main>
       </div>
       <Footer />
-    </div>
-  );
+    </div>;
 };
 export default Index;
