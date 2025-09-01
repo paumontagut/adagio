@@ -1,8 +1,5 @@
 project_id = "cydqkoohhzesogvctvhy"
 
-[functions.openai-realtime-transcribe]
-verify_jwt = false
-
 [functions.encrypted-audio-handler]
 verify_jwt = false
 
@@ -22,7 +19,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.decrypt-download]
-verify_jwt = false
-
-[functions.openai-transcribe]
 verify_jwt = false

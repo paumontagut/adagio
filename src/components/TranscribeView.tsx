@@ -10,7 +10,6 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { sessionManager } from '@/lib/sessionManager';
 import { transcribeService, type TranscribeError } from '@/services/transcribe';
-import { useRealtimeTranscribe } from '@/hooks/useRealtimeTranscribe';
 import type { ConversionResult } from '@/lib/audioConverter';
 import { 
   Loader2, 
@@ -25,8 +24,7 @@ import {
 type TranscribeState = 'idle' | 'uploading' | 'transcribing' | 'completed' | 'error';
 
 export const TranscribeView = () => {
-  const [transcriptionAdagio, setTranscriptionAdagio] = useState('');
-  const [transcriptionOpenAI, setTranscriptionOpenAI] = useState('');
+  const [transcription, setTranscription] = useState('');
   const [state, setState] = useState<TranscribeState>('idle');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioMetadata, setAudioMetadata] = useState<ConversionResult | null>(null);
@@ -34,19 +32,6 @@ export const TranscribeView = () => {
   const [backendOnline, setBackendOnline] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
-  
-  // Realtime transcription hook
-  const {
-    isConnected: realtimeConnected,
-    isTranscribing: realtimeTranscribing,
-    transcription: realtimeTranscription,
-    error: realtimeError,
-    connect: connectRealtime,
-    disconnect: disconnectRealtime,
-    sendAudio,
-    endAudio,
-    reset: resetRealtime
-  } = useRealtimeTranscribe();
 
   // Track page view analytics
   useEffect(() => {
@@ -60,7 +45,7 @@ export const TranscribeView = () => {
     setState('idle');
   }, []);
 
-  const handleTranscribeRealtime = async () => {
+  const handleTranscribe = async () => {
     if (!audioBlob) {
       toast({
         title: "No hay audio",
@@ -70,58 +55,34 @@ export const TranscribeView = () => {
       return;
     }
 
+    if (!backendOnline) {
+      toast({
+        title: "Servidor desconectado",
+        description: "El servidor de transcripción no está disponible",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setState('uploading');
     setError(null);
     setUploadProgress(0);
-    setTranscriptionAdagio('');
-    setTranscriptionOpenAI('');
-    
-    // Reset realtime transcription
-    resetRealtime();
 
     // Track analytics
     sessionManager.transcribeRequest();
     
-    // Timers for UI state transitions
+    // Timers and flags for UI state transitions
     let progressIntervalId: number | null = null;
     let toTranscribingTimeoutId: number | null = null;
     let finished = false;
     
     try {
-      // Create file for Adagio
+      // Create file from blob with appropriate name and type
       const fileName = audioMetadata?.format === 'wav' ? 'audio.wav' : 'audio.mp3';
       const fileType = audioMetadata?.format === 'wav' ? 'audio/wav' : 'audio/mp3';
       const audioFile = new File([audioBlob], fileName, { type: fileType });
 
-      // Convert audio to PCM16 24kHz for Realtime API
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      
-      // Convert to mono PCM16 24kHz
-      const float32Data = audioBuffer.getChannelData(0);
-      const int16Data = new Int16Array(float32Data.length);
-      for (let i = 0; i < float32Data.length; i++) {
-        const s = Math.max(-1, Math.min(1, float32Data[i]));
-        int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-      }
-      
-      // Convert to base64 PCM16 data
-      const uint8Data = new Uint8Array(int16Data.buffer);
-      let binary = '';
-      for (let i = 0; i < uint8Data.byteLength; i++) {
-        binary += String.fromCharCode(uint8Data[i]);
-      }
-      const base64Audio = btoa(binary);
-
-      // Connect to Realtime API if not connected
-      if (!realtimeConnected) {
-        await connectRealtime();
-        // Wait a bit for connection to establish
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
-      // Simulate upload progress
+      // Simulate upload progress for mejor UX
       progressIntervalId = window.setInterval(() => {
         setUploadProgress(prev => {
           if (prev < 90) return prev + 5;
@@ -129,7 +90,7 @@ export const TranscribeView = () => {
         });
       }, 200);
 
-      // Switch to transcribing state
+      // Pasar a estado "transcribing" tras breve delay salvo que ya haya terminado
       toTranscribingTimeoutId = window.setTimeout(() => {
         if (!finished) {
           setState('transcribing');
@@ -138,77 +99,30 @@ export const TranscribeView = () => {
         if (progressIntervalId) clearInterval(progressIntervalId);
       }, 800);
 
-      // Send audio to Realtime API in chunks
-      if (realtimeConnected) {
-        // Send audio in smaller chunks (20ms chunks for better real-time processing)
-        const chunkSize = 960; // 20ms at 24kHz * 2 bytes = 960 bytes
-        for (let i = 0; i < uint8Data.length; i += chunkSize) {
-          const chunk = uint8Data.subarray(i, Math.min(i + chunkSize, uint8Data.length));
-          let chunkBinary = '';
-          for (let j = 0; j < chunk.byteLength; j++) {
-            chunkBinary += String.fromCharCode(chunk[j]);
-          }
-          const chunkBase64 = btoa(chunkBinary);
-          sendAudio(chunkBase64);
-          
-          // Small delay between chunks to simulate real-time streaming
-          await new Promise(resolve => setTimeout(resolve, 20));
-        }
-        endAudio();
-      }
+      const result = await transcribeService.transcribeFile(audioFile);
 
-      // Call Adagio API in parallel
-      const adagioPromise = transcribeService.transcribeFile(audioFile);
-      
-      // Wait for both Adagio and realtime transcription
-      const adagioResult = await adagioPromise;
-      
-      // Wait for realtime transcription to complete (with timeout)
-      let attempts = 0;
-      const maxAttempts = 30; // 15 seconds timeout
-      while ((!realtimeTranscription || realtimeTranscribing) && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        attempts++;
-      }
-
-      // Cleanup timers
+      // Marcar como finalizado y limpiar timers
       finished = true;
       if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
       if (progressIntervalId) clearInterval(progressIntervalId);
       setUploadProgress(100);
 
-      // Set results
-      setTranscriptionAdagio(adagioResult.text);
-      setTranscriptionOpenAI(realtimeTranscription || 'Error: Timeout en transcripción realtime');
-
+      setTranscription(result.text);
       setState('completed');
 
       // Track success analytics
-      const hasValidTranscription = (adagioResult.text && !adagioResult.text.includes('Error:')) || 
-                                  (realtimeTranscription && !realtimeTranscription.includes('Error:'));
-      
-      if (hasValidTranscription) {
-        const duration = audioMetadata?.duration || 0;
-        sessionManager.transcribeSuccess(duration);
-        
-        toast({
-          title: "Transcripción completada",
-          description: "Audio transcrito con ambos servicios"
-        });
-      } else {
-        sessionManager.transcribeError('Both services failed');
-        
-        toast({
-          title: "Error de transcripción",
-          description: "Ambos servicios fallaron en la transcripción",
-          variant: "destructive"
-        });
-      }
+      const duration = audioMetadata?.duration || 0;
+      sessionManager.transcribeSuccess(duration);
+
+      toast({
+        title: "Transcripción completada",
+        description: "El audio ha sido transcrito exitosamente"
+      });
 
     } catch (error) {
       const transcribeError = error as TranscribeError;
 
-      // Cleanup timers
+      // Cleanup timers to avoid stale state updates
       if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
       if (progressIntervalId) clearInterval(progressIntervalId);
 
@@ -231,44 +145,29 @@ export const TranscribeView = () => {
     }
   };
 
-  // Use realtime transcription results
-  useEffect(() => {
-    if (realtimeTranscription && state === 'transcribing') {
-      setTranscriptionOpenAI(realtimeTranscription);
-    }
-  }, [realtimeTranscription, state]);
-
-  // Handle realtime errors
-  useEffect(() => {
-    if (realtimeError) {
-      setTranscriptionOpenAI(`Error: ${realtimeError}`);
-    }
-  }, [realtimeError]);
-
-  const handleCopyTranscription = useCallback((text: string, service: string) => {
-    if (text) {
-      navigator.clipboard.writeText(text);
+  const handleCopyTranscription = useCallback(() => {
+    if (transcription) {
+      navigator.clipboard.writeText(transcription);
       toast({
         title: "Copiado",
-        description: `Transcripción de ${service} copiada al portapapeles`,
+        description: "Transcripción copiada al portapapeles",
       });
     }
-  }, [toast]);
+  }, [transcription, toast]);
 
-  const handleDownloadTranscription = useCallback((text: string, service: string) => {
-    if (text) {
-      const content = `Transcripción - ${service}\n\n${text}`;
-      const blob = new Blob([content], { type: 'text/plain' });
+  const handleDownloadTranscription = useCallback(() => {
+    if (transcription) {
+      const blob = new Blob([transcription], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `transcripcion_${service.toLowerCase().replace(/\s+/g, '_')}.txt`;
+      a.download = 'transcripcion.txt';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
-  }, []);
+  }, [transcription]);
 
   const handleRetry = () => {
     setError(null);
@@ -278,8 +177,7 @@ export const TranscribeView = () => {
   const handleReset = () => {
     setAudioBlob(null);
     setAudioMetadata(null);
-    setTranscriptionAdagio('');
-    setTranscriptionOpenAI('');
+    setTranscription('');
     setError(null);
     setState('idle');
     setUploadProgress(0);
@@ -314,9 +212,8 @@ export const TranscribeView = () => {
   };
 
   const stateConfig = getStateConfig();
-  const isProcessing = state === 'uploading' || state === 'transcribing' || realtimeTranscribing;
+  const isProcessing = state === 'uploading' || state === 'transcribing';
   const canTranscribe = audioBlob && backendOnline && !isProcessing;
-  const hasResults = transcriptionAdagio || transcriptionOpenAI;
   
   // Debug info - remove in production
   console.log('TranscribeView state:', { 
@@ -325,7 +222,7 @@ export const TranscribeView = () => {
     isProcessing, 
     canTranscribe,
     state,
-    hasResults
+    transcription: !!transcription
   });
 
   return (
@@ -418,124 +315,75 @@ export const TranscribeView = () => {
               </div>
             )}
             
-            {/* Show comparison results when completed */}
-            {state === 'completed' && hasResults && (
-              <div className="w-full space-y-6 mt-6" role="region" aria-labelledby="transcription-results">
-                <h4 id="transcription-results" className="text-lg font-semibold text-center">
-                  Comparativa de Transcripciones
-                </h4>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Adagio Results */}
-                  <Card className="p-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h5 className="font-semibold text-primary">Adagio</h5>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCopyTranscription(transcriptionAdagio, 'Adagio')}
-                            disabled={!transcriptionAdagio || transcriptionAdagio.includes('Error:')}
-                          >
-                            <Copy className="h-4 w-4 mr-1" />
-                            Copiar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownloadTranscription(transcriptionAdagio, 'Adagio')}
-                            disabled={!transcriptionAdagio || transcriptionAdagio.includes('Error:')}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Descargar
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <Textarea
-                        value={transcriptionAdagio || 'Transcribiendo...'}
-                        readOnly
-                        className={`min-h-[120px] resize-none text-sm ${
-                          transcriptionAdagio?.includes('Error:') 
-                            ? 'bg-destructive/10 text-destructive' 
-                            : 'bg-muted/30'
-                        }`}
-                        placeholder="Transcripción de Adagio aparecerá aquí..."
-                        aria-label="Transcripción de Adagio"
-                      />
-                    </div>
-                  </Card>
-
-                  {/* OpenAI Results */}
-                  <Card className="p-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h5 className="font-semibold text-primary">ChatGPT 4o transcribe</h5>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCopyTranscription(transcriptionOpenAI, 'ChatGPT 4o')}
-                            disabled={!transcriptionOpenAI || transcriptionOpenAI.includes('Error:')}
-                          >
-                            <Copy className="h-4 w-4 mr-1" />
-                            Copiar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownloadTranscription(transcriptionOpenAI, 'ChatGPT 4o')}
-                            disabled={!transcriptionOpenAI || transcriptionOpenAI.includes('Error:')}
-                          >
-                            <Download className="h-4 w-4 mr-1" />
-                            Descargar
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <Textarea
-                        value={transcriptionOpenAI || 'Transcribiendo...'}
-                        readOnly
-                        className={`min-h-[120px] resize-none text-sm ${
-                          transcriptionOpenAI?.includes('Error:') 
-                            ? 'bg-destructive/10 text-destructive' 
-                            : 'bg-muted/30'
-                        }`}
-                        placeholder="Transcripción de ChatGPT 4o aparecerá aquí..."
-                        aria-label="Transcripción de ChatGPT 4o"
-                      />
-                    </div>
-                  </Card>
-                </div>
-                
-                {audioMetadata && (
-                  <div 
-                    className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-muted/20 p-3 rounded-md gap-2"
-                    role="complementary"
-                    aria-label="Información del archivo de audio"
-                  >
-                    <span className="text-center sm:text-left">
-                      Procesado: {audioMetadata.format.toUpperCase()} • 
-                      {audioMetadata.sampleRate}Hz • 
-                      {audioMetadata.channels} canal{audioMetadata.channels !== 1 ? 'es' : ''}
-                    </span>
-                    <span>
-                      Duración: {Math.round(audioMetadata.duration)}s
-                    </span>
+            {/* Show transcription directly in the same widget when completed */}
+            {state === 'completed' && transcription && (
+              <div className="w-full space-y-4 mt-6" role="region" aria-labelledby="transcription-results">
+                <div className="space-y-4">
+                  <h4 id="transcription-results" className="sr-only">Resultados de la transcripción</h4>
+                  <div className="flex flex-col sm:flex-row justify-center items-center gap-2" role="toolbar" aria-label="Acciones de transcripción">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyTranscription}
+                      className="w-full sm:w-auto"
+                      aria-describedby="copy-description"
+                    >
+                      <Copy className="h-4 w-4 mr-2" aria-hidden="true" />
+                      Copiar
+                    </Button>
+                    <div id="copy-description" className="sr-only">Copiar transcripción al portapapeles</div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadTranscription}
+                      className="w-full sm:w-auto"
+                      aria-describedby="download-description"
+                    >
+                      <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+                      Descargar
+                    </Button>
+                    <div id="download-description" className="sr-only">Descargar transcripción como archivo de texto</div>
                   </div>
-                )}
-                
-                <div className="flex justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={handleReset}
-                    aria-describedby="reset-description"
-                  >
-                    Transcribir otro audio
-                  </Button>
-                  <div id="reset-description" className="sr-only">
-                    Limpiar el audio actual y comenzar una nueva transcripción
+                  
+                  <Textarea
+                    value={transcription}
+                    readOnly
+                    className="min-h-[120px] resize-none bg-muted/30 text-center"
+                    placeholder="La transcripción aparecerá aquí..."
+                    aria-label="Texto transcrito"
+                    aria-describedby="transcription-info"
+                  />
+                  
+                  {audioMetadata && (
+                    <div 
+                      id="transcription-info"
+                      className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-muted/20 p-3 rounded-md gap-2"
+                      role="complementary"
+                      aria-label="Información del archivo de audio"
+                    >
+                      <span className="text-center sm:text-left">
+                        Procesado: {audioMetadata.format.toUpperCase()} • 
+                        {audioMetadata.sampleRate}Hz • 
+                        {audioMetadata.channels} canal{audioMetadata.channels !== 1 ? 'es' : ''}
+                      </span>
+                      <span>
+                        Duración: {Math.round(audioMetadata.duration)}s
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={handleReset}
+                      aria-describedby="reset-description"
+                    >
+                      Transcribir otro audio
+                    </Button>
+                    <div id="reset-description" className="sr-only">
+                      Limpiar el audio actual y comenzar una nueva transcripción
+                    </div>
                   </div>
                 </div>
               </div>
@@ -555,10 +403,10 @@ export const TranscribeView = () => {
       )}
 
       {/* Transcribe Button */}
-      {!isProcessing && !hasResults && audioBlob && (
+      {!isProcessing && !transcription && audioBlob && (
         <div className="flex flex-col items-center space-y-4" id="transcribe-controls">
           <Button 
-            onClick={handleTranscribeRealtime}
+            onClick={handleTranscribe}
             disabled={!canTranscribe}
             size="xl"
             variant="default"
@@ -567,10 +415,10 @@ export const TranscribeView = () => {
             tabIndex={0}
           >
             <FileAudio className="mr-2 h-4 w-4" aria-hidden="true" />
-            Transcribir Audio (GPT-4o Realtime)
+            Transcribir Audio
           </Button>
           <div id="transcribe-button-description" className="sr-only">
-            Iniciar transcripción del audio grabado o subido usando GPT-4o Realtime API
+            Iniciar transcripción del audio grabado o subido
           </div>
           {!backendOnline && (
             <p 
@@ -585,7 +433,7 @@ export const TranscribeView = () => {
       )}
 
       {/* Empty State */}
-      {!audioBlob && !hasResults && !error && state === 'idle' && (
+      {!audioBlob && !transcription && !error && state === 'idle' && (
         <EmptyState
           icon={FileAudio}
           title="Listo para transcribir"
