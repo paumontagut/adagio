@@ -37,8 +37,7 @@ export const MyData = () => {
                 <AlertDescription>
                   <strong>Gestión de Datos Personalizada:</strong>
                   <br />
-                  Para cualquier consulta sobre tus datos, solicitud de descarga, 
-                  modificación o eliminación, por favor contacta directamente con nosotros.
+                  Para cualquier consulta o ejercicio de derechos RGPD, por favor contacta directamente con nosotros.
                 </AlertDescription>
               </Alert>
               

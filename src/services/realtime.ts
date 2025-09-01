@@ -140,24 +140,34 @@ export class RealtimeTranscriber {
 
       console.log('Connecting to OpenAI Realtime API...');
 
-      // Connect to OpenAI Realtime API
-      const response = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${ephemeralToken}`,
-          "Content-Type": "application/sdp",
-          "OpenAI-Beta": "realtime=v1"
-        },
-        body: offer.sdp,
-      });
+      // Connect to OpenAI Realtime API with simple retry
+      let answerSdp: string | null = null;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const response = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${ephemeralToken}`,
+              "Content-Type": "application/sdp",
+              "OpenAI-Beta": "realtime=v1"
+            },
+            body: offer.sdp,
+          });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('OpenAI Realtime API error:', response.status, errorText);
-        throw new Error(`OpenAI Realtime API error: ${response.status} ${errorText}`);
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`OpenAI Realtime API error: ${response.status} ${errorText}`);
+          }
+
+          answerSdp = await response.text();
+          break; // success
+        } catch (err) {
+          console.error(`Realtime SDP fetch attempt ${attempt} failed:`, err);
+          if (attempt === 2) throw err;
+          await new Promise((r) => setTimeout(r, 700));
+        }
       }
 
-      const answerSdp = await response.text();
       console.log('Received answer SDP, setting remote description...');
 
       await this.pc.setRemoteDescription({
@@ -271,7 +281,7 @@ export class RealtimeTranscriber {
           type: 'session.update',
           session: {
             modalities: ["text"],
-            instructions: "You are a speech-to-text transcription service. Only transcribe what you hear in the audio. Do not respond, do not answer questions, do not provide commentary. Simply transcribe the speech to text accurately.",
+            instructions: "Eres un servicio de transcripción. Solo transcribe lo que escuches. No respondas ni converses.",
             input_audio_format: "pcm16",
             input_audio_transcription: {
               model: "whisper-1"
@@ -281,7 +291,7 @@ export class RealtimeTranscriber {
               threshold: 0.5,
               prefix_padding_ms: 300,
               silence_duration_ms: 1000,
-              create_response: false,
+              create_response: true, // auto-crear respuesta al detectar fin de habla
               interrupt_response: true
             }
           }
@@ -336,6 +346,14 @@ export class RealtimeTranscriber {
         this.callbacks.onError(message.error?.message || 'Unknown realtime error');
         break;
         
+      case 'input_audio_buffer.speech_stopped':
+        // When VAD detects end of speech, ensure a response is created (mic mode)
+        if (this.audioSource === 'microphone' && this.dc?.readyState === 'open') {
+          console.log('Speech stopped detected, forcing response.create');
+          this.dc.send(JSON.stringify({ type: 'response.create' }));
+        }
+        break;
+      
       default:
         console.log('Unhandled message type:', message.type);
     }

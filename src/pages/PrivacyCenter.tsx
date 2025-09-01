@@ -91,12 +91,14 @@ export const PrivacyCenter = () => {
                   </p>
                   <ul className="text-left max-w-md mx-auto space-y-1">
                     <li>• Acceso a tus datos personales</li>
-                    <li>• Descarga de tus grabaciones</li>
-                    <li>• Eliminación de datos específicos o completa</li>
-                    <li>• Corrección de información inexacta</li>
+                    <li>• Rectificación de información inexacta</li>
+                    <li>• Portabilidad de tus datos</li>
+                    <li>• Oposición o limitación del tratamiento</li>
                     <li>• Retirada de consentimientos</li>
-                    <li>• Oposición al procesamiento de datos</li>
                   </ul>
+                  <p className="text-xs mt-2">
+                    Todas las gestiones se realizan exclusivamente por correo en <strong>hola@adagioweb.com</strong>.
+                  </p>
                 </div>
               </div>
             </div>
