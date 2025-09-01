@@ -2,12 +2,14 @@ import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { RecorderUploader } from '@/components/RecorderUploader';
 import { BackendStatus } from '@/components/BackendStatus';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
+import ComparisonView from '@/components/ComparisonView';
 import { sessionManager } from '@/lib/sessionManager';
 import { transcribeService, type TranscribeError, type TranscribeProvider } from '@/services/transcribe';
 import type { ConversionResult } from '@/lib/audioConverter';
@@ -20,7 +22,9 @@ import {
   Waves, 
   CheckCircle,
   Bot,
-  Server
+  Server,
+  Zap,
+  GitCompare
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -293,24 +297,28 @@ export const TranscribeView = () => {
       <div className="text-center space-y-4">
         <div>
           <h2 id="transcribe-heading" className="text-2xl font-semibold text-foreground mb-2">
-            Transcripción de Audio - Comparativa
+            Transcripción de Audio
           </h2>
           <p className="text-muted-foreground" id="transcribe-description">
-            Graba tu voz o sube un archivo para transcribir con Adagio y ChatGPT 4o
+            Compara diferentes tecnologías de transcripción de audio
           </p>
-          <div className="flex justify-center gap-2 mt-2">
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Server className="h-3 w-3" />
-              Adagio
-            </Badge>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Bot className="h-3 w-3" />
-              ChatGPT 4o Transcribe
-            </Badge>
-          </div>
         </div>
       </div>
 
+      {/* Tabs */}
+      <Tabs defaultValue="batch" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="batch" className="flex items-center gap-2">
+            <GitCompare className="h-4 w-4" />
+            Comparativa Batch
+          </TabsTrigger>
+          <TabsTrigger value="realtime" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Realtime vs Batch
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="batch" className="space-y-6">
       {/* Audio Input Section */}
       <Card className="p-6" role="region" aria-labelledby="audio-input-heading">
         <div className="space-y-4">
@@ -555,6 +563,12 @@ export const TranscribeView = () => {
           autoRefresh={true}
         />
       </div>
+        </TabsContent>
+
+        <TabsContent value="realtime" className="space-y-6">
+          <ComparisonView />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

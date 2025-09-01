@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.stt-openai]
 verify_jwt = false
+
+[functions.realtime-ephemeral]
+verify_jwt = false
