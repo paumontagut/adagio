@@ -289,7 +289,7 @@ export class RealtimeTranscriber {
               prefix_padding_ms: 300,
               silence_duration_ms: 1000
             },
-            temperature: 0.2
+            temperature: 0.6
           }
         };
         
