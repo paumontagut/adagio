@@ -86,6 +86,42 @@ export const MyRecordings = () => {
     }
   };
 
+  const handleDownload = async (recording: Recording) => {
+    if (!recording.consent_store) {
+      toast.error('Esta grabación no tiene consentimiento para descarga');
+      return;
+    }
+
+    try {
+      // Generate filename
+      const dateStr = format(new Date(recording.created_at), 'yyyy-MM-dd_HH-mm-ss');
+      const phraseStr = recording.phrase_text.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+      const filename = `${phraseStr}_${dateStr}.${recording.format}`;
+
+      // Download from Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('audio_raw')
+        .download(recording.audio_url);
+
+      if (error) throw error;
+
+      // Create download link
+      const url = window.URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Descarga completada');
+    } catch (error) {
+      console.error('Error downloading recording:', error);
+      toast.error('Error al descargar la grabación');
+    }
+  };
+
   const formatDuration = (ms: number) => {
     const seconds = Math.round(ms / 1000);
     const minutes = Math.floor(seconds / 60);
@@ -214,7 +250,12 @@ export const MyRecordings = () => {
                     <Button size="sm" variant="outline">
                       <Play className="h-4 w-4" />
                     </Button>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleDownload(recording)}
+                      disabled={!recording.consent_store}
+                    >
                       <Download className="h-4 w-4" />
                     </Button>
                     <Button 

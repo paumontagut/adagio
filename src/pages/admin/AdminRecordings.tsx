@@ -321,6 +321,76 @@ export const AdminRecordings: React.FC = () => {
     }
   };
 
+  const handleDownloadSingle = async (recording: Recording) => {
+    if (!hasPermission('viewer')) {
+      toast({
+        title: "Sin permisos",
+        description: "No tienes permisos para descargar grabaciones",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!recording.consent_store) {
+      toast({
+        title: "Sin consentimiento",
+        description: "Esta grabación no tiene consentimiento para descarga",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Generate filename
+      const dateStr = format(new Date(recording.created_at), 'yyyy-MM-dd_HH-mm-ss');
+      const phraseStr = (recording.phrase_text || 'audio').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+      const formatExt = recording.format || recording.audio_format || 'wav';
+      const filename = `${phraseStr}_${dateStr}.${formatExt}`;
+
+      if (recording.is_encrypted) {
+        toast({
+          title: "Grabación cifrada",
+          description: "Las grabaciones cifradas requieren descifrado adicional. Use descarga masiva.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Download from Supabase Storage for unencrypted files
+      if (recording.audio_url && recording.audio_url !== 'encrypted_storage') {
+        const { data, error } = await supabase.storage
+          .from('audio_raw')
+          .download(recording.audio_url);
+
+        if (error) throw error;
+
+        // Create download link
+        const url = window.URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        toast({
+          title: "Descarga completada",
+          description: `Archivo ${filename} descargado correctamente`,
+        });
+      } else {
+        throw new Error('URL de audio no disponible');
+      }
+    } catch (error: any) {
+      console.error('Error downloading recording:', error);
+      toast({
+        title: "Error de descarga",
+        description: error.message || "No se pudo descargar la grabación",
+        variant: "destructive"
+      });
+    }
+  };
+
   const formatDuration = (ms?: number) => {
     if (!ms) return '-';
     const seconds = Math.floor(ms / 1000);
@@ -556,7 +626,12 @@ export const AdminRecordings: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleDownloadSingle(recording)}
+                        disabled={!hasPermission('viewer') || !recording.consent_store}
+                      >
                         <Download className="h-3 w-3" />
                       </Button>
                       {recording.audio_url && (
