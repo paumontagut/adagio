@@ -22,7 +22,7 @@ export type TranscribeProvider = 'adagio' | 'openai';
 const ENV = import.meta.env as any;
 const STT_PROVIDER = (ENV.VITE_STT_PROVIDER || 'adagio').toLowerCase() as TranscribeProvider;
 const ADAGIO_URL = ENV.VITE_TRANSCRIBE_URL || ENV.NEXT_PUBLIC_TRANSCRIBE_URL || '';
-const OPENAI_URL = ENV.VITE_STT_OPENAI_URL || `https://cydqkoohhzesogvctvhy.supabase.co/functions/v1/stt-openai`;
+const OPENAI_URL = ENV.VITE_STT_OPENAI_URL || `https://cydqkoohhzesogvctvhy.functions.supabase.co/functions/v1/stt-openai`;
 const HEALTH_URL = ENV.VITE_HEALTH_URL || ENV.NEXT_PUBLIC_HEALTH_URL || '';
 const TIMEOUT_MS = (parseInt(ENV.VITE_TRANSCRIBE_TIMEOUT || ENV.NEXT_PUBLIC_TRANSCRIBE_TIMEOUT) || 90) * 1000;
 
