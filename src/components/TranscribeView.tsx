@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { sessionManager } from '@/lib/sessionManager';
 import { transcribeService, type TranscribeError } from '@/services/transcribe';
+import { useRealtimeTranscribe } from '@/hooks/useRealtimeTranscribe';
 import type { ConversionResult } from '@/lib/audioConverter';
 import { 
   Loader2, 
@@ -20,7 +21,6 @@ import {
   Waves, 
   CheckCircle 
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 type TranscribeState = 'idle' | 'uploading' | 'transcribing' | 'completed' | 'error';
 
@@ -34,6 +34,19 @@ export const TranscribeView = () => {
   const [backendOnline, setBackendOnline] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
+  
+  // Realtime transcription hook
+  const {
+    isConnected: realtimeConnected,
+    isTranscribing: realtimeTranscribing,
+    transcription: realtimeTranscription,
+    error: realtimeError,
+    connect: connectRealtime,
+    disconnect: disconnectRealtime,
+    sendAudio,
+    endAudio,
+    reset: resetRealtime
+  } = useRealtimeTranscribe();
 
   // Track page view analytics
   useEffect(() => {
@@ -47,20 +60,11 @@ export const TranscribeView = () => {
     setState('idle');
   }, []);
 
-  const handleTranscribe = async () => {
+  const handleTranscribeRealtime = async () => {
     if (!audioBlob) {
       toast({
         title: "No hay audio",
         description: "Por favor graba audio o sube un archivo primero",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!backendOnline) {
-      toast({
-        title: "Servidor desconectado",
-        description: "El servidor de transcripción no está disponible",
         variant: "destructive"
       });
       return;
@@ -71,22 +75,25 @@ export const TranscribeView = () => {
     setUploadProgress(0);
     setTranscriptionAdagio('');
     setTranscriptionOpenAI('');
+    
+    // Reset realtime transcription
+    resetRealtime();
 
     // Track analytics
     sessionManager.transcribeRequest();
     
-    // Timers and flags for UI state transitions
+    // Timers for UI state transitions
     let progressIntervalId: number | null = null;
     let toTranscribingTimeoutId: number | null = null;
     let finished = false;
     
     try {
-      // Create file from blob with appropriate name and type
+      // Create file for Adagio
       const fileName = audioMetadata?.format === 'wav' ? 'audio.wav' : 'audio.mp3';
       const fileType = audioMetadata?.format === 'wav' ? 'audio/wav' : 'audio/mp3';
       const audioFile = new File([audioBlob], fileName, { type: fileType });
 
-      // Convert audio to base64 for OpenAI API
+      // Convert audio to base64 for Realtime API
       const arrayBuffer = await audioBlob.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
       let binary = '';
@@ -95,7 +102,14 @@ export const TranscribeView = () => {
       }
       const base64Audio = btoa(binary);
 
-      // Simulate upload progress for mejor UX
+      // Connect to Realtime API if not connected
+      if (!realtimeConnected) {
+        await connectRealtime();
+        // Wait a bit for connection to establish
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Simulate upload progress
       progressIntervalId = window.setInterval(() => {
         setUploadProgress(prev => {
           if (prev < 90) return prev + 5;
@@ -103,7 +117,7 @@ export const TranscribeView = () => {
         });
       }, 200);
 
-      // Pasar a estado "transcribing" tras breve delay salvo que ya haya terminado
+      // Switch to transcribing state
       toTranscribingTimeoutId = window.setTimeout(() => {
         if (!finished) {
           setState('transcribing');
@@ -112,54 +126,41 @@ export const TranscribeView = () => {
         if (progressIntervalId) clearInterval(progressIntervalId);
       }, 800);
 
-      // Call both APIs in parallel
-      const [adagioResult, openAIResult] = await Promise.allSettled([
-        transcribeService.transcribeFile(audioFile),
-        supabase.functions.invoke('openai-transcribe', {
-          body: { audio: base64Audio }
-        })
-      ]);
+      // Send audio to Realtime API
+      if (realtimeConnected) {
+        sendAudio(base64Audio);
+        endAudio();
+      }
 
-      // Marcar como finalizado y limpiar timers
+      // Call Adagio API in parallel
+      const adagioPromise = transcribeService.transcribeFile(audioFile);
+      
+      // Wait for both Adagio and realtime transcription
+      const adagioResult = await adagioPromise;
+      
+      // Wait for realtime transcription to complete (with timeout)
+      let attempts = 0;
+      const maxAttempts = 30; // 15 seconds timeout
+      while ((!realtimeTranscription || realtimeTranscribing) && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        attempts++;
+      }
+
+      // Cleanup timers
       finished = true;
       if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
       if (progressIntervalId) clearInterval(progressIntervalId);
       setUploadProgress(100);
 
-      // Handle Adagio result
-      if (adagioResult.status === 'fulfilled') {
-        setTranscriptionAdagio(adagioResult.value.text);
-      } else {
-        console.error('Adagio transcription failed:', adagioResult.reason);
-        setTranscriptionAdagio('Error: No se pudo transcribir con Adagio');
-      }
-
-      // Handle OpenAI result
-      if (openAIResult.status === 'fulfilled' && openAIResult.value.data) {
-        setTranscriptionOpenAI(openAIResult.value.data.text);
-      } else {
-        if (openAIResult.status === 'rejected') {
-          console.error('OpenAI transcription failed:', openAIResult.reason);
-          setTranscriptionOpenAI('Error: No se pudo transcribir con OpenAI');
-        } else if (openAIResult.value.error) {
-          // Handle specific error types from the edge function
-          const errorData = openAIResult.value.data;
-          if (errorData?.error === 'INSUFFICIENT_QUOTA') {
-            setTranscriptionOpenAI('Error: Cuota de OpenAI agotada o sin facturación');
-          } else {
-            setTranscriptionOpenAI('Error: No se pudo transcribir con OpenAI');
-          }
-        } else {
-          console.error('OpenAI transcription failed: Invalid response format');
-          setTranscriptionOpenAI('Error: Respuesta inválida de OpenAI');
-        }
-      }
+      // Set results
+      setTranscriptionAdagio(adagioResult.text);
+      setTranscriptionOpenAI(realtimeTranscription || 'Error: Timeout en transcripción realtime');
 
       setState('completed');
 
-      // Track success analytics - only if at least one transcription succeeded
-      const hasValidTranscription = (transcriptionAdagio && !transcriptionAdagio.includes('Error:')) || 
-                                  (transcriptionOpenAI && !transcriptionOpenAI.includes('Error:'));
+      // Track success analytics
+      const hasValidTranscription = (adagioResult.text && !adagioResult.text.includes('Error:')) || 
+                                  (realtimeTranscription && !realtimeTranscription.includes('Error:'));
       
       if (hasValidTranscription) {
         const duration = audioMetadata?.duration || 0;
@@ -182,7 +183,7 @@ export const TranscribeView = () => {
     } catch (error) {
       const transcribeError = error as TranscribeError;
 
-      // Cleanup timers to avoid stale state updates
+      // Cleanup timers
       if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
       if (progressIntervalId) clearInterval(progressIntervalId);
 
@@ -204,6 +205,20 @@ export const TranscribeView = () => {
       setUploadProgress(0);
     }
   };
+
+  // Use realtime transcription results
+  useEffect(() => {
+    if (realtimeTranscription && state === 'transcribing') {
+      setTranscriptionOpenAI(realtimeTranscription);
+    }
+  }, [realtimeTranscription, state]);
+
+  // Handle realtime errors
+  useEffect(() => {
+    if (realtimeError) {
+      setTranscriptionOpenAI(`Error: ${realtimeError}`);
+    }
+  }, [realtimeError]);
 
   const handleCopyTranscription = useCallback((text: string, service: string) => {
     if (text) {
@@ -274,7 +289,7 @@ export const TranscribeView = () => {
   };
 
   const stateConfig = getStateConfig();
-  const isProcessing = state === 'uploading' || state === 'transcribing';
+  const isProcessing = state === 'uploading' || state === 'transcribing' || realtimeTranscribing;
   const canTranscribe = audioBlob && backendOnline && !isProcessing;
   const hasResults = transcriptionAdagio || transcriptionOpenAI;
   
@@ -518,7 +533,7 @@ export const TranscribeView = () => {
       {!isProcessing && !hasResults && audioBlob && (
         <div className="flex flex-col items-center space-y-4" id="transcribe-controls">
           <Button 
-            onClick={handleTranscribe}
+            onClick={handleTranscribeRealtime}
             disabled={!canTranscribe}
             size="xl"
             variant="default"
@@ -527,10 +542,10 @@ export const TranscribeView = () => {
             tabIndex={0}
           >
             <FileAudio className="mr-2 h-4 w-4" aria-hidden="true" />
-            Transcribir Audio
+            Transcribir Audio (GPT-4o Realtime)
           </Button>
           <div id="transcribe-button-description" className="sr-only">
-            Iniciar transcripción del audio grabado o subido
+            Iniciar transcripción del audio grabado o subido usando GPT-4o Realtime API
           </div>
           {!backendOnline && (
             <p 
