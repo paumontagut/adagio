@@ -1,4 +1,4 @@
-// Transcription service for communicating with FastAPI backend
+// Transcription service supporting multiple providers (Adagio server + OpenAI)
 
 export interface HealthResponse {
   online: boolean;
@@ -7,6 +7,7 @@ export interface HealthResponse {
 
 export interface TranscribeResponse {
   text: string;
+  provider?: string;
 }
 
 export interface TranscribeError {
@@ -15,15 +16,46 @@ export interface TranscribeError {
   details?: string;
 }
 
-const TRANSCRIBE_URL = import.meta.env.VITE_TRANSCRIBE_URL || import.meta.env.NEXT_PUBLIC_TRANSCRIBE_URL || '';
-const HEALTH_URL = import.meta.env.VITE_HEALTH_URL || import.meta.env.NEXT_PUBLIC_HEALTH_URL || '';
-const TIMEOUT_MS = (parseInt(import.meta.env.VITE_TRANSCRIBE_TIMEOUT || import.meta.env.NEXT_PUBLIC_TRANSCRIBE_TIMEOUT) || 90) * 1000;
+export type TranscribeProvider = 'adagio' | 'openai';
+
+// Environment configuration
+const ENV = import.meta.env as any;
+const STT_PROVIDER = (ENV.VITE_STT_PROVIDER || 'adagio').toLowerCase() as TranscribeProvider;
+const ADAGIO_URL = ENV.VITE_TRANSCRIBE_URL || ENV.NEXT_PUBLIC_TRANSCRIBE_URL || '';
+const OPENAI_URL = ENV.VITE_STT_OPENAI_URL || `https://cydqkoohhzesogvctvhy.supabase.co/functions/v1/stt-openai`;
+const HEALTH_URL = ENV.VITE_HEALTH_URL || ENV.NEXT_PUBLIC_HEALTH_URL || '';
+const TIMEOUT_MS = (parseInt(ENV.VITE_TRANSCRIBE_TIMEOUT || ENV.NEXT_PUBLIC_TRANSCRIBE_TIMEOUT) || 90) * 1000;
 
 class TranscribeService {
+  private currentProvider: TranscribeProvider = STT_PROVIDER;
+
+  /**
+   * Get current provider configuration
+   */
+  getProviderInfo() {
+    return {
+      provider: this.currentProvider,
+      name: this.currentProvider === 'openai' ? 'ChatGPT 4o Transcribe' : 'Adagio',
+      url: this.currentProvider === 'openai' ? OPENAI_URL : ADAGIO_URL
+    };
+  }
+
+  /**
+   * Set the transcription provider
+   */
+  setProvider(provider: TranscribeProvider) {
+    this.currentProvider = provider;
+  }
+
   /**
    * Check if the transcription backend is online
    */
   async ping(): Promise<HealthResponse> {
+    // OpenAI doesn't have a health check endpoint, assume it's online
+    if (this.currentProvider === 'openai') {
+      return { online: true };
+    }
+
     if (!HEALTH_URL) {
       return { online: false, error: 'URL de salud no configurada' };
     }
@@ -65,11 +97,14 @@ class TranscribeService {
    * Upload and transcribe an audio file
    */
   async transcribeFile(file: File): Promise<TranscribeResponse> {
-    if (!TRANSCRIBE_URL) {
+    const endpoint = this.currentProvider === 'openai' ? OPENAI_URL : ADAGIO_URL;
+    const providerName = this.getProviderInfo().name;
+
+    if (!endpoint) {
       throw this.createError(
         'CONFIG_ERROR',
-        'URL de transcripción no configurada',
-        'Verifica que VITE_TRANSCRIBE_URL esté configurado'
+        `URL de transcripción no configurada para ${providerName}`,
+        `Verifica que ${this.currentProvider === 'openai' ? 'VITE_STT_OPENAI_URL' : 'VITE_TRANSCRIBE_URL'} esté configurado`
       );
     }
 
@@ -108,7 +143,7 @@ class TranscribeService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-      const response = await fetch(TRANSCRIBE_URL, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
         signal: controller.signal,
@@ -156,7 +191,10 @@ class TranscribeService {
         );
       }
 
-      return { text: result.text };
+      return { 
+        text: result.text,
+        provider: providerName
+      };
 
     } catch (error) {
       if (error instanceof Error) {
