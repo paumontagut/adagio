@@ -341,7 +341,7 @@ export const PrivacyCenter = () => {
                     <strong>¿Necesitas eliminar tus datos?</strong>
                     <br />
                     Si has grabado como usuario invitado y deseas eliminar tus datos personales, 
-                    contacta directamente a <strong>adagio@symplia.es</strong> con tu documentación 
+                    contacta directamente a <strong>hola@adagioweb.com</strong> con tu documentación 
                     de identidad y detalles de las grabaciones.
                   </AlertDescription>
                 </Alert>
@@ -526,7 +526,7 @@ export const PrivacyCenter = () => {
                 <h3 className="font-medium mb-2">Contacto</h3>
                 <p className="text-muted-foreground">
                   Para ejercer tus derechos o realizar consultas sobre privacidad, 
-                  contacta con nosotros en: <strong>adagio@symplia.es</strong>
+                  contacta con nosotros en: <strong>hola@adagioweb.com</strong>
                 </p>
               </div>
             </div>

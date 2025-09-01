@@ -8,7 +8,7 @@ import { Footer } from '@/components/Footer';
 import { AuthButton } from '@/components/AuthButton';
 import { UserMenu } from '@/components/UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, HardDrive } from 'lucide-react';
+import { Shield, Database } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 const Index = () => {
@@ -45,14 +45,14 @@ const Index = () => {
           >
             {user && (
               <>
-                <Link to="/my-recordings" className="hidden sm:block">
+                <Link to="/privacy-center" className="hidden sm:block">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs"
                   >
-                    <HardDrive className="h-3 w-3 mr-1" aria-hidden="true" />
-                    Grabaciones
+                    <Shield className="h-3 w-3 mr-1" aria-hidden="true" />
+                    Privacidad
                   </Button>
                 </Link>
                 <Link to="/my-data" className="hidden sm:block">
@@ -61,7 +61,7 @@ const Index = () => {
                     size="sm" 
                     className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs"
                   >
-                    <HardDrive className="h-3 w-3 mr-1" aria-hidden="true" />
+                    <Database className="h-3 w-3 mr-1" aria-hidden="true" />
                     Datos
                   </Button>
                 </Link>

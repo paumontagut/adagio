@@ -143,7 +143,7 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: Train
           <div className="text-xs text-muted-foreground space-y-2 p-4 bg-muted/30 rounded-lg">
             <p><strong>Información RGPD:</strong></p>
             <ul className="space-y-1 ml-4">
-              <li>• <strong>Responsable:</strong> Symplia (adagio@symplia.es)</li>
+              <li>• <strong>Responsable:</strong> Adagio (hola@adagioweb.com)</li>
               <li>• <strong>Finalidad:</strong> Entrenamiento de modelos de IA y mejora del servicio</li>
               <li>• <strong>Base legal:</strong> Consentimiento explícito (Art. 6.1.a y 9.2.a RGPD)</li>
               <li>• <strong>Conservación:</strong> Hasta revocación del consentimiento</li>

@@ -42,10 +42,10 @@ export const GuestDataManager = () => {
                 <strong>Contacto para eliminación de datos:</strong>
                 <br />
                 Email: <a 
-                  href="mailto:adagio@symplia.es" 
+                  href="mailto:hola@adagioweb.com" 
                   className="text-primary hover:text-primary/80 underline font-medium"
                 >
-                  adagio@symplia.es
+                  hola@adagioweb.com
                 </a>
               </AlertDescription>
             </Alert>
@@ -79,7 +79,7 @@ export const GuestDataManager = () => {
 
             <div className="text-center pt-4">
               <a
-                href="mailto:adagio@symplia.es?subject=Solicitud de eliminación de datos - Usuario invitado"
+                href="mailto:hola@adagioweb.com?subject=Solicitud de eliminación de datos - Usuario invitado"
                 className="inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-lg font-medium transition-colors"
               >
                 <Mail className="h-4 w-4" />

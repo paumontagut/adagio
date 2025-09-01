@@ -40,12 +40,6 @@ export const AuthButton = () => {
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link to="/my-recordings" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Mis Grabaciones
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
             <Link to="/privacy-center" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Centro de Privacidad

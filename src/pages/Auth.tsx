@@ -264,7 +264,7 @@ export const Auth = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="correo@ejemplo.com"
+                  placeholder="hola@adagioweb.com"
                   required
                 />
               </div>

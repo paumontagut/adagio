@@ -473,7 +473,7 @@ export const PrivacyPolicy = () => {
                     <Database className="h-4 w-4 text-primary" />
                     <span>Mis Datos</span>
                   </Link>
-                  <a href="mailto:dpo@adagio.es" className="flex items-center gap-2 p-2 bg-card rounded hover:bg-muted/50 transition-colors">
+                  <a href="mailto:hola@adagioweb.com" className="flex items-center gap-2 p-2 bg-card rounded hover:bg-muted/50 transition-colors">
                     <FileText className="h-4 w-4 text-primary" />
                     <span>Contactar DPO</span>
                   </a>

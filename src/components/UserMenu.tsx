@@ -63,12 +63,6 @@ export const UserMenu = () => {
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/my-recordings" className="cursor-pointer">
-            <User className="mr-2 h-4 w-4" />
-            Mis grabaciones
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
           <Link to="/my-data" className="cursor-pointer">
             <HardDrive className="mr-2 h-4 w-4" />
             Mis datos
