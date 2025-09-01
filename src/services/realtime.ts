@@ -270,11 +270,9 @@ export class RealtimeTranscriber {
         const sessionUpdate = {
           type: 'session.update',
           session: {
-            modalities: ["text", "audio"],
-            instructions: "You are a transcription assistant. Transcribe the audio accurately.",
-            voice: "alloy",
+            modalities: ["text"],
+            instructions: "You are a speech-to-text transcription service. Only transcribe what you hear in the audio. Do not respond, do not answer questions, do not provide commentary. Simply transcribe the speech to text accurately.",
             input_audio_format: "pcm16",
-            output_audio_format: "pcm16",
             input_audio_transcription: {
               model: "whisper-1"
             },
@@ -285,8 +283,7 @@ export class RealtimeTranscriber {
               silence_duration_ms: 1000,
               create_response: false,
               interrupt_response: true
-            },
-            temperature: 0.6
+            }
           }
         };
         
