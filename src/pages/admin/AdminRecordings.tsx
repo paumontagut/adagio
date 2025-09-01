@@ -391,6 +391,30 @@ export const AdminRecordings: React.FC = () => {
     }
   };
 
+  const handlePlaySingle = async (recording: Recording) => {
+    try {
+      if (recording.is_encrypted || !recording.audio_url || recording.audio_url === 'encrypted_storage') {
+        throw new Error('Archivo no disponible para reproducción');
+      }
+      const { data, error } = await supabase.storage
+        .from('audio_raw')
+        .createSignedUrl(recording.audio_url, 60);
+      if (error || !data?.signedUrl) {
+        const dl = await supabase.storage.from('audio_raw').download(recording.audio_url);
+        if (dl.error) throw dl.error;
+        const objectUrl = URL.createObjectURL(dl.data);
+        const audio = new Audio(objectUrl);
+        await audio.play();
+        return;
+      }
+      const audio = new Audio(data.signedUrl);
+      await audio.play();
+    } catch (err: any) {
+      console.error('Error playing recording:', err);
+      toast({ title: 'Error al reproducir', description: err.message || 'No se pudo reproducir la grabación', variant: 'destructive' });
+    }
+  };
+
   const formatDuration = (ms?: number) => {
     if (!ms) return '-';
     const seconds = Math.floor(ms / 1000);
@@ -630,12 +654,12 @@ export const AdminRecordings: React.FC = () => {
                         size="sm" 
                         variant="outline"
                         onClick={() => handleDownloadSingle(recording)}
-                        disabled={!hasPermission('viewer') || !recording.consent_store}
+                        disabled={!hasPermission('viewer') || !recording.consent_store || !recording.audio_url || recording.audio_url === 'encrypted_storage'}
                       >
                         <Download className="h-3 w-3" />
                       </Button>
                       {recording.audio_url && (
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => handlePlaySingle(recording)} disabled={!recording.audio_url || recording.audio_url === 'encrypted_storage'}>
                           <Play className="h-3 w-3" />
                         </Button>
                       )}

@@ -98,6 +98,10 @@ export const MyRecordings = () => {
       const phraseStr = recording.phrase_text.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
       const filename = `${phraseStr}_${dateStr}.${recording.format}`;
 
+      if (!recording.audio_url || recording.audio_url === 'encrypted_storage') {
+        throw new Error('Archivo no disponible para descarga');
+      }
+
       // Download from Supabase Storage
       const { data, error } = await supabase.storage
         .from('audio_raw')
@@ -119,6 +123,35 @@ export const MyRecordings = () => {
     } catch (error) {
       console.error('Error downloading recording:', error);
       toast.error('Error al descargar la grabación');
+    }
+  };
+
+  const handlePlay = async (recording: Recording) => {
+    try {
+      if (!recording.audio_url || recording.audio_url === 'encrypted_storage') {
+        throw new Error('Archivo no disponible para reproducción');
+      }
+
+      // Prefer signed URL for streaming
+      const { data, error } = await supabase.storage
+        .from('audio_raw')
+        .createSignedUrl(recording.audio_url, 60);
+
+      if (error || !data?.signedUrl) {
+        // Fallback to blob
+        const dl = await supabase.storage.from('audio_raw').download(recording.audio_url);
+        if (dl.error) throw dl.error;
+        const objectUrl = URL.createObjectURL(dl.data);
+        const audio = new Audio(objectUrl);
+        await audio.play();
+        return;
+      }
+
+      const audio = new Audio(data.signedUrl);
+      await audio.play();
+    } catch (err) {
+      console.error('Error playing recording:', err);
+      toast.error('No se pudo reproducir la grabación');
     }
   };
 
