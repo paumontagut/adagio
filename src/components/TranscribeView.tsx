@@ -20,11 +20,13 @@ import {
   Waves, 
   CheckCircle 
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 type TranscribeState = 'idle' | 'uploading' | 'transcribing' | 'completed' | 'error';
 
 export const TranscribeView = () => {
-  const [transcription, setTranscription] = useState('');
+  const [transcriptionAdagio, setTranscriptionAdagio] = useState('');
+  const [transcriptionOpenAI, setTranscriptionOpenAI] = useState('');
   const [state, setState] = useState<TranscribeState>('idle');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioMetadata, setAudioMetadata] = useState<ConversionResult | null>(null);
@@ -67,6 +69,8 @@ export const TranscribeView = () => {
     setState('uploading');
     setError(null);
     setUploadProgress(0);
+    setTranscriptionAdagio('');
+    setTranscriptionOpenAI('');
 
     // Track analytics
     sessionManager.transcribeRequest();
@@ -81,6 +85,15 @@ export const TranscribeView = () => {
       const fileName = audioMetadata?.format === 'wav' ? 'audio.wav' : 'audio.mp3';
       const fileType = audioMetadata?.format === 'wav' ? 'audio/wav' : 'audio/mp3';
       const audioFile = new File([audioBlob], fileName, { type: fileType });
+
+      // Convert audio to base64 for OpenAI API
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64Audio = btoa(binary);
 
       // Simulate upload progress for mejor UX
       progressIntervalId = window.setInterval(() => {
@@ -99,7 +112,13 @@ export const TranscribeView = () => {
         if (progressIntervalId) clearInterval(progressIntervalId);
       }, 800);
 
-      const result = await transcribeService.transcribeFile(audioFile);
+      // Call both APIs in parallel
+      const [adagioResult, openAIResult] = await Promise.allSettled([
+        transcribeService.transcribeFile(audioFile),
+        supabase.functions.invoke('openai-transcribe', {
+          body: { audio: base64Audio }
+        })
+      ]);
 
       // Marcar como finalizado y limpiar timers
       finished = true;
@@ -107,7 +126,26 @@ export const TranscribeView = () => {
       if (progressIntervalId) clearInterval(progressIntervalId);
       setUploadProgress(100);
 
-      setTranscription(result.text);
+      // Handle Adagio result
+      if (adagioResult.status === 'fulfilled') {
+        setTranscriptionAdagio(adagioResult.value.text);
+      } else {
+        console.error('Adagio transcription failed:', adagioResult.reason);
+        setTranscriptionAdagio('Error: No se pudo transcribir con Adagio');
+      }
+
+      // Handle OpenAI result
+      if (openAIResult.status === 'fulfilled' && openAIResult.value.data) {
+        setTranscriptionOpenAI(openAIResult.value.data.text);
+      } else {
+        if (openAIResult.status === 'rejected') {
+          console.error('OpenAI transcription failed:', openAIResult.reason);
+        } else {
+          console.error('OpenAI transcription failed: Invalid response format');
+        }
+        setTranscriptionOpenAI('Error: No se pudo transcribir con ChatGPT 4o');
+      }
+
       setState('completed');
 
       // Track success analytics
@@ -116,7 +154,7 @@ export const TranscribeView = () => {
 
       toast({
         title: "Transcripción completada",
-        description: "El audio ha sido transcrito exitosamente"
+        description: "Audio transcrito con ambos servicios"
       });
 
     } catch (error) {
@@ -145,29 +183,30 @@ export const TranscribeView = () => {
     }
   };
 
-  const handleCopyTranscription = useCallback(() => {
-    if (transcription) {
-      navigator.clipboard.writeText(transcription);
+  const handleCopyTranscription = useCallback((text: string, service: string) => {
+    if (text) {
+      navigator.clipboard.writeText(text);
       toast({
         title: "Copiado",
-        description: "Transcripción copiada al portapapeles",
+        description: `Transcripción de ${service} copiada al portapapeles`,
       });
     }
-  }, [transcription, toast]);
+  }, [toast]);
 
-  const handleDownloadTranscription = useCallback(() => {
-    if (transcription) {
-      const blob = new Blob([transcription], { type: 'text/plain' });
+  const handleDownloadTranscription = useCallback((text: string, service: string) => {
+    if (text) {
+      const content = `Transcripción - ${service}\n\n${text}`;
+      const blob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'transcripcion.txt';
+      a.download = `transcripcion_${service.toLowerCase().replace(/\s+/g, '_')}.txt`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
-  }, [transcription]);
+  }, []);
 
   const handleRetry = () => {
     setError(null);
@@ -177,7 +216,8 @@ export const TranscribeView = () => {
   const handleReset = () => {
     setAudioBlob(null);
     setAudioMetadata(null);
-    setTranscription('');
+    setTranscriptionAdagio('');
+    setTranscriptionOpenAI('');
     setError(null);
     setState('idle');
     setUploadProgress(0);
@@ -214,6 +254,7 @@ export const TranscribeView = () => {
   const stateConfig = getStateConfig();
   const isProcessing = state === 'uploading' || state === 'transcribing';
   const canTranscribe = audioBlob && backendOnline && !isProcessing;
+  const hasResults = transcriptionAdagio || transcriptionOpenAI;
   
   // Debug info - remove in production
   console.log('TranscribeView state:', { 
@@ -222,7 +263,7 @@ export const TranscribeView = () => {
     isProcessing, 
     canTranscribe,
     state,
-    transcription: !!transcription
+    hasResults
   });
 
   return (
@@ -315,75 +356,124 @@ export const TranscribeView = () => {
               </div>
             )}
             
-            {/* Show transcription directly in the same widget when completed */}
-            {state === 'completed' && transcription && (
-              <div className="w-full space-y-4 mt-6" role="region" aria-labelledby="transcription-results">
-                <div className="space-y-4">
-                  <h4 id="transcription-results" className="sr-only">Resultados de la transcripción</h4>
-                  <div className="flex flex-col sm:flex-row justify-center items-center gap-2" role="toolbar" aria-label="Acciones de transcripción">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyTranscription}
-                      className="w-full sm:w-auto"
-                      aria-describedby="copy-description"
-                    >
-                      <Copy className="h-4 w-4 mr-2" aria-hidden="true" />
-                      Copiar
-                    </Button>
-                    <div id="copy-description" className="sr-only">Copiar transcripción al portapapeles</div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDownloadTranscription}
-                      className="w-full sm:w-auto"
-                      aria-describedby="download-description"
-                    >
-                      <Download className="h-4 w-4 mr-2" aria-hidden="true" />
-                      Descargar
-                    </Button>
-                    <div id="download-description" className="sr-only">Descargar transcripción como archivo de texto</div>
+            {/* Show comparison results when completed */}
+            {state === 'completed' && hasResults && (
+              <div className="w-full space-y-6 mt-6" role="region" aria-labelledby="transcription-results">
+                <h4 id="transcription-results" className="text-lg font-semibold text-center">
+                  Comparativa de Transcripciones
+                </h4>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Adagio Results */}
+                  <Card className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h5 className="font-semibold text-primary">Adagio</h5>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopyTranscription(transcriptionAdagio, 'Adagio')}
+                            disabled={!transcriptionAdagio || transcriptionAdagio.includes('Error:')}
+                          >
+                            <Copy className="h-4 w-4 mr-1" />
+                            Copiar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadTranscription(transcriptionAdagio, 'Adagio')}
+                            disabled={!transcriptionAdagio || transcriptionAdagio.includes('Error:')}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Descargar
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <Textarea
+                        value={transcriptionAdagio || 'Transcribiendo...'}
+                        readOnly
+                        className={`min-h-[120px] resize-none text-sm ${
+                          transcriptionAdagio?.includes('Error:') 
+                            ? 'bg-destructive/10 text-destructive' 
+                            : 'bg-muted/30'
+                        }`}
+                        placeholder="Transcripción de Adagio aparecerá aquí..."
+                        aria-label="Transcripción de Adagio"
+                      />
+                    </div>
+                  </Card>
+
+                  {/* OpenAI Results */}
+                  <Card className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h5 className="font-semibold text-primary">ChatGPT 4o transcribe</h5>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopyTranscription(transcriptionOpenAI, 'ChatGPT 4o')}
+                            disabled={!transcriptionOpenAI || transcriptionOpenAI.includes('Error:')}
+                          >
+                            <Copy className="h-4 w-4 mr-1" />
+                            Copiar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadTranscription(transcriptionOpenAI, 'ChatGPT 4o')}
+                            disabled={!transcriptionOpenAI || transcriptionOpenAI.includes('Error:')}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Descargar
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <Textarea
+                        value={transcriptionOpenAI || 'Transcribiendo...'}
+                        readOnly
+                        className={`min-h-[120px] resize-none text-sm ${
+                          transcriptionOpenAI?.includes('Error:') 
+                            ? 'bg-destructive/10 text-destructive' 
+                            : 'bg-muted/30'
+                        }`}
+                        placeholder="Transcripción de ChatGPT 4o aparecerá aquí..."
+                        aria-label="Transcripción de ChatGPT 4o"
+                      />
+                    </div>
+                  </Card>
+                </div>
+                
+                {audioMetadata && (
+                  <div 
+                    className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-muted/20 p-3 rounded-md gap-2"
+                    role="complementary"
+                    aria-label="Información del archivo de audio"
+                  >
+                    <span className="text-center sm:text-left">
+                      Procesado: {audioMetadata.format.toUpperCase()} • 
+                      {audioMetadata.sampleRate}Hz • 
+                      {audioMetadata.channels} canal{audioMetadata.channels !== 1 ? 'es' : ''}
+                    </span>
+                    <span>
+                      Duración: {Math.round(audioMetadata.duration)}s
+                    </span>
                   </div>
-                  
-                  <Textarea
-                    value={transcription}
-                    readOnly
-                    className="min-h-[120px] resize-none bg-muted/30 text-center"
-                    placeholder="La transcripción aparecerá aquí..."
-                    aria-label="Texto transcrito"
-                    aria-describedby="transcription-info"
-                  />
-                  
-                  {audioMetadata && (
-                    <div 
-                      id="transcription-info"
-                      className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-muted/20 p-3 rounded-md gap-2"
-                      role="complementary"
-                      aria-label="Información del archivo de audio"
-                    >
-                      <span className="text-center sm:text-left">
-                        Procesado: {audioMetadata.format.toUpperCase()} • 
-                        {audioMetadata.sampleRate}Hz • 
-                        {audioMetadata.channels} canal{audioMetadata.channels !== 1 ? 'es' : ''}
-                      </span>
-                      <span>
-                        Duración: {Math.round(audioMetadata.duration)}s
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-center">
-                    <Button
-                      variant="outline"
-                      onClick={handleReset}
-                      aria-describedby="reset-description"
-                    >
-                      Transcribir otro audio
-                    </Button>
-                    <div id="reset-description" className="sr-only">
-                      Limpiar el audio actual y comenzar una nueva transcripción
-                    </div>
+                )}
+                
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={handleReset}
+                    aria-describedby="reset-description"
+                  >
+                    Transcribir otro audio
+                  </Button>
+                  <div id="reset-description" className="sr-only">
+                    Limpiar el audio actual y comenzar una nueva transcripción
                   </div>
                 </div>
               </div>
@@ -403,7 +493,7 @@ export const TranscribeView = () => {
       )}
 
       {/* Transcribe Button */}
-      {!isProcessing && !transcription && audioBlob && (
+      {!isProcessing && !hasResults && audioBlob && (
         <div className="flex flex-col items-center space-y-4" id="transcribe-controls">
           <Button 
             onClick={handleTranscribe}
@@ -433,7 +523,7 @@ export const TranscribeView = () => {
       )}
 
       {/* Empty State */}
-      {!audioBlob && !transcription && !error && state === 'idle' && (
+      {!audioBlob && !hasResults && !error && state === 'idle' && (
         <EmptyState
           icon={FileAudio}
           title="Listo para transcribir"
