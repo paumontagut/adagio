@@ -30,6 +30,8 @@ export class RealtimeTranscriber {
   private firstDeltaTime?: number;
   private accumulatedText: string = '';
   private isCompleted: boolean = false;
+  private sessionReady: boolean = false;
+  private audioSource: File | 'microphone' | null = null;
 
   constructor(callbacks: RealtimeCallbacks) {
     this.callbacks = callbacks;
@@ -62,6 +64,8 @@ export class RealtimeTranscriber {
       this.accumulatedText = '';
       this.firstDeltaTime = undefined;
       this.isCompleted = false;
+      this.sessionReady = false;
+      this.audioSource = audioSource;
 
       // Get ephemeral token
       const tokenData = await this.getEphemeralToken();
@@ -101,6 +105,9 @@ export class RealtimeTranscriber {
             this.pc.addTrack(track, stream);
           }
         });
+      } else {
+        // For file sources, add a recvonly audio transceiver to ensure SDP has audio section
+        this.pc.addTransceiver('audio', { direction: 'recvonly' });
       }
 
       // Create data channel
@@ -108,35 +115,7 @@ export class RealtimeTranscriber {
       
       this.dc.addEventListener("open", () => {
         console.log('Data channel opened');
-        
-        // Configure session for transcription
-        const sessionUpdate = {
-          type: 'session.update',
-          session: {
-            modalities: ["text", "audio"],
-            instructions: "You are a transcription assistant. Transcribe the audio accurately.",
-            voice: "alloy",
-            input_audio_format: "pcm16",
-            output_audio_format: "pcm16",
-            input_audio_transcription: {
-              model: "whisper-1"
-            },
-            turn_detection: {
-              type: "server_vad",
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 1000
-            },
-            temperature: 0.2
-          }
-        };
-        
-        this.dc?.send(JSON.stringify(sessionUpdate));
-
-        // If we have a file, process it
-        if (audioSource instanceof File) {
-          this.processAudioFile(audioSource);
-        }
+        // Wait for session.created before sending session.update
       });
 
       this.dc.addEventListener("message", (event) => {
@@ -290,14 +269,45 @@ export class RealtimeTranscriber {
     switch (message.type) {
       case 'session.created':
         console.log('Session created successfully');
+        this.sessionReady = true;
+        
+        // Now send session.update after session is created
+        const sessionUpdate = {
+          type: 'session.update',
+          session: {
+            modalities: ["text", "audio"],
+            instructions: "You are a transcription assistant. Transcribe the audio accurately.",
+            voice: "alloy",
+            input_audio_format: "pcm16",
+            output_audio_format: "pcm16",
+            input_audio_transcription: {
+              model: "whisper-1"
+            },
+            turn_detection: {
+              type: "server_vad",
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 1000
+            },
+            temperature: 0.2
+          }
+        };
+        
+        this.dc?.send(JSON.stringify(sessionUpdate));
         break;
         
       case 'session.updated':
         console.log('Session updated successfully');
+        
+        // Now process file if we have one and session is ready
+        if (this.sessionReady && this.audioSource instanceof File) {
+          this.processAudioFile(this.audioSource);
+        }
         break;
         
       case 'response.audio_transcript.delta':
-        // Partial transcription
+      case 'response.output_text.delta':
+        // Partial transcription (handle both types)
         if (message.delta) {
           if (!this.firstDeltaTime) {
             this.firstDeltaTime = performance.now();
@@ -313,6 +323,7 @@ export class RealtimeTranscriber {
         break;
         
       case 'response.audio_transcript.done':
+      case 'response.output_text.done':
         // Final transcription
         console.log('Transcription completed');
         this.completeTranscription();
