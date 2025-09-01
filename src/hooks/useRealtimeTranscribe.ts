@@ -28,7 +28,7 @@ export const useRealtimeTranscribe = () => {
         : 'localhost:54321';
         
       const wsUrl = currentUrl.includes('lovable.dev')
-        ? `wss://cydqkoohhzesogvctvhy.supabase.co/functions/v1/openai-realtime-transcribe`
+        ? `wss://cydqkoohhzesogvctvhy.functions.supabase.co/functions/v1/openai-realtime-transcribe`
         : `ws://localhost:54321/functions/v1/openai-realtime-transcribe`;
 
       console.log('Connecting to WebSocket:', wsUrl);

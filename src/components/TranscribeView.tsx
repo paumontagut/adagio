@@ -93,12 +93,24 @@ export const TranscribeView = () => {
       const fileType = audioMetadata?.format === 'wav' ? 'audio/wav' : 'audio/mp3';
       const audioFile = new File([audioBlob], fileName, { type: fileType });
 
-      // Convert audio to base64 for Realtime API
+      // Convert audio to PCM16 24kHz for Realtime API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       const arrayBuffer = await audioBlob.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      
+      // Convert to mono PCM16 24kHz
+      const float32Data = audioBuffer.getChannelData(0);
+      const int16Data = new Int16Array(float32Data.length);
+      for (let i = 0; i < float32Data.length; i++) {
+        const s = Math.max(-1, Math.min(1, float32Data[i]));
+        int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      
+      // Convert to base64 PCM16 data
+      const uint8Data = new Uint8Array(int16Data.buffer);
       let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      for (let i = 0; i < uint8Data.byteLength; i++) {
+        binary += String.fromCharCode(uint8Data[i]);
       }
       const base64Audio = btoa(binary);
 
@@ -126,9 +138,22 @@ export const TranscribeView = () => {
         if (progressIntervalId) clearInterval(progressIntervalId);
       }, 800);
 
-      // Send audio to Realtime API
+      // Send audio to Realtime API in chunks
       if (realtimeConnected) {
-        sendAudio(base64Audio);
+        // Send audio in smaller chunks (20ms chunks for better real-time processing)
+        const chunkSize = 960; // 20ms at 24kHz * 2 bytes = 960 bytes
+        for (let i = 0; i < uint8Data.length; i += chunkSize) {
+          const chunk = uint8Data.subarray(i, Math.min(i + chunkSize, uint8Data.length));
+          let chunkBinary = '';
+          for (let j = 0; j < chunk.byteLength; j++) {
+            chunkBinary += String.fromCharCode(chunk[j]);
+          }
+          const chunkBase64 = btoa(chunkBinary);
+          sendAudio(chunkBase64);
+          
+          // Small delay between chunks to simulate real-time streaming
+          await new Promise(resolve => setTimeout(resolve, 20));
+        }
         endAudio();
       }
 
