@@ -37,14 +37,12 @@ interface TranscriptionResult {
 
 export const TranscribeView = () => {
   const [adagioResult, setAdagioResult] = useState<TranscriptionResult | null>(null);
-  const [openaiResult, setOpenaiResult] = useState<TranscriptionResult | null>(null);
   const [state, setState] = useState<TranscribeState>('idle');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioMetadata, setAudioMetadata] = useState<ConversionResult | null>(null);
   const [error, setError] = useState<TranscribeError | null>(null);
   const [backendOnline, setBackendOnline] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [currentlyProcessing, setCurrentlyProcessing] = useState<'adagio' | 'openai' | null>(null);
   const { toast } = useToast();
 
   // Track page view analytics
@@ -95,7 +93,6 @@ export const TranscribeView = () => {
     setError(null);
     setUploadProgress(0);
     setAdagioResult(null);
-    setOpenaiResult(null);
 
     // Track analytics
     sessionManager.transcribeRequest();
@@ -123,29 +120,9 @@ export const TranscribeView = () => {
         if (progressIntervalId) clearInterval(progressIntervalId);
       }, 800);
 
-      // Transcribe with both providers in parallel
-      const transcriptionPromises = [
-        transcribeWithProvider('adagio').then(result => {
-          setCurrentlyProcessing('adagio');
-          setAdagioResult(result);
-          setCurrentlyProcessing(null);
-          return result;
-        }).catch(err => {
-          console.warn('Adagio transcription failed:', err);
-          return null;
-        }),
-        transcribeWithProvider('openai').then(result => {
-          setCurrentlyProcessing('openai');
-          setOpenaiResult(result);
-          setCurrentlyProcessing(null);
-          return result;
-        }).catch(err => {
-          console.warn('OpenAI transcription failed:', err);
-          return null;
-        })
-      ];
-
-      await Promise.allSettled(transcriptionPromises);
+      // Transcribe only with Adagio
+      const result = await transcribeWithProvider('adagio');
+      setAdagioResult(result);
 
       // Marcar como finalizado y limpiar timers
       finished = true;
@@ -161,7 +138,7 @@ export const TranscribeView = () => {
 
       toast({
         title: "Transcripción completada",
-        description: "Ambos proveedores han procesado el audio"
+        description: "Adagio ha procesado el audio exitosamente"
       });
 
     } catch (error) {
@@ -225,11 +202,9 @@ export const TranscribeView = () => {
     setAudioBlob(null);
     setAudioMetadata(null);
     setAdagioResult(null);
-    setOpenaiResult(null);
     setError(null);
     setState('idle');
     setUploadProgress(0);
-    setCurrentlyProcessing(null);
     setResetKey(prev => prev + 1); // Force RecorderUploader to reset
   };
 
@@ -264,7 +239,7 @@ export const TranscribeView = () => {
   const stateConfig = getStateConfig();
   const isProcessing = state === 'uploading' || state === 'transcribing';
   const canTranscribe = audioBlob && backendOnline && !isProcessing;
-  const hasResults = adagioResult || openaiResult;
+  const hasResults = adagioResult;
   
   // Debug info - remove in production
   console.log('TranscribeView state:', { 
@@ -309,19 +284,15 @@ export const TranscribeView = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="batch" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="batch" className="flex items-center gap-2">
-            <GitCompare className="h-4 w-4" />
-            Comparativa Batch
-          </TabsTrigger>
-          <TabsTrigger value="realtime" className="flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            Realtime vs Batch
+      <Tabs defaultValue="adagio" className="w-full">
+        <TabsList className="grid w-full grid-cols-1">
+          <TabsTrigger value="adagio" className="flex items-center gap-2">
+            <Server className="h-4 w-4" />
+            Transcripción Adagio
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="batch" className="space-y-6">
+        <TabsContent value="adagio" className="space-y-6">
       {/* Audio Input Section */}
       <Card className="p-6" role="region" aria-labelledby="audio-input-heading">
         <div className="space-y-4">
@@ -380,113 +351,50 @@ export const TranscribeView = () => {
                 </span>
               </div>
             )}
-            {currentlyProcessing && (
-              <div className="flex items-center space-x-2 mt-4" role="status" aria-live="polite">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                <span className="text-sm text-muted-foreground">
-                  Procesando con {currentlyProcessing === 'adagio' ? 'Adagio' : 'ChatGPT 4o'}...
-                </span>
-              </div>
-            )}
           </div>
         </Card>
       )}
 
-      {/* Transcription Results - Comparativa */}
-      {state === 'completed' && hasResults && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" role="region" aria-labelledby="results-heading">
-          <h3 id="results-heading" className="sr-only">Resultados de transcripción comparativa</h3>
+      {/* Transcription Results - Only Adagio */}
+      {state === 'completed' && adagioResult && (
+        <Card className="p-6" role="region" aria-labelledby="results-heading">
+          <h3 id="results-heading" className="text-lg font-medium text-foreground mb-4">
+            Resultado de Transcripción
+          </h3>
           
-          {/* Adagio Results */}
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Server className="h-3 w-3" />
-                  Adagio
-                </Badge>
-                {adagioResult && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopyTranscription(adagioResult.text, 'Adagio')}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownloadTranscription(adagioResult.text, 'Adagio')}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Server className="h-3 w-3" />
+                Adagio
+              </Badge>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCopyTranscription(adagioResult.text, 'Adagio')}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownloadTranscription(adagioResult.text, 'Adagio')}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
               </div>
-              
-              <Textarea
-                value={adagioResult?.text || 'Procesando...'}
-                readOnly
-                className="min-h-[120px] resize-none bg-muted/30"
-                placeholder="Transcripción de Adagio aparecerá aquí..."
-                aria-label="Transcripción de Adagio"
-              />
-              
-              {!adagioResult && (
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Esperando respuesta del servidor Adagio...</span>
-                </div>
-              )}
             </div>
-          </Card>
-
-          {/* OpenAI Results */}
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Bot className="h-3 w-3" />
-                  ChatGPT 4o Transcribe
-                </Badge>
-                {openaiResult && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopyTranscription(openaiResult.text, 'ChatGPT')}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownloadTranscription(openaiResult.text, 'ChatGPT')}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-              
-              <Textarea
-                value={openaiResult?.text || 'Procesando...'}
-                readOnly
-                className="min-h-[120px] resize-none bg-muted/30"
-                placeholder="Transcripción de ChatGPT 4o aparecerá aquí..."
-                aria-label="Transcripción de ChatGPT 4o"
-              />
-              
-              {!openaiResult && (
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Esperando respuesta de OpenAI...</span>
-                </div>
-              )}
-            </div>
-          </Card>
-        </div>
+            
+            <Textarea
+              value={adagioResult.text}
+              readOnly
+              className="min-h-[120px] resize-none bg-muted/30"
+              placeholder="Transcripción de Adagio aparecerá aquí..."
+              aria-label="Transcripción de Adagio"
+            />
+          </div>
+        </Card>
       )}
 
       {/* Audio metadata and reset */}
@@ -534,10 +442,10 @@ export const TranscribeView = () => {
             tabIndex={0}
           >
             <FileAudio className="mr-2 h-4 w-4" aria-hidden="true" />
-            Transcripción Comparativa
+            Transcribir con Adagio
           </Button>
           <div id="transcribe-button-description" className="sr-only">
-            Iniciar transcripción comparativa con Adagio y ChatGPT 4o
+            Iniciar transcripción con Adagio
           </div>
           {!backendOnline && (
             <p 
@@ -555,8 +463,8 @@ export const TranscribeView = () => {
       {!audioBlob && !hasResults && !error && state === 'idle' && (
         <EmptyState
           icon={FileAudio}
-          title="Listo para transcripción comparativa"
-          description="Graba tu voz o sube un archivo para comparar Adagio vs ChatGPT 4o"
+          title="Listo para transcripción"
+          description="Graba tu voz o sube un archivo para transcribir con Adagio"
         />
       )}
 
@@ -568,11 +476,21 @@ export const TranscribeView = () => {
         />
       </div>
         </TabsContent>
-
-        <TabsContent value="realtime" className="space-y-6">
-          <ComparisonView />
-        </TabsContent>
       </Tabs>
+
+      {/* Comparison Section */}
+      <div className="mt-8">
+        <div className="text-center space-y-2 mb-6">
+          <h2 className="text-2xl font-semibold text-foreground flex items-center justify-center gap-2">
+            <GitCompare className="h-6 w-6" />
+            ChatGPT vs Adagio
+          </h2>
+          <p className="text-muted-foreground">
+            Compara la transcripción en tiempo real de ChatGPT con el procesamiento por lotes de Adagio
+          </p>
+        </div>
+        <ComparisonView />
+      </div>
     </div>
   );
 };

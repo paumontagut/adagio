@@ -243,23 +243,13 @@ const ComparisonView: React.FC = () => {
             </div>
           )}
 
-          <div className="flex gap-2">
-            <Button 
-              onClick={startComparison}
-              disabled={!state.audioFile || state.isProcessing}
-              className="flex-1"
-            >
-              {state.isProcessing ? 'Procesando...' : 'Iniciar Comparación'}
-            </Button>
-            
-            <Button 
-              onClick={resetComparison}
-              variant="outline"
-              disabled={state.isProcessing}
-            >
-              Reiniciar
-            </Button>
-          </div>
+          <Button 
+            onClick={startComparison}
+            disabled={!state.audioFile || state.isProcessing}
+            className="w-full"
+          >
+            {state.isProcessing ? 'Procesando...' : 'Iniciar Comparación'}
+          </Button>
         </CardContent>
       </Card>
 
@@ -359,14 +349,10 @@ const ComparisonView: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Metrics */}
-            {(state.realtime.status === 'completed' || state.realtime.result || state.realtime.ttfb) && (
-              <div className="grid grid-cols-2 gap-2 p-3 bg-muted rounded-lg">
+            {(state.realtime.status === 'completed' || state.realtime.result) && (
+              <div className="grid grid-cols-1 gap-2 p-3 bg-muted rounded-lg">
                 <div className="flex justify-between text-sm">
-                  <span>TTFB:</span>
-                  <span className="font-mono">{formatTime(state.realtime.ttfb)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Total:</span>
+                  <span>Tiempo Total:</span>
                   <span className="font-mono">{formatTime(state.realtime.result?.totalMs)}</span>
                 </div>
               </div>
@@ -444,15 +430,7 @@ const ComparisonView: React.FC = () => {
             <CardTitle>Resumen de Comparación</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Velocidad (TTFB)</p>
-                <p className="text-lg font-semibold">
-                  ChatGPT: {formatTime(state.realtime.ttfb)}
-                </p>
-                <p className="text-sm text-muted-foreground">vs Adagio: Batch</p>
-              </div>
-              
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Tiempo Total</p>
                 <p className="text-lg font-semibold">
