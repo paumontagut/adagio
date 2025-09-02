@@ -70,96 +70,28 @@ export const AdminRecordings = () => {
   const fetchRecordings = async () => {
     setLoading(true);
     try {
-      // Fetch audio metadata, session mapping, and consent logs in parallel
-      const [audioRes, mappingRes, consentRes] = await Promise.all([
-        supabase
-          .from('audio_metadata')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100),
-        supabase
-          .from('session_mapping')
-          .select('session_pseudonym, encrypted_session_id'),
-        supabase
-          .from('consent_logs')
-          .select('session_id, full_name, email')
-      ]);
+      console.log('Fetching recordings using audio_metadata_with_identity view...');
+      
+      // Use the new view that pre-resolves full_name and email
+      const { data, error } = await supabase
+        .from('audio_metadata_with_identity')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-      if (audioRes.error) throw audioRes.error;
-      if (mappingRes.error) throw mappingRes.error;
-      if (consentRes.error) throw consentRes.error;
+      if (error) {
+        console.error('Error from view query:', error);
+        throw error;
+      }
 
-      const audioData = audioRes.data || [];
-      const mappingData = mappingRes.data || [];
-      const consentData = consentRes.data || [];
+      console.log(`Fetched ${data?.length || 0} recordings from view`);
+      console.log('Sample record:', data?.[0]);
+      
+      // Count how many have full_name
+      const recordsWithNames = data?.filter(r => r.full_name) || [];
+      console.log(`${recordsWithNames.length} recordings have full_name populated`);
 
-      // Robust decode for various serialized byte formats to recover original session_id
-      const decodeSessionId = (val: any): string => {
-        if (val === null || val === undefined) return '';
-        try {
-          // If already Uint8Array
-          if (val instanceof Uint8Array) {
-            return new TextDecoder().decode(val);
-          }
-          // Node Buffer-like object { type: 'Buffer', data: number[] }
-          if (typeof val === 'object' && val?.type === 'Buffer' && Array.isArray(val?.data)) {
-            return new TextDecoder().decode(new Uint8Array(val.data));
-          }
-          // Plain number array
-          if (Array.isArray(val)) {
-            return new TextDecoder().decode(new Uint8Array(val));
-          }
-          if (typeof val === 'string') {
-            const s = val.trim();
-            // Hex format (e.g. "\\x48656c6c6f")
-            if (s.startsWith('\\x')) {
-              const hex = s.slice(2);
-              const out = new Uint8Array(hex.length / 2);
-              for (let i = 0; i < hex.length; i += 2) out[i / 2] = parseInt(hex.substr(i, 2), 16);
-              return new TextDecoder().decode(out);
-            }
-            // Try base64
-            try {
-              const bytes = Uint8Array.from(atob(s), c => c.charCodeAt(0));
-              const txt = new TextDecoder().decode(bytes);
-              if (txt) return txt;
-            } catch {}
-            // Fallback: assume it's already the sessionId
-            return s;
-          }
-        } catch {}
-        return '';
-      };
-
-      // Build map: pseudonym -> original session_id
-      const pseudoToSessionId = new Map<string, string>();
-      mappingData.forEach((row: any) => {
-        const sessionId = decodeSessionId(row.encrypted_session_id);
-        if (row.session_pseudonym && sessionId) {
-          pseudoToSessionId.set(row.session_pseudonym, sessionId);
-        }
-      });
-
-      // Build map: session_id -> consent info
-      const consentMap = new Map<string, { full_name: string | null; email: string | null }>();
-      consentData.forEach((row: any) => {
-        consentMap.set(row.session_id, {
-          full_name: row.full_name ?? null,
-          email: row.email ?? null,
-        });
-      });
-
-      // Merge: resolve name via session_mapping -> consent_logs
-      const mappedData: AudioMetadata[] = audioData.map((record: any) => {
-        const originalSessionId = pseudoToSessionId.get(record.session_pseudonym) || '';
-        const consentInfo = originalSessionId ? consentMap.get(originalSessionId) : undefined;
-        return {
-          ...record,
-          full_name: consentInfo?.full_name || null,
-          email: consentInfo?.email || null,
-        } as AudioMetadata;
-      });
-      setRecordings(mappedData);
+      setRecordings(data || []);
     } catch (error) {
       console.error('Error fetching recordings:', error);
       toast({
@@ -602,11 +534,11 @@ export const AdminRecordings = () => {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <CheckCircle className="h-8 w-8 text-green-600" />
+            <User className="h-8 w-8 text-green-600" />
             <div>
-              <p className="text-sm text-muted-foreground">Con Consentimiento</p>
+              <p className="text-sm text-muted-foreground">Con Nombre</p>
               <p className="text-2xl font-bold">
-                {recordings.filter(r => r.consent_train && r.consent_store).length}
+                {recordings.filter(r => r.full_name).length}
               </p>
             </div>
           </div>
@@ -653,14 +585,7 @@ export const AdminRecordings = () => {
         </Card>
       )}
 
-      {loading ? (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Cargando grabaciones...</p>
-          </div>
-        </div>
-      ) : filteredRecordings.length === 0 ? (
+      {filteredRecordings.length === 0 ? (
         <Card className="p-8 text-center">
           <FileAudio className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">No se encontraron grabaciones</h3>
@@ -734,8 +659,11 @@ export const AdminRecordings = () => {
                       <User className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <span className="font-medium">
-                          {recording.full_name ? recording.full_name : 'Sin nombre registrado'}
+                          {recording.full_name || 'Sin nombre registrado'}
                         </span>
+                        {recording.email && (
+                          <p className="text-xs text-muted-foreground">{recording.email}</p>
+                        )}
                       </div>
                     </div>
                   </TableCell>
