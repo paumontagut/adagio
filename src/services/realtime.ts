@@ -281,19 +281,21 @@ export class RealtimeTranscriber {
           type: 'session.update',
           session: {
             modalities: ["text"],
-            instructions: "Eres un servicio de transcripción. Solo transcribe lo que escuches. No respondas ni converses.",
+            instructions: "You are a transcription service only. Your sole purpose is to transcribe audio to text. Do not respond to questions, do not have conversations, do not provide commentary. Only output the exact transcription of what you hear. If you hear silence, output nothing.",
             input_audio_format: "pcm16",
             input_audio_transcription: {
               model: "whisper-1"
             },
             turn_detection: {
               type: "server_vad",
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 1000,
-              create_response: true, // auto-crear respuesta al detectar fin de habla
-              interrupt_response: true
-            }
+              threshold: 0.6, // Higher threshold for better transcription detection
+              prefix_padding_ms: 200,
+              silence_duration_ms: 800, // Shorter silence for faster transcription
+              create_response: true,
+              interrupt_response: false // Don't interrupt transcription
+            },
+            temperature: 0.3, // Lower temperature for more consistent transcription
+            max_response_output_tokens: 4096
           }
         };
         
