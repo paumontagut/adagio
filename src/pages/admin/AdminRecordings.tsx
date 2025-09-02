@@ -1,812 +1,526 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { supabase } from '@/integrations/supabase/client';
-import { useAdmin } from '@/contexts/AdminContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Download, 
   Play, 
-  Trash2, 
+  Pause, 
   Search, 
   Filter, 
-  RefreshCw,
-  Calendar,
-  Volume2,
-  Lock,
-  Unlock,
-  CheckSquare,
-  Square
+  Clock, 
+  FileAudio, 
+  Shield, 
+  ShieldOff,
+  HardDrive,
+  CheckCircle,
+  XCircle,
+  User
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-interface Recording {
+interface AudioMetadata {
   id: string;
-  phrase_text?: string;
-  audio_url?: string;
-  duration_ms?: number;
-  sample_rate?: number;
-  format?: string;
+  session_pseudonym: string;
+  phrase_text: string;
+  duration_ms: number;
+  sample_rate: number;
+  audio_format: string;
+  device_info: string;
+  quality_score: number | null;
+  consent_train: boolean;
+  consent_store: boolean;
+  encryption_key_version: number;
+  unencrypted_file_path: string | null;
+  unencrypted_storage_bucket: string | null;
+  file_size_bytes: number | null;
+  unencrypted_file_size_bytes: number | null;
   created_at: string;
-  consent_store?: boolean;
-  consent_train?: boolean;
-  user_id?: string;
-  session_id?: string;
-  // For encrypted recordings
-  session_pseudonym?: string;
-  quality_score?: number;
-  audio_format?: string;
-  encryption_key_version?: number;
-  is_encrypted?: boolean;
 }
 
-interface Filters {
-  dateFrom: string;
-  dateTo: string;
-  phraseText: string;
-  consentType: 'all' | 'store' | 'train' | 'none';
-  format: string;
-  encrypted: 'all' | 'yes' | 'no';
-}
-
-export const AdminRecordings: React.FC = () => {
-  const [recordings, setRecordings] = useState<Recording[]>([]);
-  const [filteredRecordings, setFilteredRecordings] = useState<Recording[]>([]);
-  const [selectedRecordings, setSelectedRecordings] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState<Filters>({
-    dateFrom: '',
-    dateTo: '',
-    phraseText: '',
-    consentType: 'all',
-    format: '',
-    encrypted: 'all'
-  });
-
-  const { adminUser, hasPermission } = useAdmin();
+export const AdminRecordings = () => {
+  const [recordings, setRecordings] = useState<AudioMetadata[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterConsent, setFilterConsent] = useState<'all' | 'train' | 'store'>('all');
+  const [playingId, setPlayingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadRecordings();
+    fetchRecordings();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [recordings, filters]);
-
-  const loadRecordings = async () => {
+  const fetchRecordings = async () => {
+    setLoading(true);
     try {
-      setIsLoading(true);
-      
-      // Load both encrypted and unencrypted recordings
-      const [
-        { data: unencryptedRecordings, error: unencryptedError },
-        { data: encryptedRecordings, error: encryptedError }
-      ] = await Promise.all([
-        supabase.from('recordings')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase.from('audio_metadata')
-          .select('*')
-          .order('created_at', { ascending: false })
-      ]);
+      const { data, error } = await supabase
+        .from('audio_metadata')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-      if (unencryptedError) throw unencryptedError;
-      if (encryptedError) throw encryptedError;
-
-      // Combine and mark recordings
-      const combined: Recording[] = [
-        ...(unencryptedRecordings || []).map(r => ({ ...r, is_encrypted: false })),
-        ...(encryptedRecordings || []).map(r => ({ 
-          ...r, 
-          is_encrypted: true,
-          // Map encrypted recording fields to common interface
-          audio_url: null, // No direct URL for encrypted
-          format: r.audio_format
-        }))
-      ];
-
-      // Sort by created_at descending
-      combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      setRecordings(combined);
-    } catch (error: any) {
-      console.error('Error loading recordings:', error);
+      if (error) throw error;
+      setRecordings(data || []);
+    } catch (error) {
+      console.error('Error fetching recordings:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar las grabaciones",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...recordings];
-
-    // Date filters
-    if (filters.dateFrom) {
-      filtered = filtered.filter(r => 
-        new Date(r.created_at) >= new Date(filters.dateFrom)
-      );
-    }
-    if (filters.dateTo) {
-      filtered = filtered.filter(r => 
-        new Date(r.created_at) <= new Date(filters.dateTo + 'T23:59:59')
-      );
-    }
-
-    // Text filter
-    if (filters.phraseText) {
-      filtered = filtered.filter(r => 
-        r.phrase_text?.toLowerCase().includes(filters.phraseText.toLowerCase())
-      );
-    }
-
-    // Consent filter
-    if (filters.consentType !== 'all') {
-      filtered = filtered.filter(r => {
-        switch (filters.consentType) {
-          case 'store':
-            return r.consent_store === true;
-          case 'train':
-            return r.consent_train === true;
-          case 'none':
-            return !r.consent_store && !r.consent_train;
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Format filter
-    if (filters.format) {
-      filtered = filtered.filter(r => 
-        (r.format || r.audio_format)?.toLowerCase().includes(filters.format.toLowerCase())
-      );
-    }
-
-    // Encryption filter
-    if (filters.encrypted !== 'all') {
-      filtered = filtered.filter(r => 
-        filters.encrypted === 'yes' ? r.is_encrypted : !r.is_encrypted
-      );
-    }
-
-    setFilteredRecordings(filtered);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedRecordings.size === filteredRecordings.length) {
-      setSelectedRecordings(new Set());
-    } else {
-      setSelectedRecordings(new Set(filteredRecordings.map(r => r.id)));
-    }
-  };
-
-  const handleSelectRecording = (recordingId: string) => {
-    const newSelected = new Set(selectedRecordings);
-    if (newSelected.has(recordingId)) {
-      newSelected.delete(recordingId);
-    } else {
-      newSelected.add(recordingId);
-    }
-    setSelectedRecordings(newSelected);
-  };
-
-  const handleDownloadSelected = async () => {
-    if (!hasPermission('viewer')) {
-      toast({
-        title: "Sin permisos",
-        description: "No tienes permisos para descargar grabaciones",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (selectedRecordings.size === 0) {
-      toast({
-        title: "Sin selección",
-        description: "Selecciona al menos una grabación para descargar",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleDownloadEncrypted = async (recordingId: string) => {
     try {
-      // Call edge function for bulk download
-      const selectedRecordingsList = Array.from(selectedRecordings);
-      const { data, error } = await supabase.functions.invoke('admin-bulk-download', {
-        body: { recordingIds: selectedRecordingsList }
+      toast({
+        title: "Descarga iniciada",
+        description: "Procesando archivo cifrado..."
       });
 
-      if (error) throw error;
-
-      if (data?.csvData) {
-        // Create and download CSV file
-        const blob = new Blob([data.csvData], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `grabaciones_metadata_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
+      const sessionToken = localStorage.getItem('admin_session_token');
+      if (!sessionToken) {
         toast({
-          title: "Descarga completada",
-          description: `Metadatos de ${selectedRecordings.size} grabaciones descargados. ${data.encryptedCount > 0 ? `Nota: ${data.encryptedCount} grabaciones cifradas requieren descifrado adicional.` : ''}`,
+          title: "Error de autorización",
+          description: "No tienes permisos para descargar archivos",
+          variant: "destructive"
         });
-
-        setSelectedRecordings(new Set());
-      }
-    } catch (error: any) {
-      console.error('Download error:', error);
-      toast({
-        title: "Error de descarga",
-        description: error.message || "No se pudieron descargar las grabaciones",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDeleteSelected = async () => {
-    if (!hasPermission('admin')) {
-      toast({
-        title: "Sin permisos",
-        description: "No tienes permisos para eliminar grabaciones",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (selectedRecordings.size === 0) return;
-
-    const confirmDelete = confirm(
-      `¿Estás seguro de que quieres eliminar ${selectedRecordings.size} grabaciones? Esta acción no se puede deshacer.`
-    );
-
-    if (!confirmDelete) return;
-
-    try {
-      const selectedIds = Array.from(selectedRecordings);
-      
-      // Delete from both tables
-      const encryptedIds = selectedIds.filter(id => 
-        recordings.find(r => r.id === id)?.is_encrypted
-      );
-      const unencryptedIds = selectedIds.filter(id => 
-        !recordings.find(r => r.id === id)?.is_encrypted
-      );
-
-      const promises = [];
-      
-      if (unencryptedIds.length > 0) {
-        promises.push(
-          supabase.from('recordings').delete().in('id', unencryptedIds)
-        );
-      }
-      
-      if (encryptedIds.length > 0) {
-        promises.push(
-          supabase.from('audio_metadata').delete().in('id', encryptedIds)
-        );
-      }
-
-      await Promise.all(promises);
-
-      toast({
-        title: "Grabaciones eliminadas",
-        description: `Se eliminaron ${selectedRecordings.size} grabaciones correctamente`,
-      });
-
-      setSelectedRecordings(new Set());
-      loadRecordings();
-    } catch (error: any) {
-      console.error('Delete error:', error);
-      toast({
-        title: "Error al eliminar",
-        description: error.message || "No se pudieron eliminar las grabaciones",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDownloadSingle = async (recording: Recording) => {
-    if (!hasPermission('viewer')) {
-      toast({
-        title: "Sin permisos",
-        description: "No tienes permisos para descargar grabaciones",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!recording.consent_store) {
-      toast({
-        title: "Sin consentimiento",
-        description: "Esta grabación no tiene consentimiento para descarga",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Generate filename
-      const dateStr = format(new Date(recording.created_at), 'yyyy-MM-dd_HH-mm-ss');
-      const phraseStr = (recording.phrase_text || 'audio').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
-      const formatExt = recording.format || recording.audio_format || 'wav';
-      const filename = `${phraseStr}_${dateStr}.${formatExt}`;
-
-      if (recording.is_encrypted) {
-        // Use decrypt-download edge function for encrypted files
-        const adminToken = localStorage.getItem('admin_session_token');
-        if (!adminToken) {
-          throw new Error('Token de admin no disponible');
-        }
-
-        const { data, error } = await supabase.functions.invoke('decrypt-download', {
-          body: { 
-            recordingId: recording.id,
-            sessionToken: adminToken
-          }
-        });
-
-        if (error) {
-          if (error.message?.includes('LEGACY_CLIENT_ENCRYPTED')) {
-            toast({
-              title: "Archivo legado",
-              description: "Esta grabación fue cifrada en el cliente y no puede ser descifrada por el servidor. Use la función 'Crear Muestra Cifrada' para probar con archivos nuevos.",
-              variant: "destructive"
-            });
-            return;
-          }
-          throw error;
-        }
-        if (!data) throw new Error('Respuesta vacía del servidor');
-
-        // Expect JSON with base64 data
-        const { base64, mimeType, filename: fnFromServer } = data as any;
-        const byteCharacters = atob(base64);
-        const byteNumbers = new Array(byteCharacters.length)
-          .fill(0)
-          .map((_, i) => byteCharacters.charCodeAt(i));
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: mimeType || 'audio/wav' });
-
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fnFromServer || filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        toast({
-          title: "Descarga completada",
-          description: `Archivo cifrado ${(fnFromServer || filename)} descifrado y descargado correctamente`,
-        });
-      } else {
-        // Download from Supabase Storage for unencrypted files
-        if (recording.audio_url && recording.audio_url !== 'encrypted_storage') {
-          const { data, error } = await supabase.storage
-            .from('audio_raw')
-            .download(recording.audio_url);
-
-          if (error) throw error;
-
-          // Create download link
-          const url = window.URL.createObjectURL(data);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-
-          toast({
-            title: "Descarga completada",
-            description: `Archivo ${filename} descargado correctamente`,
-          });
-        } else {
-          throw new Error('URL de audio no disponible');
-        }
-      }
-    } catch (error: any) {
-      console.error('Error downloading recording:', error);
-      toast({
-        title: "Error de descarga",
-        description: error.message || "No se pudo descargar la grabación",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handlePlaySingle = async (recording: Recording) => {
-    try {
-      if (recording.is_encrypted || !recording.audio_url || recording.audio_url === 'encrypted_storage') {
-        throw new Error('Archivo no disponible para reproducción');
-      }
-      const { data, error } = await supabase.storage
-        .from('audio_raw')
-        .createSignedUrl(recording.audio_url, 60);
-      if (error || !data?.signedUrl) {
-        const dl = await supabase.storage.from('audio_raw').download(recording.audio_url);
-        if (dl.error) throw dl.error;
-        const objectUrl = URL.createObjectURL(dl.data);
-        const audio = new Audio(objectUrl);
-        await audio.play();
         return;
       }
-      const audio = new Audio(data.signedUrl);
-      await audio.play();
-    } catch (err: any) {
-      console.error('Error playing recording:', err);
-      toast({ title: 'Error al reproducir', description: err.message || 'No se pudo reproducir la grabación', variant: 'destructive' });
-    }
-  };
 
-  const createTestSample = async () => {
-    try {
-      toast({
-        title: "Creando muestra",
-        description: "Generando archivo de audio de prueba cifrado...",
+      const response = await supabase.functions.invoke('decrypt-download', {
+        body: {
+          recordingId: recordingId,
+          sessionToken: sessionToken
+        }
       });
 
-      // Generate a silent 2-second WAV file
-      const sampleRate = 16000;
-      const duration = 2; // seconds
-      const samples = sampleRate * duration;
-      const audioBuffer = new ArrayBuffer(44 + samples * 2); // WAV header + 16-bit samples
-      const view = new DataView(audioBuffer);
-
-      // WAV header
-      const writeString = (offset: number, string: string) => {
-        for (let i = 0; i < string.length; i++) {
-          view.setUint8(offset + i, string.charCodeAt(i));
+      if (response.error) {
+        if (response.error.details === 'This recording was encrypted client-side and cannot be decrypted by the server') {
+          toast({
+            title: "Archivo legacy",
+            description: "Esta grabación fue cifrada por el cliente y no puede ser descifrada automáticamente. Usa la descarga sin cifrar.",
+            variant: "destructive"
+          });
+        } else {
+          throw response.error;
         }
-      };
-
-      writeString(0, 'RIFF');
-      view.setUint32(4, 36 + samples * 2, true);
-      writeString(8, 'WAVE');
-      writeString(12, 'fmt ');
-      view.setUint32(16, 16, true);
-      view.setUint16(20, 1, true);
-      view.setUint16(22, 1, true);
-      view.setUint32(24, sampleRate, true);
-      view.setUint32(28, sampleRate * 2, true);
-      view.setUint16(32, 2, true);
-      view.setUint16(34, 16, true);
-      writeString(36, 'data');
-      view.setUint32(40, samples * 2, true);
-
-      // Silent audio data (all zeros)
-      for (let i = 0; i < samples; i++) {
-        view.setInt16(44 + i * 2, 0, true);
+        return;
       }
 
-      const audioBlob = new Blob([audioBuffer], { type: 'audio/wav' });
+      // Convert base64 to blob and download
+      const { base64, filename, mimeType } = response.data;
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
 
-      // Send to encrypted-audio-api for server-side encryption
-      const { data, error } = await supabase.functions.invoke('encrypted-audio-handler', {
-        body: {
-          action: 'store-audio-raw',
-          audioData: await arrayBufferToBase64(audioBuffer),
-          sessionId: `test_${Date.now()}`,
-          phraseText: 'Muestra de prueba cifrada en servidor',
-          consentStore: true,
-          consentTrain: false,
-          deviceInfo: 'Admin Test Generator'
-        }
-      });
-
-      if (error) throw error;
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
       toast({
-        title: "Muestra creada",
-        description: "Se ha creado una grabación de prueba cifrada. Actualizando lista...",
+        title: "Descarga completada",
+        description: `Archivo ${filename} descargado correctamente`
       });
-
-      // Reload recordings to show the new test sample
-      await loadRecordings();
-    } catch (error: any) {
-      console.error('Error creating test sample:', error);
+    } catch (error) {
+      console.error('Error downloading encrypted file:', error);
       toast({
-        title: "Error",
-        description: error.message || "No se pudo crear la muestra de prueba",
+        title: "Error de descarga",
+        description: "No se pudo descargar el archivo cifrado",
         variant: "destructive"
       });
     }
   };
 
-  const arrayBufferToBase64 = async (buffer: ArrayBuffer): Promise<string> => {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
+  const handleDownloadUnencrypted = async (recording: AudioMetadata) => {
+    if (!recording.unencrypted_file_path) {
+      toast({
+        title: "Archivo no disponible",
+        description: "Esta grabación no tiene versión sin cifrar disponible",
+        variant: "destructive"
+      });
+      return;
     }
-    return btoa(binary);
+
+    try {
+      const { data, error } = await supabase.storage
+        .from(recording.unencrypted_storage_bucket || 'audio_raw')
+        .download(recording.unencrypted_file_path);
+
+      if (error) throw error;
+
+      const url = window.URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `unencrypted_${recording.phrase_text.substring(0, 30)}_${new Date(recording.created_at).toISOString().slice(0, 10)}.${recording.audio_format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Descarga completada",
+        description: "Archivo sin cifrar descargado correctamente"
+      });
+    } catch (error) {
+      console.error('Error downloading unencrypted file:', error);
+      toast({
+        title: "Error de descarga",
+        description: "No se pudo descargar el archivo sin cifrar",
+        variant: "destructive"
+      });
+    }
   };
 
-  const formatDuration = (ms?: number) => {
-    if (!ms) return '-';
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  const handlePlayUnencrypted = async (recording: AudioMetadata) => {
+    if (!recording.unencrypted_file_path) {
+      toast({
+        title: "Archivo no disponible",
+        description: "Esta grabación no tiene versión sin cifrar para reproducir",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      if (playingId === recording.id) {
+        // Stop current playback
+        setPlayingId(null);
+        return;
+      }
+
+      const { data, error } = await supabase.storage
+        .from(recording.unencrypted_storage_bucket || 'audio_raw')
+        .download(recording.unencrypted_file_path);
+
+      if (error) throw error;
+
+      const url = window.URL.createObjectURL(data);
+      const audio = new Audio(url);
+      
+      setPlayingId(recording.id);
+      
+      audio.onended = () => {
+        setPlayingId(null);
+        window.URL.revokeObjectURL(url);
+      };
+
+      audio.onerror = () => {
+        setPlayingId(null);
+        window.URL.revokeObjectURL(url);
+        toast({
+          title: "Error de reproducción",
+          description: "No se pudo reproducir el archivo de audio",
+          variant: "destructive"
+        });
+      };
+
+      await audio.play();
+    } catch (error) {
+      setPlayingId(null);
+      console.error('Error playing audio:', error);
+      toast({
+        title: "Error de reproducción",
+        description: "No se pudo reproducir el archivo de audio",
+        variant: "destructive"
+      });
+    }
   };
 
-  if (isLoading) {
+  const formatFileSize = (bytes: number | null) => {
+    if (!bytes) return 'N/A';
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    return `${(kb / 1024).toFixed(1)} MB`;
+  };
+
+  const formatDuration = (ms: number) => {
+    const seconds = Math.round(ms / 1000);
+    return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
+  };
+
+  const filteredRecordings = recordings.filter(recording => {
+    const matchesSearch = !searchQuery || 
+      recording.phrase_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      recording.session_pseudonym.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      recording.device_info.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesFilter = filterConsent === 'all' || 
+      (filterConsent === 'train' && recording.consent_train) ||
+      (filterConsent === 'store' && recording.consent_store);
+
+    return matchesSearch && matchesFilter;
+  });
+
+  if (loading) {
     return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold">Grabaciones de Audio</h2>
+        </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-2">Cargando grabaciones...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Grabaciones</h1>
+          <h2 className="text-2xl font-semibold">Grabaciones de Audio</h2>
           <p className="text-muted-foreground">
-            {filteredRecordings.length} grabaciones encontradas ({recordings.length} total)
+            Gestiona las grabaciones con ambas versiones: cifrada y sin cifrar
           </p>
         </div>
-        <div className="flex gap-2 mt-4 md:mt-0">
-          <Button variant="outline" onClick={loadRecordings}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Actualizar
+        <Button onClick={fetchRecordings} variant="outline">
+          Actualizar
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar por frase, pseudónimo o dispositivo..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant={filterConsent === 'all' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setFilterConsent('all')}
+          >
+            Todas
           </Button>
-          <Button variant="outline" onClick={createTestSample}>
-            <Volume2 className="h-4 w-4 mr-2" />
-            Crear Muestra Cifrada
+          <Button 
+            variant={filterConsent === 'train' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setFilterConsent('train')}
+          >
+            <Filter className="h-4 w-4 mr-1" />
+            Entrenamiento
+          </Button>
+          <Button 
+            variant={filterConsent === 'store' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setFilterConsent('store')}
+          >
+            <HardDrive className="h-4 w-4 mr-1" />
+            Almacenamiento
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
-            Filtros
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            <div className="space-y-2">
-              <Label htmlFor="dateFrom">Desde</Label>
-              <Input
-                id="dateFrom"
-                type="date"
-                value={filters.dateFrom}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dateTo">Hasta</Label>
-              <Input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phraseText">Texto</Label>
-              <Input
-                id="phraseText"
-                placeholder="Buscar en texto..."
-                value={filters.phraseText}
-                onChange={(e) => setFilters(prev => ({ ...prev, phraseText: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Consentimiento</Label>
-              <Select
-                value={filters.consentType}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, consentType: value as any }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="store">Almacenamiento</SelectItem>
-                  <SelectItem value="train">Entrenamiento</SelectItem>
-                  <SelectItem value="none">Sin consentimiento</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="format">Formato</Label>
-              <Input
-                id="format"
-                placeholder="wav, mp3..."
-                value={filters.format}
-                onChange={(e) => setFilters(prev => ({ ...prev, format: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Cifrado</Label>
-              <Select
-                value={filters.encrypted}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, encrypted: value as any }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="yes">Cifradas</SelectItem>
-                  <SelectItem value="no">No cifradas</SelectItem>
-                </SelectContent>
-              </Select>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center gap-2">
+            <FileAudio className="h-5 w-5 text-primary" />
+            <div>
+              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-2xl font-semibold">{recordings.length}</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Bulk Actions */}
-      {selectedRecordings.size > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {selectedRecordings.size} grabaciones seleccionadas
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleDownloadSelected}
-                  disabled={!hasPermission('viewer')}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Descargar Seleccionadas
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteSelected}
-                  disabled={!hasPermission('admin')}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Eliminar Seleccionadas
-                </Button>
-              </div>
-            </div>
-          </CardContent>
         </Card>
-      )}
-
-      {/* Results Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectedRecordings.size === filteredRecordings.length && filteredRecordings.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Texto</TableHead>
-                <TableHead>Duración</TableHead>
-                <TableHead>Formato</TableHead>
-                <TableHead>Cifrado</TableHead>
-                <TableHead>Consentimiento</TableHead>
-                <TableHead>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRecordings.map((recording) => (
-                <TableRow key={recording.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedRecordings.has(recording.id)}
-                      onCheckedChange={() => handleSelectRecording(recording.id)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {format(new Date(recording.created_at), 'dd/MM/yyyy', { locale: es })}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {format(new Date(recording.created_at), 'HH:mm:ss', { locale: es })}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-xs truncate">
-                      {recording.phrase_text || '-'}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {formatDuration(recording.duration_ms)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {(recording.format || recording.audio_format || 'unknown').toUpperCase()}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {recording.is_encrypted ? (
-                      <Badge variant="secondary">
-                        <Lock className="h-3 w-3 mr-1" />
-                        Cifrado
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">
-                        <Unlock className="h-3 w-3 mr-1" />
-                        No cifrado
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      {recording.consent_store && (
-                        <Badge variant="secondary" className="text-xs">
-                          Almacén
-                        </Badge>
-                      )}
-                      {recording.consent_train && (
-                        <Badge variant="secondary" className="text-xs">
-                          Entreno
-                        </Badge>
-                      )}
-                      {!recording.consent_store && !recording.consent_train && (
-                        <Badge variant="outline" className="text-xs">
-                          Sin consentimiento
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleDownloadSingle(recording)}
-                        disabled={!hasPermission('viewer') || !recording.consent_store}
-                      >
-                        <Download className="h-3 w-3" />
-                      </Button>
-                      {recording.audio_url && (
-                        <Button size="sm" variant="outline" onClick={() => handlePlaySingle(recording)} disabled={recording.is_encrypted}>
-                          <Play className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          
-          {filteredRecordings.length === 0 && (
-            <div className="text-center py-8">
-              <Volume2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No se encontraron grabaciones</p>
+        <Card className="p-4">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-blue-600" />
+            <div>
+              <p className="text-sm text-muted-foreground">Cifradas</p>
+              <p className="text-2xl font-semibold">{recordings.length}</p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-2">
+            <ShieldOff className="h-5 w-5 text-orange-600" />
+            <div>
+              <p className="text-sm text-muted-foreground">Sin Cifrar</p>
+              <p className="text-2xl font-semibold">
+                {recordings.filter(r => r.unencrypted_file_path).length}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <div>
+              <p className="text-sm text-muted-foreground">Con Consentimiento</p>
+              <p className="text-2xl font-semibold">
+                {recordings.filter(r => r.consent_train && r.consent_store).length}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Recordings List */}
+      <div className="space-y-4">
+        {filteredRecordings.length === 0 ? (
+          <Card className="p-8 text-center">
+            <FileAudio className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No se encontraron grabaciones</h3>
+            <p className="text-muted-foreground">
+              {searchQuery || filterConsent !== 'all' 
+                ? 'Intenta ajustar los filtros de búsqueda'
+                : 'Aún no hay grabaciones de audio disponibles'
+              }
+            </p>
+          </Card>
+        ) : (
+          filteredRecordings.map((recording) => (
+            <Card key={recording.id} className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-mono text-muted-foreground">
+                      {recording.session_pseudonym}
+                    </span>
+                    <Badge variant="outline">
+                      v{recording.encryption_key_version}
+                    </Badge>
+                  </div>
+                  <p className="font-medium mb-2">"{recording.phrase_text}"</p>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDuration(recording.duration_ms)}
+                    </div>
+                    <span>{recording.sample_rate} Hz</span>
+                    <span>{recording.audio_format.toUpperCase()}</span>
+                    {recording.quality_score && (
+                      <span>Calidad: {Math.round(recording.quality_score * 100)}%</span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right text-sm text-muted-foreground">
+                  <p>{formatDistanceToNow(new Date(recording.created_at), { 
+                    addSuffix: true, 
+                    locale: es 
+                  })}</p>
+                </div>
+              </div>
+
+              {/* Consent Badges */}
+              <div className="flex gap-2 mb-4">
+                <Badge variant={recording.consent_train ? "default" : "secondary"}>
+                  {recording.consent_train ? (
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                  ) : (
+                    <XCircle className="h-3 w-3 mr-1" />
+                  )}
+                  Entrenamiento
+                </Badge>
+                <Badge variant={recording.consent_store ? "default" : "secondary"}>
+                  {recording.consent_store ? (
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                  ) : (
+                    <XCircle className="h-3 w-3 mr-1" />
+                  )}
+                  Almacenamiento
+                </Badge>
+              </div>
+
+              {/* File Versions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Encrypted Version */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium">Versión Cifrada</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Tamaño: {formatFileSize(recording.file_size_bytes)} • AES-256-GCM
+                  </p>
+                  <Button 
+                    onClick={() => handleDownloadEncrypted(recording.id)}
+                    size="sm" 
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Descargar Cifrada
+                  </Button>
+                </div>
+
+                {/* Unencrypted Version */}
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShieldOff className="h-4 w-4 text-orange-600" />
+                    <span className="font-medium">Versión Sin Cifrar</span>
+                  </div>
+                  {recording.unencrypted_file_path ? (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Tamaño: {formatFileSize(recording.unencrypted_file_size_bytes)} • WAV
+                      </p>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => handlePlayUnencrypted(recording)}
+                          size="sm" 
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          {playingId === recording.id ? (
+                            <Pause className="h-4 w-4 mr-2" />
+                          ) : (
+                            <Play className="h-4 w-4 mr-2" />
+                          )}
+                          {playingId === recording.id ? 'Pausar' : 'Reproducir'}
+                        </Button>
+                        <Button 
+                          onClick={() => handleDownloadUnencrypted(recording)}
+                          size="sm" 
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Descargar
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground mb-3">
+                      No disponible para esta grabación
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Device Info */}
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-xs text-muted-foreground">
+                  <strong>Dispositivo:</strong> {recording.device_info}
+                </p>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };

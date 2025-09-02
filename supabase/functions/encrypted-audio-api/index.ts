@@ -243,7 +243,21 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
   const encryptedBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, rawBytes);
   const encryptedBytes = new Uint8Array(encryptedBuf);
 
-  // Insert metadata
+  // Guardar versión sin cifrar primero
+  const unencryptedFileName = `training_audio_${sessionPseudonym}_${Date.now()}.wav`;
+  const { error: unencryptedErr } = await supabase.storage
+    .from('audio_raw')
+    .upload(unencryptedFileName, rawBytes, {
+      contentType: 'audio/wav',
+      upsert: false
+    });
+
+  if (unencryptedErr) {
+    console.error('Error storing unencrypted audio:', unencryptedErr);
+    return jsonError('Failed to store unencrypted audio backup', 500);
+  }
+
+  // Insert metadata with both file references
   const { data: meta, error: metaErr } = await supabase
     .from('audio_metadata')
     .insert({
@@ -256,7 +270,11 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
       quality_score: data.qualityScore,
       consent_train: data.consentTrain,
       consent_store: data.consentStore,
-      encryption_key_version: keyRow.version
+      encryption_key_version: keyRow.version,
+      unencrypted_file_path: unencryptedFileName,
+      unencrypted_storage_bucket: 'audio_raw',
+      file_size_bytes: encryptedBytes.byteLength,
+      unencrypted_file_size_bytes: rawBytes.byteLength
     })
     .select()
     .single();
@@ -279,24 +297,7 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
     return jsonError('Failed to store encrypted audio file', 500)
   }
 
-  // TEMPORAL: También guardar versión no cifrada para poder descargar mientras se resuelve el descifrado
-  try {
-    const fileName = `training_audio_${sessionPseudonym}_${Date.now()}.wav`;
-    const { error: unencryptedErr } = await supabase.storage
-      .from('audio_raw')
-      .upload(fileName, rawBytes, {
-        contentType: 'audio/wav',
-        upsert: false
-      });
-
-    if (unencryptedErr) {
-      console.warn('Warning: Failed to store unencrypted backup', unencryptedErr);
-    } else {
-      console.log(`Unencrypted backup stored: ${fileName}`);
-    }
-  } catch (backupErr) {
-    console.warn('Warning: Unencrypted backup failed', backupErr);
-  }
+  console.log(`Both encrypted and unencrypted versions stored successfully. Unencrypted: ${unencryptedFileName}`);
 
   // Consent log
   const { error: consentErr } = await supabase.from('consent_logs').insert({

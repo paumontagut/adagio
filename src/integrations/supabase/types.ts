@@ -149,11 +149,15 @@ export type Database = {
           device_info: string | null
           duration_ms: number
           encryption_key_version: number
+          file_size_bytes: number | null
           id: string
           phrase_text: string
           quality_score: number | null
           sample_rate: number
           session_pseudonym: string
+          unencrypted_file_path: string | null
+          unencrypted_file_size_bytes: number | null
+          unencrypted_storage_bucket: string | null
         }
         Insert: {
           audio_format?: string
@@ -163,11 +167,15 @@ export type Database = {
           device_info?: string | null
           duration_ms: number
           encryption_key_version?: number
+          file_size_bytes?: number | null
           id?: string
           phrase_text: string
           quality_score?: number | null
           sample_rate: number
           session_pseudonym: string
+          unencrypted_file_path?: string | null
+          unencrypted_file_size_bytes?: number | null
+          unencrypted_storage_bucket?: string | null
         }
         Update: {
           audio_format?: string
@@ -177,11 +185,15 @@ export type Database = {
           device_info?: string | null
           duration_ms?: number
           encryption_key_version?: number
+          file_size_bytes?: number | null
           id?: string
           phrase_text?: string
           quality_score?: number | null
           sample_rate?: number
           session_pseudonym?: string
+          unencrypted_file_path?: string | null
+          unencrypted_file_size_bytes?: number | null
+          unencrypted_storage_bucket?: string | null
         }
         Relationships: []
       }
