@@ -279,6 +279,25 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
     return jsonError('Failed to store encrypted audio file', 500)
   }
 
+  // TEMPORAL: También guardar versión no cifrada para poder descargar mientras se resuelve el descifrado
+  try {
+    const fileName = `training_audio_${sessionPseudonym}_${Date.now()}.wav`;
+    const { error: unencryptedErr } = await supabase.storage
+      .from('audio_raw')
+      .upload(fileName, rawBytes, {
+        contentType: 'audio/wav',
+        upsert: false
+      });
+
+    if (unencryptedErr) {
+      console.warn('Warning: Failed to store unencrypted backup', unencryptedErr);
+    } else {
+      console.log(`Unencrypted backup stored: ${fileName}`);
+    }
+  } catch (backupErr) {
+    console.warn('Warning: Unencrypted backup failed', backupErr);
+  }
+
   // Consent log
   const { error: consentErr } = await supabase.from('consent_logs').insert({
     session_id: data.sessionId,

@@ -56,24 +56,6 @@ const adminMenuItems = [
     url: "/admin/users",
     icon: Users,
     roles: ['admin']
-  },
-  {
-    title: "Reportes",
-    url: "/admin/reports",
-    icon: BarChart3,
-    roles: ['admin', 'analyst']
-  },
-  {
-    title: "Actividad",
-    url: "/admin/activity",
-    icon: Activity,
-    roles: ['admin', 'analyst']
-  },
-  {
-    title: "Configuración",
-    url: "/admin/settings",
-    icon: Settings,
-    roles: ['admin']
   }
 ];
 
