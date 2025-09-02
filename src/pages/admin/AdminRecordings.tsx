@@ -3,6 +3,15 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -17,7 +26,10 @@ import {
   ShieldOff,
   CheckCircle,
   XCircle,
-  User
+  User,
+  Trash2,
+  Archive,
+  ArrowUpDown
 } from 'lucide-react';
 
 interface AudioMetadata {
@@ -44,6 +56,9 @@ export const AdminRecordings = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [selectedRecordings, setSelectedRecordings] = useState<Set<string>>(new Set());
+  const [sortField, setSortField] = useState<keyof AudioMetadata>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -320,14 +335,115 @@ export const AdminRecordings = () => {
     return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
   };
 
-  const filteredRecordings = recordings.filter(recording => {
-    const matchesSearch = !searchQuery || 
-      recording.phrase_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recording.session_pseudonym.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recording.device_info.toLowerCase().includes(searchQuery.toLowerCase());
+  const handleSort = (field: keyof AudioMetadata) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
 
-    return matchesSearch;
-  });
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedRecordings(new Set(filteredRecordings.map(r => r.id)));
+    } else {
+      setSelectedRecordings(new Set());
+    }
+  };
+
+  const handleSelectRecording = (recordingId: string, checked: boolean) => {
+    const newSelected = new Set(selectedRecordings);
+    if (checked) {
+      newSelected.add(recordingId);
+    } else {
+      newSelected.delete(recordingId);
+    }
+    setSelectedRecordings(newSelected);
+  };
+
+  const handleBulkDownloadEncrypted = async () => {
+    const selectedIds = Array.from(selectedRecordings);
+    if (selectedIds.length === 0) return;
+
+    toast({
+      title: "Descarga masiva iniciada",
+      description: `Procesando ${selectedIds.length} archivos cifrados...`
+    });
+
+    for (const recordingId of selectedIds) {
+      await handleDownloadEncrypted(recordingId);
+      // Small delay to avoid overwhelming the server
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  };
+
+  const handleBulkDownloadUnencrypted = async () => {
+    const selectedIds = Array.from(selectedRecordings);
+    const availableRecordings = recordings.filter(r => 
+      selectedIds.includes(r.id) && r.unencrypted_file_path
+    );
+    
+    if (availableRecordings.length === 0) {
+      toast({
+        title: "Sin archivos disponibles",
+        description: "Ninguna de las grabaciones seleccionadas tiene versión sin cifrar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Descarga masiva iniciada",
+      description: `Procesando ${availableRecordings.length} archivos sin cifrar...`
+    });
+
+    for (const recording of availableRecordings) {
+      await handleDownloadUnencrypted(recording);
+      // Small delay to avoid overwhelming the server
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const selectedIds = Array.from(selectedRecordings);
+    if (selectedIds.length === 0) return;
+
+    // This would need to be implemented as an edge function for proper deletion
+    toast({
+      title: "Función pendiente",
+      description: "La eliminación masiva será implementada próximamente",
+      variant: "default"
+    });
+  };
+
+  const filteredRecordings = recordings
+    .filter(recording => {
+      const matchesSearch = !searchQuery || 
+        recording.phrase_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recording.session_pseudonym.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recording.device_info.toLowerCase().includes(searchQuery.toLowerCase());
+
+      return matchesSearch;
+    })
+    .sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
+      
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+      
+      let comparison = 0;
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        comparison = aValue.localeCompare(bValue);
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue;
+      } else {
+        comparison = String(aValue).localeCompare(String(bValue));
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
 
   if (loading) {
     return (
@@ -351,7 +467,7 @@ export const AdminRecordings = () => {
           </Button>
         </div>
         <p className="text-muted-foreground">
-          Gestiona las grabaciones con ambas versiones: cifrada y sin cifrar
+          Gestiona las grabaciones con selección múltiple y acciones masivas
         </p>
       </div>
 
@@ -412,8 +528,54 @@ export const AdminRecordings = () => {
         </Card>
       </div>
 
-      {/* Recordings List */}
-      {filteredRecordings.length === 0 ? (
+      {/* Selection and Bulk Actions */}
+      {selectedRecordings.size > 0 && (
+        <Card className="p-4 mb-6 bg-primary/5 border-primary/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">
+                {selectedRecordings.size} grabación(es) seleccionada(s)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={handleBulkDownloadEncrypted}
+                variant="outline" 
+                size="sm"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Descargar Cifradas
+              </Button>
+              <Button 
+                onClick={handleBulkDownloadUnencrypted}
+                variant="outline" 
+                size="sm"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Descargar Sin Cifrar
+              </Button>
+              <Button 
+                onClick={handleBulkDelete}
+                variant="outline" 
+                size="sm"
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Eliminar
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Cargando grabaciones...</p>
+          </div>
+        </div>
+      ) : filteredRecordings.length === 0 ? (
         <Card className="p-8 text-center">
           <FileAudio className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">No se encontraron grabaciones</h3>
@@ -425,133 +587,192 @@ export const AdminRecordings = () => {
           </p>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {filteredRecordings.map((recording) => (
-            <Card key={recording.id} className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-mono text-muted-foreground">
-                      {recording.session_pseudonym}
-                    </span>
-                    <Badge variant="outline" className="text-xs">
-                      v{recording.encryption_key_version}
-                    </Badge>
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedRecordings.size === filteredRecordings.length}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('session_pseudonym')}
+                >
+                  <div className="flex items-center gap-2">
+                    Pseudónimo
+                    <ArrowUpDown className="h-4 w-4" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">"{recording.phrase_text}"</h3>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {formatDuration(recording.duration_ms)}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('phrase_text')}
+                >
+                  <div className="flex items-center gap-2">
+                    Frase Grabada
+                    <ArrowUpDown className="h-4 w-4" />
+                  </div>
+                </TableHead>
+                <TableHead>Versión Cifrada</TableHead>
+                <TableHead>Versión Sin Cifrar</TableHead>
+                <TableHead>Consentimiento</TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort('created_at')}
+                >
+                  <div className="flex items-center gap-2">
+                    Fecha
+                    <ArrowUpDown className="h-4 w-4" />
+                  </div>
+                </TableHead>
+                <TableHead>Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRecordings.map((recording) => (
+                <TableRow 
+                  key={recording.id}
+                  data-state={selectedRecordings.has(recording.id) ? "selected" : undefined}
+                >
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedRecordings.has(recording.id)}
+                      onCheckedChange={(checked) => 
+                        handleSelectRecording(recording.id, checked as boolean)
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-mono text-sm">
+                        {recording.session_pseudonym.substring(0, 16)}...
+                      </span>
                     </div>
-                    <span>{recording.sample_rate} Hz</span>
-                    <span>{recording.audio_format.toUpperCase()}</span>
-                    {recording.quality_score && (
-                      <span>Calidad: {Math.round(recording.quality_score * 100)}%</span>
-                    )}
-                  </div>
-                  
-                  {/* Consent Badges */}
-                  <div className="flex gap-2 mb-4">
-                    <Badge variant={recording.consent_train ? "default" : "secondary"} className="text-xs">
-                      {recording.consent_train ? (
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                      ) : (
-                        <XCircle className="h-3 w-3 mr-1" />
-                      )}
-                      Entrenamiento
-                    </Badge>
-                    <Badge variant={recording.consent_store ? "default" : "secondary"} className="text-xs">
-                      {recording.consent_store ? (
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                      ) : (
-                        <XCircle className="h-3 w-3 mr-1" />
-                      )}
-                      Almacenamiento
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              {/* File Versions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Encrypted Version */}
-                <div className="border rounded-lg p-4 bg-blue-50/50">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield className="h-5 w-5 text-blue-600" />
-                    <span className="font-medium">Versión Cifrada</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Tamaño: {formatFileSize(recording.file_size_bytes)} • AES-256-GCM
-                  </p>
-                  <Button 
-                    onClick={() => handleDownloadEncrypted(recording.id)}
-                    size="sm" 
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Descargar Cifrada
-                  </Button>
-                </div>
-
-                {/* Unencrypted Version */}
-                <div className="border rounded-lg p-4 bg-orange-50/50">
-                  <div className="flex items-center gap-2 mb-3">
-                    <ShieldOff className="h-5 w-5 text-orange-600" />
-                    <span className="font-medium">Versión Sin Cifrar</span>
-                  </div>
-                  {recording.unencrypted_file_path ? (
-                    <>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Tamaño: {formatFileSize(recording.unencrypted_file_size_bytes)} • WAV
-                      </p>
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={() => handlePlayUnencrypted(recording)}
-                          size="sm" 
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          {playingId === recording.id ? (
-                            <Pause className="h-4 w-4 mr-1" />
-                          ) : (
-                            <Play className="h-4 w-4 mr-1" />
-                          )}
-                          {playingId === recording.id ? 'Pausar' : 'Reproducir'}
-                        </Button>
-                        <Button 
-                          onClick={() => handleDownloadUnencrypted(recording)}
-                          size="sm" 
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Descargar
-                        </Button>
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-xs">
+                      <p className="font-medium truncate">"{recording.phrase_text}"</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <Clock className="h-3 w-3" />
+                        {formatDuration(recording.duration_ms)}
+                        <span>•</span>
+                        <span>{recording.sample_rate} Hz</span>
+                        <span>•</span>
+                        <span>{recording.audio_format.toUpperCase()}</span>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        No disponible para esta grabación
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm">Disponible</span>
+                      <Badge variant="outline" className="text-xs">
+                        v{recording.encryption_key_version}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatFileSize(recording.file_size_bytes)}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    {recording.unencrypted_file_path ? (
+                      <div className="flex items-center gap-2">
+                        <ShieldOff className="h-4 w-4 text-orange-600" />
+                        <span className="text-sm">Disponible</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">No disponible</span>
+                      </div>
+                    )}
+                    {recording.unencrypted_file_path && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatFileSize(recording.unencrypted_file_size_bytes)}
                       </p>
-                      <Button size="sm" variant="outline" disabled className="w-full">
-                        No disponible
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Badge 
+                        variant={recording.consent_train ? "default" : "secondary"} 
+                        className="text-xs"
+                      >
+                        {recording.consent_train ? (
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                        ) : (
+                          <XCircle className="h-3 w-3 mr-1" />
+                        )}
+                        Entrenamiento
+                      </Badge>
+                      <Badge 
+                        variant={recording.consent_store ? "default" : "secondary"} 
+                        className="text-xs"
+                      >
+                        {recording.consent_store ? (
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                        ) : (
+                          <XCircle className="h-3 w-3 mr-1" />
+                        )}
+                        Almacenamiento
+                      </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(recording.created_at).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        onClick={() => handleDownloadEncrypted(recording.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Shield className="h-4 w-4" />
                       </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Device Info */}
-              <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
-                <strong>Dispositivo:</strong> {recording.device_info}
-              </div>
-            </Card>
-          ))}
-        </div>
+                      {recording.unencrypted_file_path && (
+                        <>
+                          <Button
+                            onClick={() => handlePlayUnencrypted(recording)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            {playingId === recording.id ? (
+                              <Pause className="h-4 w-4" />
+                            ) : (
+                              <Play className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            onClick={() => handleDownloadUnencrypted(recording)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   );
