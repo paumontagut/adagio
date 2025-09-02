@@ -70,52 +70,60 @@ export const AdminRecordings = () => {
   const fetchRecordings = async () => {
     setLoading(true);
     try {
-      // First, get all audio metadata
-      const { data: audioData, error: audioError } = await supabase
-        .from('audio_metadata')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
+      // Fetch audio metadata, session mapping, and consent logs in parallel
+      const [audioRes, mappingRes, consentRes] = await Promise.all([
+        supabase
+          .from('audio_metadata')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100),
+        supabase
+          .from('session_mapping')
+          .select('session_pseudonym, encrypted_session_id'),
+        supabase
+          .from('consent_logs')
+          .select('session_id, full_name, email')
+      ]);
 
-      if (audioError) throw audioError;
+      if (audioRes.error) throw audioRes.error;
+      if (mappingRes.error) throw mappingRes.error;
+      if (consentRes.error) throw consentRes.error;
 
-      // Fetch guest verification tokens to map names by session_pseudonym (primary source)
-      const { data: guestData, error: guestError } = await supabase
-        .from('guest_verification_tokens')
-        .select('session_pseudonym, full_name, email');
-      if (guestError) throw guestError;
+      const audioData = audioRes.data || [];
+      const mappingData = mappingRes.data || [];
+      const consentData = consentRes.data || [];
 
-      // Also fetch consent logs as a secondary fallback (some deployments may have stored pseudonym in session_id)
-      const { data: consentData, error: consentError } = await supabase
-        .from('consent_logs')
-        .select('session_id, full_name, email');
-      if (consentError) throw consentError;
-
-      // Build maps for quick lookup
-      const guestMap = new Map<string, { full_name: string | null; email: string | null }>();
-      guestData?.forEach((row: any) => {
-        guestMap.set(row.session_pseudonym, {
-          full_name: row.full_name ?? null,
-          email: row.email ?? null,
-        });
+      // Build map: pseudonym -> original session_id (encrypted_session_id stores clear bytes)
+      const pseudoToSessionId = new Map<string, string>();
+      mappingData.forEach((row: any) => {
+        const b64: string = row.encrypted_session_id;
+        let sessionId = '';
+        try {
+          const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+          sessionId = new TextDecoder().decode(bytes);
+        } catch (_e) {
+          sessionId = '';
+        }
+        pseudoToSessionId.set(row.session_pseudonym, sessionId);
       });
+
+      // Build map: session_id -> consent info
       const consentMap = new Map<string, { full_name: string | null; email: string | null }>();
-      consentData?.forEach((row: any) => {
+      consentData.forEach((row: any) => {
         consentMap.set(row.session_id, {
           full_name: row.full_name ?? null,
           email: row.email ?? null,
         });
       });
 
-      // Map the audio data to include full_name/email, preferring guest tokens
-      const mappedData = (audioData || []).map((record: any) => {
-        const guestInfo = guestMap.get(record.session_pseudonym);
-        const consentInfo = consentMap.get(record.session_pseudonym); // fallback if some logs used pseudonym as session_id
-        const info = guestInfo || consentInfo;
+      // Merge: prefer consent_logs name resolved via session_mapping
+      const mappedData: AudioMetadata[] = audioData.map((record: any) => {
+        const originalSessionId = pseudoToSessionId.get(record.session_pseudonym) || record.session_pseudonym; // fallback
+        const consentInfo = originalSessionId ? consentMap.get(originalSessionId) : undefined;
         return {
           ...record,
-          full_name: info?.full_name || null,
-          email: info?.email || null,
+          full_name: consentInfo?.full_name || null,
+          email: consentInfo?.email || null,
         } as AudioMetadata;
       });
 
