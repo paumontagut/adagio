@@ -70,51 +70,47 @@ export const AdminRecordings = () => {
   const fetchRecordings = async () => {
     setLoading(true);
     try {
-      console.log('Fetching recordings from audio_metadata_with_identity view...');
+      console.log('Fetching recordings from recordings table...');
       
-      // Use audio_metadata_with_identity view to get complete data including file paths
+      // Use recordings table directly which has full_name column
       const { data, error } = await supabase
-        .from('audio_metadata_with_identity')
+        .from('recordings')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) {
-        console.error('Error from audio_metadata_with_identity query:', error);
+        console.error('Error from recordings query:', error);
         throw error;
       }
 
-      console.log(`Fetched ${data?.length || 0} recordings from audio_metadata_with_identity`);
+      console.log(`Fetched ${data?.length || 0} recordings from recordings table`);
       console.log('Sample record:', data?.[0]);
       
       // Count how many have full_name
       const recordsWithNames = data?.filter(r => r.full_name) || [];
       console.log(`${recordsWithNames.length} recordings have full_name populated`);
       
-      // Count how many have unencrypted files available
-      const recordsWithUnencrypted = data?.filter(r => r.unencrypted_file_path) || [];
-      console.log(`${recordsWithUnencrypted.length} recordings have unencrypted files available`);
-
-      // Map data to match AudioMetadata interface - use actual values from database
+      // Map data to match AudioMetadata interface - use correct fields from recordings table
       const transformedData = data?.map(record => ({
         id: record.id,
-        session_pseudonym: record.session_pseudonym || 'N/A',
+        session_pseudonym: record.session_id || 'N/A',
         phrase_text: record.phrase_text || '',
         duration_ms: record.duration_ms || 0,
         sample_rate: record.sample_rate || 0,
-        audio_format: record.audio_format || 'wav',
-        device_info: record.device_info || 'Unknown device',
-        quality_score: record.quality_score,
+        audio_format: record.format || 'webm',
+        device_info: record.device_label || 'Unknown device',
+        quality_score: null,
         consent_train: record.consent_train || false,
         consent_store: record.consent_store || false,
-        encryption_key_version: record.encryption_key_version || 1,
-        unencrypted_file_path: record.unencrypted_file_path,
-        unencrypted_storage_bucket: record.unencrypted_storage_bucket,
-        file_size_bytes: record.file_size_bytes,
-        unencrypted_file_size_bytes: record.unencrypted_file_size_bytes,
+        encryption_key_version: 1,
+        unencrypted_file_path: null,
+        unencrypted_storage_bucket: null,
+        file_size_bytes: null,
+        unencrypted_file_size_bytes: null,
         created_at: record.created_at,
-        full_name: record.full_name,
-        email: record.email
+        full_name: record.full_name || null,
+        email: null
       })) || [];
 
       setRecordings(transformedData);
