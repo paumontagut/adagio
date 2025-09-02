@@ -93,18 +93,51 @@ export const AdminRecordings = () => {
       const mappingData = mappingRes.data || [];
       const consentData = consentRes.data || [];
 
-      // Build map: pseudonym -> original session_id (encrypted_session_id stores clear bytes)
+      // Robust decode for various serialized byte formats to recover original session_id
+      const decodeSessionId = (val: any): string => {
+        if (val === null || val === undefined) return '';
+        try {
+          // If already Uint8Array
+          if (val instanceof Uint8Array) {
+            return new TextDecoder().decode(val);
+          }
+          // Node Buffer-like object { type: 'Buffer', data: number[] }
+          if (typeof val === 'object' && val?.type === 'Buffer' && Array.isArray(val?.data)) {
+            return new TextDecoder().decode(new Uint8Array(val.data));
+          }
+          // Plain number array
+          if (Array.isArray(val)) {
+            return new TextDecoder().decode(new Uint8Array(val));
+          }
+          if (typeof val === 'string') {
+            const s = val.trim();
+            // Hex format (e.g. "\\x48656c6c6f")
+            if (s.startsWith('\\x')) {
+              const hex = s.slice(2);
+              const out = new Uint8Array(hex.length / 2);
+              for (let i = 0; i < hex.length; i += 2) out[i / 2] = parseInt(hex.substr(i, 2), 16);
+              return new TextDecoder().decode(out);
+            }
+            // Try base64
+            try {
+              const bytes = Uint8Array.from(atob(s), c => c.charCodeAt(0));
+              const txt = new TextDecoder().decode(bytes);
+              if (txt) return txt;
+            } catch {}
+            // Fallback: assume it's already the sessionId
+            return s;
+          }
+        } catch {}
+        return '';
+      };
+
+      // Build map: pseudonym -> original session_id
       const pseudoToSessionId = new Map<string, string>();
       mappingData.forEach((row: any) => {
-        const b64: string = row.encrypted_session_id;
-        let sessionId = '';
-        try {
-          const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-          sessionId = new TextDecoder().decode(bytes);
-        } catch (_e) {
-          sessionId = '';
+        const sessionId = decodeSessionId(row.encrypted_session_id);
+        if (row.session_pseudonym && sessionId) {
+          pseudoToSessionId.set(row.session_pseudonym, sessionId);
         }
-        pseudoToSessionId.set(row.session_pseudonym, sessionId);
       });
 
       // Build map: session_id -> consent info
@@ -116,9 +149,9 @@ export const AdminRecordings = () => {
         });
       });
 
-      // Merge: prefer consent_logs name resolved via session_mapping
+      // Merge: resolve name via session_mapping -> consent_logs
       const mappedData: AudioMetadata[] = audioData.map((record: any) => {
-        const originalSessionId = pseudoToSessionId.get(record.session_pseudonym) || record.session_pseudonym; // fallback
+        const originalSessionId = pseudoToSessionId.get(record.session_pseudonym) || '';
         const consentInfo = originalSessionId ? consentMap.get(originalSessionId) : undefined;
         return {
           ...record,
@@ -126,7 +159,6 @@ export const AdminRecordings = () => {
           email: consentInfo?.email || null,
         } as AudioMetadata;
       });
-
       setRecordings(mappedData);
     } catch (error) {
       console.error('Error fetching recordings:', error);
