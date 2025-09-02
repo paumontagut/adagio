@@ -79,32 +79,46 @@ export const AdminRecordings = () => {
 
       if (audioError) throw audioError;
 
-      // Then get consent logs to match with session pseudonyms
+      // Fetch guest verification tokens to map names by session_pseudonym (primary source)
+      const { data: guestData, error: guestError } = await supabase
+        .from('guest_verification_tokens')
+        .select('session_pseudonym, full_name, email');
+      if (guestError) throw guestError;
+
+      // Also fetch consent logs as a secondary fallback (some deployments may have stored pseudonym in session_id)
       const { data: consentData, error: consentError } = await supabase
         .from('consent_logs')
         .select('session_id, full_name, email');
-
       if (consentError) throw consentError;
 
-      // Create a map of session_id to consent info for efficient lookup
-      const consentMap = new Map();
-      consentData?.forEach(consent => {
-        consentMap.set(consent.session_id, {
-          full_name: consent.full_name,
-          email: consent.email
+      // Build maps for quick lookup
+      const guestMap = new Map<string, { full_name: string | null; email: string | null }>();
+      guestData?.forEach((row: any) => {
+        guestMap.set(row.session_pseudonym, {
+          full_name: row.full_name ?? null,
+          email: row.email ?? null,
+        });
+      });
+      const consentMap = new Map<string, { full_name: string | null; email: string | null }>();
+      consentData?.forEach((row: any) => {
+        consentMap.set(row.session_id, {
+          full_name: row.full_name ?? null,
+          email: row.email ?? null,
         });
       });
 
-      // Map the audio data to include full_name and email
+      // Map the audio data to include full_name/email, preferring guest tokens
       const mappedData = (audioData || []).map((record: any) => {
-        const consentInfo = consentMap.get(record.session_pseudonym);
+        const guestInfo = guestMap.get(record.session_pseudonym);
+        const consentInfo = consentMap.get(record.session_pseudonym); // fallback if some logs used pseudonym as session_id
+        const info = guestInfo || consentInfo;
         return {
           ...record,
-          full_name: consentInfo?.full_name || null,
-          email: consentInfo?.email || null
-        };
+          full_name: info?.full_name || null,
+          email: info?.email || null,
+        } as AudioMetadata;
       });
-      
+
       setRecordings(mappedData);
     } catch (error) {
       console.error('Error fetching recordings:', error);
