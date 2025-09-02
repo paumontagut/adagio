@@ -94,13 +94,31 @@ export const ConsentGate = ({ onReady }: ConsentGateProps) => {
         payload.session_id = getOrCreateSessionId();
       }
 
-      // Upsert to database
-      const { error } = await supabase
+      // Try to insert first, if conflict then update
+      let error = null;
+      
+      // First try to insert
+      const { error: insertError } = await supabase
         .from("train_consents")
-        .upsert(payload, { 
-          onConflict: user?.id ? "user_id" : "session_id",
-          ignoreDuplicates: false 
-        });
+        .insert(payload);
+
+      if (insertError) {
+        // If conflict (record exists), try to update instead
+        if (insertError.code === '23505') { // unique_violation
+          const { error: updateError } = await supabase
+            .from("train_consents")
+            .update({
+              full_name: payload.full_name,
+              consent_train: payload.consent_train,
+              consent_store: payload.consent_store
+            })
+            .eq(user?.id ? 'user_id' : 'session_id', user?.id ? payload.user_id : payload.session_id);
+          
+          error = updateError;
+        } else {
+          error = insertError;
+        }
+      }
 
       if (error) {
         console.error('Database error:', error);
