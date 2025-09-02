@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
 import { Shield, Scale, Database, FileText } from "lucide-react";
-
 export const Footer = () => {
-  return (
-    <footer className="bg-adagio-primary text-white border-t border-adagio-primary-hover">
+  return <footer className="bg-adagio-primary text-white border-t border-adagio-primary-hover">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
@@ -19,17 +17,11 @@ export const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-white">Legal</h4>
             <nav className="space-y-2">
-              <Link 
-                to="/privacy-policy" 
-                className="flex items-center gap-2 text-sm text-white/80 hover:text-adagio-accent hover:underline transition-colors"
-              >
+              <Link to="/privacy-policy" className="flex items-center gap-2 text-sm text-white/80 hover:text-adagio-accent hover:underline transition-colors">
                 <Shield className="h-3 w-3" />
                 Política de Privacidad
               </Link>
-              <Link 
-                to="/terms-and-conditions" 
-                className="flex items-center gap-2 text-sm text-white/80 hover:text-adagio-accent hover:underline transition-colors"
-              >
+              <Link to="/terms-and-conditions" className="flex items-center gap-2 text-sm text-white/80 hover:text-adagio-accent hover:underline transition-colors">
                 <Scale className="h-3 w-3" />
                 Términos y Condiciones
               </Link>
@@ -40,20 +32,11 @@ export const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-white">Privacidad</h4>
             <nav className="space-y-2">
-              <Link 
-                to="/privacy-center" 
-                className="flex items-center gap-2 text-sm text-white/80 hover:text-adagio-accent hover:underline transition-colors"
-              >
+              <Link to="/privacy-center" className="flex items-center gap-2 text-sm text-white/80 hover:text-adagio-accent hover:underline transition-colors">
                 <Shield className="h-3 w-3" />
                 Centro de Privacidad
               </Link>
-              <Link 
-                to="/my-data" 
-                className="flex items-center gap-2 text-sm text-white/80 hover:text-adagio-accent hover:underline transition-colors"
-              >
-                <Database className="h-3 w-3" />
-                Mis Datos
-              </Link>
+              
             </nav>
           </div>
         </div>
@@ -71,6 +54,5 @@ export const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
