@@ -288,17 +288,14 @@ export class RealtimeTranscriber {
             },
             turn_detection: {
               type: "server_vad",
-              threshold: 0.6, // Higher threshold for better transcription detection
+              threshold: 0.6,
               prefix_padding_ms: 200,
-              silence_duration_ms: 800, // Shorter silence for faster transcription
+              silence_duration_ms: 800,
               create_response: true,
-              interrupt_response: false // Don't interrupt transcription
-            },
-            temperature: 0.3, // Lower temperature for more consistent transcription
-            max_response_output_tokens: 4096
+              interrupt_response: false
+            }
           }
         };
-        
         this.dc?.send(JSON.stringify(sessionUpdate));
         break;
         

@@ -70,52 +70,69 @@ export const AdminRecordings = () => {
   const fetchRecordings = async () => {
     setLoading(true);
     try {
-      console.log('Fetching recordings from audio_metadata_with_identity view...');
-      
-      // Use audio_metadata_with_identity view which has all necessary fields including full_name
-      const { data, error } = await supabase
-        .from('audio_metadata_with_identity')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
+      console.log('Fetching recordings from audio_metadata_with_identity and recordings...');
 
-      if (error) {
-        console.error('Error from audio_metadata_with_identity query:', error);
-        throw error;
+      const [metaRes, recRes] = await Promise.all([
+        supabase
+          .from('audio_metadata_with_identity')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(500),
+        supabase
+          .from('recordings')
+          .select('id, session_id, created_at, phrase_text, full_name')
+          .order('created_at', { ascending: false })
+          .limit(1000)
+      ]);
+
+      if (metaRes.error) {
+        console.error('Error from audio_metadata_with_identity query:', metaRes.error);
+        throw metaRes.error;
+      }
+      if (recRes.error) {
+        console.warn('Non-fatal: recordings query had error:', recRes.error);
       }
 
-      console.log(`Fetched ${data?.length || 0} recordings from audio_metadata_with_identity`);
-      console.log('Sample record:', data?.[0]);
-      
-      // Count how many have full_name
-      const recordsWithNames = data?.filter(r => r.full_name) || [];
-      console.log(`${recordsWithNames.length} recordings have full_name populated`);
-      
-      // Count how many have unencrypted files
-      const recordsWithUnencrypted = data?.filter(r => r.unencrypted_file_path) || [];
-      console.log(`${recordsWithUnencrypted.length} recordings have unencrypted files available`);
-      
-      // Use data directly from audio_metadata_with_identity view (no transformation needed)
-      const transformedData = data?.map(record => ({
-        id: record.id,
-        session_pseudonym: record.session_pseudonym || 'N/A',
-        phrase_text: record.phrase_text || '',
-        duration_ms: record.duration_ms || 0,
-        sample_rate: record.sample_rate || 0,
-        audio_format: record.audio_format || 'wav',
-        device_info: record.device_info || 'Unknown device',
-        quality_score: record.quality_score,
-        consent_train: record.consent_train || false,
-        consent_store: record.consent_store || false,
-        encryption_key_version: record.encryption_key_version || 1,
-        unencrypted_file_path: record.unencrypted_file_path,
-        unencrypted_storage_bucket: record.unencrypted_storage_bucket,
-        file_size_bytes: record.file_size_bytes,
-        unencrypted_file_size_bytes: record.unencrypted_file_size_bytes,
-        created_at: record.created_at,
-        full_name: record.full_name || null,
-        email: record.email || null
-      })) || [];
+      const meta = metaRes.data || [];
+      const recs = recRes.data || [];
+
+      // Build quick lookup by phrase + rounded minute timestamp
+      const recIndex = new Map<string, { full_name: string | null }>();
+      for (const r of recs) {
+        const key = `${(r.phrase_text || '').trim().toLowerCase()}__${new Date(r.created_at).toISOString().slice(0,16)}`; // yyyy-mm-ddThh:mm
+        if (!recIndex.has(key)) recIndex.set(key, { full_name: r.full_name || null });
+      }
+
+      const transformedData = meta.map((m: any) => {
+        let full_name: string | null = m.full_name || null;
+        if (!full_name) {
+          const key = `${(m.phrase_text || '').trim().toLowerCase()}__${new Date(m.created_at).toISOString().slice(0,16)}`;
+          full_name = recIndex.get(key)?.full_name || null;
+        }
+        return {
+          id: m.id,
+          session_pseudonym: m.session_pseudonym || 'N/A',
+          phrase_text: m.phrase_text || '',
+          duration_ms: m.duration_ms || 0,
+          sample_rate: m.sample_rate || 0,
+          audio_format: m.audio_format || 'wav',
+          device_info: m.device_info || 'Unknown device',
+          quality_score: m.quality_score,
+          consent_train: m.consent_train || false,
+          consent_store: m.consent_store || false,
+          encryption_key_version: m.encryption_key_version || 1,
+          unencrypted_file_path: m.unencrypted_file_path,
+          unencrypted_storage_bucket: m.unencrypted_storage_bucket,
+          file_size_bytes: m.file_size_bytes,
+          unencrypted_file_size_bytes: m.unencrypted_file_size_bytes,
+          created_at: m.created_at,
+          full_name,
+          email: m.email || null
+        } as AudioMetadata;
+      });
+
+      // Log counts
+      console.log(`Fetched ${transformedData.length} records; with names: ${transformedData.filter(r => r.full_name).length}; with unencrypted: ${transformedData.filter(r => r.unencrypted_file_path).length}`);
 
       setRecordings(transformedData);
     } catch (error) {
@@ -451,11 +468,38 @@ export const AdminRecordings = () => {
     const selectedIds = Array.from(selectedRecordings);
     if (selectedIds.length === 0) return;
 
-    // This would need to be implemented as an edge function for proper deletion
+    const sessionToken = localStorage.getItem('admin_session_token');
+    if (!sessionToken) {
+      toast({
+        title: "Error de autorización",
+        description: "No tienes permisos para eliminar archivos",
+        variant: "destructive"
+      });
+      return;
+    }
+
     toast({
-      title: "Función pendiente",
-      description: "La eliminación masiva será implementada próximamente",
-      variant: "default"
+      title: "Eliminación masiva",
+      description: `Eliminando ${selectedIds.length} grabación(es)...`
+    });
+
+    for (const id of selectedIds) {
+      const response = await supabase.functions.invoke('admin-delete-recording', {
+        body: { recordingId: id, sessionToken }
+      });
+      if (response.error) {
+        console.error('Delete error:', response.error);
+      }
+      await new Promise(r => setTimeout(r, 250));
+    }
+
+    // Refresh list
+    await fetchRecordings();
+    setSelectedRecordings(new Set());
+
+    toast({
+      title: "Eliminación completada",
+      description: "Las grabaciones seleccionadas han sido eliminadas"
     });
   };
 
@@ -780,6 +824,7 @@ export const AdminRecordings = () => {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
+                        title="Descargar cifrada"
                       >
                         <Shield className="h-4 w-4" />
                       </Button>
@@ -790,6 +835,7 @@ export const AdminRecordings = () => {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
+                            title={playingId === recording.id ? "Pausar" : "Reproducir"}
                           >
                             {playingId === recording.id ? (
                               <Pause className="h-4 w-4" />
@@ -802,11 +848,35 @@ export const AdminRecordings = () => {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
+                            title="Descargar sin cifrar"
                           >
                             <Download className="h-4 w-4" />
                           </Button>
                         </>
                       )}
+                      <Button
+                        onClick={async () => {
+                          const sessionToken = localStorage.getItem('admin_session_token');
+                          if (!sessionToken) {
+                            toast({ title: 'Error de autorización', description: 'No tienes permisos para eliminar', variant: 'destructive' });
+                            return;
+                          }
+                          const response = await supabase.functions.invoke('admin-delete-recording', { body: { recordingId: recording.id, sessionToken } });
+                          if (response.error) {
+                            console.error(response.error);
+                            toast({ title: 'Error', description: 'No se pudo eliminar', variant: 'destructive' });
+                            return;
+                          }
+                          toast({ title: 'Eliminada', description: 'La grabación ha sido eliminada' });
+                          fetchRecordings();
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-destructive"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
