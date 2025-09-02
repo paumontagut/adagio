@@ -16,6 +16,7 @@ import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminRecordings } from "./pages/admin/AdminRecordings";
+import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminLayout } from "./components/admin/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="recordings" element={<AdminRecordings />} />
+                <Route path="users" element={<AdminUsers />} />
               </Route>
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
