@@ -10,18 +10,15 @@ import {
   Play, 
   Pause, 
   Search, 
-  Filter, 
+  RefreshCw, 
   Clock, 
   FileAudio, 
   Shield, 
   ShieldOff,
-  HardDrive,
   CheckCircle,
   XCircle,
   User
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 interface AudioMetadata {
   id: string;
@@ -46,7 +43,6 @@ export const AdminRecordings = () => {
   const [recordings, setRecordings] = useState<AudioMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterConsent, setFilterConsent] = useState<'all' | 'train' | 'store'>('all');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -260,44 +256,38 @@ export const AdminRecordings = () => {
       recording.session_pseudonym.toLowerCase().includes(searchQuery.toLowerCase()) ||
       recording.device_info.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesFilter = filterConsent === 'all' || 
-      (filterConsent === 'train' && recording.consent_train) ||
-      (filterConsent === 'store' && recording.consent_store);
-
-    return matchesSearch && matchesFilter;
+    return matchesSearch;
   });
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Grabaciones de Audio</h2>
-        </div>
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-2">Cargando grabaciones...</p>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Cargando grabaciones...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Grabaciones de Audio</h2>
-          <p className="text-muted-foreground">
-            Gestiona las grabaciones con ambas versiones: cifrada y sin cifrar
-          </p>
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold">Grabaciones de Audio</h1>
+          <Button onClick={fetchRecordings} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualizar
+          </Button>
         </div>
-        <Button onClick={fetchRecordings} variant="outline">
-          Actualizar
-        </Button>
+        <p className="text-muted-foreground">
+          Gestiona las grabaciones con ambas versiones: cifrada y sin cifrar
+        </p>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1">
+      {/* Search */}
+      <div className="mb-6">
+        <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Buscar por frase, pseudónimo o dispositivo..."
@@ -306,70 +296,45 @@ export const AdminRecordings = () => {
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant={filterConsent === 'all' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setFilterConsent('all')}
-          >
-            Todas
-          </Button>
-          <Button 
-            variant={filterConsent === 'train' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setFilterConsent('train')}
-          >
-            <Filter className="h-4 w-4 mr-1" />
-            Entrenamiento
-          </Button>
-          <Button 
-            variant={filterConsent === 'store' ? 'default' : 'outline'} 
-            size="sm"
-            onClick={() => setFilterConsent('store')}
-          >
-            <HardDrive className="h-4 w-4 mr-1" />
-            Almacenamiento
-          </Button>
-        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card className="p-4">
-          <div className="flex items-center gap-2">
-            <FileAudio className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-3">
+            <FileAudio className="h-8 w-8 text-primary" />
             <div>
               <p className="text-sm text-muted-foreground">Total</p>
-              <p className="text-2xl font-semibold">{recordings.length}</p>
+              <p className="text-2xl font-bold">{recordings.length}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-600" />
+          <div className="flex items-center gap-3">
+            <Shield className="h-8 w-8 text-blue-600" />
             <div>
               <p className="text-sm text-muted-foreground">Cifradas</p>
-              <p className="text-2xl font-semibold">{recordings.length}</p>
+              <p className="text-2xl font-bold">{recordings.length}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
-          <div className="flex items-center gap-2">
-            <ShieldOff className="h-5 w-5 text-orange-600" />
+          <div className="flex items-center gap-3">
+            <ShieldOff className="h-8 w-8 text-orange-600" />
             <div>
               <p className="text-sm text-muted-foreground">Sin Cifrar</p>
-              <p className="text-2xl font-semibold">
+              <p className="text-2xl font-bold">
                 {recordings.filter(r => r.unencrypted_file_path).length}
               </p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
+          <div className="flex items-center gap-3">
+            <CheckCircle className="h-8 w-8 text-green-600" />
             <div>
               <p className="text-sm text-muted-foreground">Con Consentimiento</p>
-              <p className="text-2xl font-semibold">
+              <p className="text-2xl font-bold">
                 {recordings.filter(r => r.consent_train && r.consent_store).length}
               </p>
             </div>
@@ -378,20 +343,20 @@ export const AdminRecordings = () => {
       </div>
 
       {/* Recordings List */}
-      <div className="space-y-4">
-        {filteredRecordings.length === 0 ? (
-          <Card className="p-8 text-center">
-            <FileAudio className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No se encontraron grabaciones</h3>
-            <p className="text-muted-foreground">
-              {searchQuery || filterConsent !== 'all' 
-                ? 'Intenta ajustar los filtros de búsqueda'
-                : 'Aún no hay grabaciones de audio disponibles'
-              }
-            </p>
-          </Card>
-        ) : (
-          filteredRecordings.map((recording) => (
+      {filteredRecordings.length === 0 ? (
+        <Card className="p-8 text-center">
+          <FileAudio className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">No se encontraron grabaciones</h3>
+          <p className="text-muted-foreground">
+            {searchQuery 
+              ? 'Intenta ajustar los filtros de búsqueda'
+              : 'Aún no hay grabaciones de audio disponibles'
+            }
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredRecordings.map((recording) => (
             <Card key={recording.id} className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -400,12 +365,12 @@ export const AdminRecordings = () => {
                     <span className="text-sm font-mono text-muted-foreground">
                       {recording.session_pseudonym}
                     </span>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="text-xs">
                       v{recording.encryption_key_version}
                     </Badge>
                   </div>
-                  <p className="font-medium mb-2">"{recording.phrase_text}"</p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <h3 className="font-semibold text-lg mb-2">"{recording.phrase_text}"</h3>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {formatDuration(recording.duration_ms)}
@@ -416,41 +381,35 @@ export const AdminRecordings = () => {
                       <span>Calidad: {Math.round(recording.quality_score * 100)}%</span>
                     )}
                   </div>
+                  
+                  {/* Consent Badges */}
+                  <div className="flex gap-2 mb-4">
+                    <Badge variant={recording.consent_train ? "default" : "secondary"} className="text-xs">
+                      {recording.consent_train ? (
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                      ) : (
+                        <XCircle className="h-3 w-3 mr-1" />
+                      )}
+                      Entrenamiento
+                    </Badge>
+                    <Badge variant={recording.consent_store ? "default" : "secondary"} className="text-xs">
+                      {recording.consent_store ? (
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                      ) : (
+                        <XCircle className="h-3 w-3 mr-1" />
+                      )}
+                      Almacenamiento
+                    </Badge>
+                  </div>
                 </div>
-                <div className="text-right text-sm text-muted-foreground">
-                  <p>{formatDistanceToNow(new Date(recording.created_at), { 
-                    addSuffix: true, 
-                    locale: es 
-                  })}</p>
-                </div>
-              </div>
-
-              {/* Consent Badges */}
-              <div className="flex gap-2 mb-4">
-                <Badge variant={recording.consent_train ? "default" : "secondary"}>
-                  {recording.consent_train ? (
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                  ) : (
-                    <XCircle className="h-3 w-3 mr-1" />
-                  )}
-                  Entrenamiento
-                </Badge>
-                <Badge variant={recording.consent_store ? "default" : "secondary"}>
-                  {recording.consent_store ? (
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                  ) : (
-                    <XCircle className="h-3 w-3 mr-1" />
-                  )}
-                  Almacenamiento
-                </Badge>
               </div>
 
               {/* File Versions */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Encrypted Version */}
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="h-4 w-4 text-blue-600" />
+                <div className="border rounded-lg p-4 bg-blue-50/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield className="h-5 w-5 text-blue-600" />
                     <span className="font-medium">Versión Cifrada</span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
@@ -468,9 +427,9 @@ export const AdminRecordings = () => {
                 </div>
 
                 {/* Unencrypted Version */}
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ShieldOff className="h-4 w-4 text-orange-600" />
+                <div className="border rounded-lg p-4 bg-orange-50/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ShieldOff className="h-5 w-5 text-orange-600" />
                     <span className="font-medium">Versión Sin Cifrar</span>
                   </div>
                   {recording.unencrypted_file_path ? (
@@ -486,9 +445,9 @@ export const AdminRecordings = () => {
                           className="flex-1"
                         >
                           {playingId === recording.id ? (
-                            <Pause className="h-4 w-4 mr-2" />
+                            <Pause className="h-4 w-4 mr-1" />
                           ) : (
-                            <Play className="h-4 w-4 mr-2" />
+                            <Play className="h-4 w-4 mr-1" />
                           )}
                           {playingId === recording.id ? 'Pausar' : 'Reproducir'}
                         </Button>
@@ -498,29 +457,32 @@ export const AdminRecordings = () => {
                           variant="outline"
                           className="flex-1"
                         >
-                          <Download className="h-4 w-4 mr-2" />
+                          <Download className="h-4 w-4 mr-1" />
                           Descargar
                         </Button>
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm text-muted-foreground mb-3">
-                      No disponible para esta grabación
-                    </p>
+                    <>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        No disponible para esta grabación
+                      </p>
+                      <Button size="sm" variant="outline" disabled className="w-full">
+                        No disponible
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
 
               {/* Device Info */}
-              <div className="mt-4 pt-4 border-t">
-                <p className="text-xs text-muted-foreground">
-                  <strong>Dispositivo:</strong> {recording.device_info}
-                </p>
+              <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
+                <strong>Dispositivo:</strong> {recording.device_info}
               </div>
             </Card>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
