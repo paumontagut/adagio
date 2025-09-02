@@ -168,9 +168,6 @@ export const PrivacyCenter = () => {
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Enlaces de Interés</h2>
             <div className="flex flex-wrap gap-4">
-              <Link to="/my-data" className="text-primary hover:text-primary/80 underline">
-                Mis Datos
-              </Link>
               <Link to="/privacy-policy" className="text-primary hover:text-primary/80 underline">
                 Política de Privacidad
               </Link>

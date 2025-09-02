@@ -8,7 +8,7 @@ import { AdminProvider } from "@/contexts/AdminContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { PrivacyCenter } from "./pages/PrivacyCenter";
-import { MyData } from "./pages/MyData";
+
 import { AuthCallback } from "./pages/AuthCallback";
 import { Auth } from "./pages/Auth";
 import { TermsAndConditions } from "./pages/TermsAndConditions";
@@ -32,7 +32,6 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/privacy-center" element={<PrivacyCenter />} />
-              <Route path="/my-data" element={<MyData />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
               <Route path="/terms" element={<TermsAndConditions />} />
