@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Play, Download, Trash2, Calendar, Clock, Mic, LogIn, User } from 'lucide-react';
+import { Play, Download, Trash2, Calendar, Clock, Mic, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -20,8 +20,6 @@ interface Recording {
   device_label: string;
   consent_train: boolean;
   consent_store: boolean;
-  full_name: string;
-  consent_at: string;
   created_at: string;
 }
 
@@ -245,13 +243,6 @@ export const MyRecordings = () => {
                         {recording.format.toUpperCase()}
                       </Badge>
                     </div>
-
-                    {recording.full_name && (
-                      <div className="flex items-center gap-1 mb-2">
-                        <User className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-sm">{recording.full_name}</span>
-                      </div>
-                    )}
                     
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                       <div className="flex items-center gap-1">

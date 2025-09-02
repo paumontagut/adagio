@@ -10,9 +10,9 @@ import { AudioRecorder } from '@/components/AudioRecorder';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { ConsentModal } from '@/components/ConsentModal';
-import { ConsentGate } from '@/components/ConsentGate';
+import { TrainingConsentModal } from '@/components/TrainingConsentModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { getOrCreateSessionId, getStoredConsent } from '@/lib/session';
+import { getGuestSessionId } from '@/lib/guestSession';
 
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
@@ -42,19 +42,30 @@ const TrainView = () => {
   const [currentPhrase, setCurrentPhrase] = useState(() => samplePhrases[Math.floor(Math.random() * samplePhrases.length)]);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
-  const [showConsentGate, setShowConsentGate] = useState(true);
-  const [consentData, setConsentData] = useState({ fullName: '', consentAt: '' });
+  const [hasConsented, setHasConsented] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [showTrainingConsentModal, setShowTrainingConsentModal] = useState(true);
+  const [consentTrain, setConsentTrain] = useState(false);
+  const [consentStore, setConsentStore] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  // const [encryptionKey, setEncryptionKey] = useState<string>(''); // removed
   const [currentKeyVersion, setCurrentKeyVersion] = useState<number>(1);
+  const [fullName, setFullName] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Initialize and track page view
+  // Check if user already gave consent and track page view
   useEffect(() => {
+    const session = sessionManager.getSession();
+    if (session) {
+      setHasConsented(session.consentGiven);
+    }
     sessionManager.pageView('train');
+    
+    // Generate or retrieve encryption key
     initializeEncryption();
   }, []);
 
@@ -145,9 +156,9 @@ const TrainView = () => {
             audioFormat: 'wav',
             deviceInfo: `Browser MediaRecorder - ${navigator.userAgent.substring(0, 100)}`,
             qualityScore: processingResult?.isValid ? 0.95 : 0.70,
-            consentTrain: getStoredConsent().consentTrain,
-            consentStore: getStoredConsent().consentStore,
-            fullName: consentData.fullName
+            consentTrain: consentTrain,
+            consentStore: consentStore,
+            fullName: fullName.trim()
           }
         }
       );
@@ -161,20 +172,17 @@ const TrainView = () => {
 
       // Save recording to database (if user is logged in or as guest)
       try {
-        const storedConsent = getStoredConsent();
         const recordingData = {
           user_id: user?.id || null,
-          session_id: user ? null : getOrCreateSessionId(),
+          session_id: user ? null : getGuestSessionId(),
           phrase_text: currentPhrase,
           audio_url: responseData?.fileUrl || 'encrypted_storage',
           duration_ms: duration_ms,
           sample_rate: processingResult?.metrics.sampleRate || 16000,
           format: 'wav',
           device_label: `Browser MediaRecorder - ${navigator.userAgent.substring(0, 100)}`,
-          consent_train: storedConsent.consentTrain,
-          consent_store: storedConsent.consentStore,
-          full_name: consentData.fullName,
-          consent_at: consentData.consentAt
+          consent_train: consentTrain,
+          consent_store: consentStore
         };
 
         const { error: dbError } = await supabase
@@ -209,6 +217,7 @@ const TrainView = () => {
         setAudioBlob(null);
         setProcessingResult(null);
         setIsSuccess(false);
+        setFullName('');
         getNewPhrase();
       }, 3000);
 
@@ -227,9 +236,17 @@ const TrainView = () => {
       setIsSubmitting(false);
     }
   };
-  const handleConsentReady = (fullName: string, consentAt: string) => {
-    setConsentData({ fullName, consentAt });
-    setShowConsentGate(false);
+  const handleConsentGiven = (analyticsConsent: boolean) => {
+    sessionManager.updateConsent(true);
+    sessionManager.updateAnalyticsConsent(analyticsConsent);
+    setHasConsented(true);
+    setShowConsentModal(false);
+
+    // Now proceed with submission
+    handleSubmit();
+  };
+  const handleAnalyticsToggle = (enabled: boolean) => {
+    sessionManager.updateAnalyticsConsent(enabled);
   };
   const getErrorDetails = (errorCode: string) => {
     switch (errorCode) {
@@ -260,11 +277,28 @@ const TrainView = () => {
         };
     }
   };
+  const handleTrainingConsentGiven = async (
+    consentTrainValue: boolean, 
+    consentStoreValue: boolean, 
+    fullNameValue: string
+  ) => {
+    setConsentTrain(consentTrainValue);
+    setConsentStore(consentStoreValue);
+    setFullName(fullNameValue);
+    setShowTrainingConsentModal(false);
+  };
 
   return (
     <div className="space-y-6">
-      {/* Consent Gate - Must appear first */}
-      {showConsentGate && <ConsentGate onReady={handleConsentReady} />}
+      {/* Training Consent Modal - Must appear first */}
+      <TrainingConsentModal 
+        isOpen={showTrainingConsentModal} 
+        onConsentGiven={handleTrainingConsentGiven}
+        onCancel={() => { setShowTrainingConsentModal(false); navigate('/?tab=transcribe'); }}
+      />
+      
+      {/* Consent Modal */}
+      <ConsentModal isOpen={showConsentModal} onConsentGiven={handleConsentGiven} />
 
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-foreground mb-2">
@@ -338,8 +372,8 @@ const TrainView = () => {
       {/* Error State */}
       {error && <ErrorState {...getErrorDetails(error)} onRetry={() => setError(null)} />}
 
-      {/* Audio Recording - Only show if consent given */}
-      {!showConsentGate && (
+      {/* Audio Recording - Only show if training consent given */}
+      {!showTrainingConsentModal && (
         <Card className="p-6">
           <h3 className="text-lg font-medium mb-4 text-foreground">Grabación</h3>
           <AudioRecorder onRecordingComplete={handleRecordingComplete} maxDuration={30} />
