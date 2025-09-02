@@ -49,6 +49,8 @@ interface AudioMetadata {
   file_size_bytes: number | null;
   unencrypted_file_size_bytes: number | null;
   created_at: string;
+  full_name: string | null;
+  email: string | null;
 }
 
 export const AdminRecordings = () => {
@@ -68,14 +70,42 @@ export const AdminRecordings = () => {
   const fetchRecordings = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First, get all audio metadata
+      const { data: audioData, error: audioError } = await supabase
         .from('audio_metadata')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
-      setRecordings(data || []);
+      if (audioError) throw audioError;
+
+      // Then get consent logs to match with session pseudonyms
+      const { data: consentData, error: consentError } = await supabase
+        .from('consent_logs')
+        .select('session_id, full_name, email');
+
+      if (consentError) throw consentError;
+
+      // Create a map of session_id to consent info for efficient lookup
+      const consentMap = new Map();
+      consentData?.forEach(consent => {
+        consentMap.set(consent.session_id, {
+          full_name: consent.full_name,
+          email: consent.email
+        });
+      });
+
+      // Map the audio data to include full_name and email
+      const mappedData = (audioData || []).map((record: any) => {
+        const consentInfo = consentMap.get(record.session_pseudonym);
+        return {
+          ...record,
+          full_name: consentInfo?.full_name || null,
+          email: consentInfo?.email || null
+        };
+      });
+      
+      setRecordings(mappedData);
     } catch (error) {
       console.error('Error fetching recordings:', error);
       toast({
@@ -422,7 +452,9 @@ export const AdminRecordings = () => {
       const matchesSearch = !searchQuery || 
         recording.phrase_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
         recording.session_pseudonym.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recording.device_info.toLowerCase().includes(searchQuery.toLowerCase());
+        recording.device_info.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (recording.full_name && recording.full_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (recording.email && recording.email.toLowerCase().includes(searchQuery.toLowerCase()));
 
       return matchesSearch;
     })
@@ -476,7 +508,7 @@ export const AdminRecordings = () => {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Buscar por frase, pseudónimo o dispositivo..."
+            placeholder="Buscar por nombre, frase, pseudónimo o dispositivo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -599,10 +631,10 @@ export const AdminRecordings = () => {
                 </TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('session_pseudonym')}
+                  onClick={() => handleSort('full_name')}
                 >
                   <div className="flex items-center gap-2">
-                    Pseudónimo
+                    Nombre Completo
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </TableHead>
@@ -647,9 +679,25 @@ export const AdminRecordings = () => {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-mono text-sm">
-                        {recording.session_pseudonym.substring(0, 16)}...
-                      </span>
+                      <div>
+                        {recording.full_name ? (
+                          <div>
+                            <span className="font-medium">{recording.full_name}</span>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              {recording.session_pseudonym.substring(0, 16)}...
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <span className="font-mono text-sm text-muted-foreground">
+                              {recording.session_pseudonym.substring(0, 16)}...
+                            </span>
+                            <div className="text-xs text-muted-foreground">
+                              (Sin nombre registrado)
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
