@@ -231,7 +231,7 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
     return jsonError('Failed to get encryption key', 500)
   }
 
-  const keyBytes = base64ToUint8(keyRow.key_hash);
+  const keyBytes = await decodeKeyMaterial(keyRow.key_hash);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const salt = crypto.getRandomValues(new Uint8Array(16)); // kept for schema consistency
 
@@ -333,6 +333,44 @@ function uint8ToBase64(bytes: Uint8Array): string {
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
+}
+
+function hexToUint8(hex: string): Uint8Array {
+  const clean = hex.trim().toLowerCase().replace(/^0x/, '');
+  const len = clean.length;
+  if (len % 2 !== 0) return new Uint8Array();
+  const out = new Uint8Array(len / 2);
+  for (let i = 0; i < len; i += 2) out[i / 2] = parseInt(clean.substr(i, 2), 16);
+  return out;
+}
+
+async function decodeKeyMaterial(key: string | Uint8Array): Promise<Uint8Array> {
+  // If already bytes
+  if (key instanceof Uint8Array) {
+    if (key.byteLength === 16 || key.byteLength === 24 || key.byteLength === 32) return key;
+    // Normalize to 32 bytes via SHA-256
+    const hash = await crypto.subtle.digest('SHA-256', key);
+    return new Uint8Array(hash);
+  }
+
+  const k = (key || '').trim();
+
+  // Try base64 first
+  try {
+    const b = base64ToUint8(k);
+    if (b.byteLength === 16 || b.byteLength === 24 || b.byteLength === 32) return b;
+  } catch {}
+
+  // Try hex
+  if (/^[0-9a-fA-F]+$/.test(k) || k.startsWith('0x')) {
+    const b = hexToUint8(k);
+    if (b.byteLength === 16 || b.byteLength === 24 || b.byteLength === 32) return b;
+  }
+
+  // Fallback: hash UTF-8 string to 32 bytes
+  const enc = new TextEncoder().encode(k);
+  const hash = await crypto.subtle.digest('SHA-256', enc);
+  return new Uint8Array(hash);
 }
 
 async function handleGetKeyVersion(supabase: any) {

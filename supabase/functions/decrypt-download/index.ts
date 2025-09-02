@@ -88,7 +88,7 @@ serve(async (req) => {
     // Convert base64 (bytea) to Uint8Array
     const encBlob = toUint8(enc.encrypted_blob);
     const iv = toUint8(enc.iv);
-    const keyRaw = toUint8(keyRec.key_hash);
+    const keyRaw = await decodeKeyMaterial(keyRec.key_hash);
 
     // Decrypt (AES-GCM)
     try {
@@ -131,6 +131,37 @@ function toUint8(input: string | Uint8Array): Uint8Array {
     for (let i = 0; i < input.length; i++) arr[i] = input.charCodeAt(i);
     return arr;
   }
+}
+
+function hexToUint8(hex: string): Uint8Array {
+  const clean = hex.trim().toLowerCase().replace(/^0x/, '');
+  if (clean.length % 2 !== 0) return new Uint8Array();
+  const out = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < clean.length; i += 2) out[i / 2] = parseInt(clean.substr(i, 2), 16);
+  return out;
+}
+
+async function decodeKeyMaterial(key: string | Uint8Array): Promise<Uint8Array> {
+  if (key instanceof Uint8Array) {
+    if (key.byteLength === 16 || key.byteLength === 24 || key.byteLength === 32) return key;
+    const hash = await crypto.subtle.digest('SHA-256', key);
+    return new Uint8Array(hash);
+  }
+  const k = (key || '').trim();
+  // base64 first
+  try {
+    const b = b64decode(k);
+    if (b.byteLength === 16 || b.byteLength === 24 || b.byteLength === 32) return b;
+  } catch {}
+  // hex
+  if (/^[0-9a-fA-F]+$/.test(k) || k.startsWith('0x')) {
+    const b = hexToUint8(k);
+    if (b.byteLength === 16 || b.byteLength === 24 || b.byteLength === 32) return b;
+  }
+  // fallback sha-256 of utf-8 string
+  const enc = new TextEncoder().encode(k);
+  const hash = await crypto.subtle.digest('SHA-256', enc);
+  return new Uint8Array(hash);
 }
 
 async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint8Array): Promise<Uint8Array> {
