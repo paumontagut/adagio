@@ -472,10 +472,9 @@ export const AdminRecordings = () => {
   const filteredRecordings = recordings
     .filter(recording => {
       const matchesSearch = !searchQuery || 
-        recording.phrase_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recording.session_pseudonym.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recording.device_info.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (recording.full_name && recording.full_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        recording.phrase_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recording.device_info.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (recording.email && recording.email.toLowerCase().includes(searchQuery.toLowerCase()));
 
       return matchesSearch;
@@ -530,7 +529,7 @@ export const AdminRecordings = () => {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Buscar por nombre, frase, pseudónimo o dispositivo..."
+            placeholder="Buscar por nombre, frase o dispositivo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -702,23 +701,9 @@ export const AdminRecordings = () => {
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        {recording.full_name ? (
-                          <div>
-                            <span className="font-medium">{recording.full_name}</span>
-                            <div className="text-xs text-muted-foreground font-mono">
-                              {recording.session_pseudonym.substring(0, 16)}...
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <span className="font-mono text-sm text-muted-foreground">
-                              {recording.session_pseudonym.substring(0, 16)}...
-                            </span>
-                            <div className="text-xs text-muted-foreground">
-                              (Sin nombre registrado)
-                            </div>
-                          </div>
-                        )}
+                        <span className="font-medium">
+                          {recording.full_name ? recording.full_name : 'Sin nombre registrado'}
+                        </span>
                       </div>
                     </div>
                   </TableCell>
