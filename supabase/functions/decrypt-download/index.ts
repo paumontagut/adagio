@@ -12,6 +12,7 @@ type UUID = string;
 interface DecryptRequest {
   recordingId: UUID;
   sessionToken: string;
+  downloadType?: 'encrypted' | 'unencrypted'; // New field for download type
 }
 
 serve(async (req) => {
@@ -28,7 +29,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
-    const { recordingId, sessionToken }: DecryptRequest = await req.json();
+    const { recordingId, sessionToken, downloadType = 'encrypted' }: DecryptRequest = await req.json();
     if (!recordingId || !sessionToken) {
       return json({ error: 'recordingId and sessionToken are required' }, 400);
     }
@@ -51,7 +52,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (adminErr) return json({ error: adminErr.message }, 401);
-    if (!admin || !admin.is_active || admin.role !== 'admin') {
+    if (!admin || !admin.is_active || (admin.role !== 'admin' && admin.role !== 'analyst')) {
       return json({ error: 'Unauthorized' }, 401);
     }
 
@@ -65,7 +66,31 @@ serve(async (req) => {
     if (metaErr) return json({ error: metaErr.message }, 404);
     if (!meta) return json({ error: 'Recording not found' }, 404);
 
-    // 3) Load encrypted file
+    // 3) Handle unencrypted download
+    if (downloadType === 'unencrypted') {
+      if (!meta.unencrypted_file_path) {
+        return json({ error: 'Unencrypted file not available for this recording' }, 404);
+      }
+      
+      try {
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from(meta.unencrypted_storage_bucket || 'audio_raw')
+          .download(meta.unencrypted_file_path);
+        
+        if (downloadError) throw downloadError;
+        
+        const arrayBuffer = await fileData.arrayBuffer();
+        const base64 = b64encode(new Uint8Array(arrayBuffer));
+        const filename = `unencrypted_${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
+        
+        return json({ base64, filename, mimeType: 'audio/wav' }, 200);
+      } catch (error) {
+        console.error('Error downloading unencrypted file:', error);
+        return json({ error: 'Failed to download unencrypted file' }, 500);
+      }
+    }
+
+    // 4) Handle encrypted download (default behavior)
     const { data: enc, error: encErr } = await supabase
       .from('encrypted_audio_files')
       .select('*')
@@ -75,7 +100,7 @@ serve(async (req) => {
     if (encErr) return json({ error: encErr.message }, 404);
     if (!enc) return json({ error: 'Encrypted file not found' }, 404);
 
-    // 4) Load key by version (may be inactive but must match recording version)
+    // 5) Load key by version (may be inactive but must match recording version)
     const { data: keyRec, error: keyErr } = await supabase
       .from('encryption_keys')
       .select('key_hash')
@@ -90,21 +115,51 @@ serve(async (req) => {
     const iv = toUint8(enc.iv);
     const keyRaw = await decodeKeyMaterial(keyRec.key_hash);
 
-    // Decrypt (AES-GCM)
+    // Decrypt (AES-GCM) with fallback for legacy files
     try {
       const decrypted = await decryptAesGcm(encBlob, iv, keyRaw);
       const base64 = b64encode(decrypted);
-      const filename = `${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
+      const filename = `encrypted_${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
 
       return json({ base64, filename, mimeType: 'audio/wav' }, 200);
     } catch (e) {
       console.error('Decryption failed:', e);
-      // Check if this is a legacy client-encrypted file by looking at the error pattern
       const errorMsg = e?.message || '';
-      if (errorMsg.includes('OperationError') || meta.encryption_key_version === 1) {
-        return json({ error: 'LEGACY_CLIENT_ENCRYPTED', details: 'This recording was encrypted client-side and cannot be decrypted by the server' }, 422);
+      
+      // For legacy files, try to fallback to unencrypted version if available
+      if ((errorMsg.includes('iv length') || errorMsg.includes('OperationError') || meta.encryption_key_version === 1)) {
+        if (meta.unencrypted_file_path) {
+          try {
+            const { data: fileData, error: downloadError } = await supabase.storage
+              .from(meta.unencrypted_storage_bucket || 'audio_raw')
+              .download(meta.unencrypted_file_path);
+            
+            if (!downloadError && fileData) {
+              const arrayBuffer = await fileData.arrayBuffer();
+              const base64 = b64encode(new Uint8Array(arrayBuffer));
+              const filename = `legacy_fallback_${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
+              
+              return json({ 
+                base64, 
+                filename, 
+                mimeType: 'audio/wav',
+                isLegacyFallback: true,
+                message: 'Esta es una grabación legacy. Se descargó la versión sin cifrar.'
+              }, 200);
+            }
+          } catch (fallbackError) {
+            console.error('Fallback to unencrypted also failed:', fallbackError);
+          }
+        }
+        
+        return json({ 
+          error: 'LEGACY_CLIENT_ENCRYPTED', 
+          details: 'This recording was encrypted client-side and cannot be decrypted by the server',
+          hasUnencrypted: !!meta.unencrypted_file_path
+        }, 422);
       }
-      return json({ error: 'DECRYPTION_FAILED' }, 422);
+      
+      return json({ error: 'DECRYPTION_FAILED', details: errorMsg }, 422);
     }
   } catch (e) {
     console.error('decrypt-download error:', e);
@@ -166,11 +221,27 @@ async function decodeKeyMaterial(key: string | Uint8Array): Promise<Uint8Array> 
 
 async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint8Array): Promise<Uint8Array> {
   const key = await crypto.subtle.importKey('raw', keyRaw, { name: 'AES-GCM' }, false, ['decrypt']);
+  
+  // Handle different IV lengths - AES-GCM typically uses 12 bytes, but some legacy might use 16
+  let processedIv = iv;
+  if (iv.length !== 12 && iv.length !== 16) {
+    console.warn(`Unusual IV length: ${iv.length} bytes. Attempting to process...`);
+    // If IV is too long, truncate to 12 bytes
+    if (iv.length > 12) {
+      processedIv = iv.slice(0, 12);
+    } else {
+      // If too short, pad with zeros (not ideal but fallback)
+      const paddedIv = new Uint8Array(12);
+      paddedIv.set(iv);
+      processedIv = paddedIv;
+    }
+  }
+  
   try {
-    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted);
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: processedIv }, key, encrypted);
     return new Uint8Array(decrypted);
   } catch (e) {
     console.error('Decryption failed:', e);
-    throw new Error('DECRYPTION_FAILED');
+    throw new Error(`DECRYPTION_FAILED: ${e.message}`);
   }
 }

@@ -93,15 +93,18 @@ export const AdminRecordings = () => {
       const response = await supabase.functions.invoke('decrypt-download', {
         body: {
           recordingId: recordingId,
-          sessionToken: sessionToken
+          sessionToken: sessionToken,
+          downloadType: 'encrypted'
         }
       });
 
       if (response.error) {
-        if (response.error.details === 'This recording was encrypted client-side and cannot be decrypted by the server') {
+        if (response.error.error === 'LEGACY_CLIENT_ENCRYPTED') {
           toast({
-            title: "Archivo legacy",
-            description: "Esta grabación fue cifrada por el cliente y no puede ser descifrada automáticamente. Usa la descarga sin cifrar.",
+            title: "Archivo legacy detectado",
+            description: response.error.hasUnencrypted 
+              ? "Esta grabación fue cifrada por el cliente. Usa la descarga sin cifrar disponible."
+              : "Esta grabación legacy no se puede descifrar y no tiene versión sin cifrar.",
             variant: "destructive"
           });
         } else {
@@ -110,8 +113,18 @@ export const AdminRecordings = () => {
         return;
       }
 
+      // Handle successful download (including legacy fallback)
+      const { base64, filename, mimeType, isLegacyFallback, message } = response.data;
+      
+      if (isLegacyFallback) {
+        toast({
+          title: "Descarga con fallback",
+          description: message,
+          variant: "default"
+        });
+      }
+
       // Convert base64 to blob and download
-      const { base64, filename, mimeType } = response.data;
       const byteCharacters = atob(base64);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -154,16 +167,47 @@ export const AdminRecordings = () => {
     }
 
     try {
-      const { data, error } = await supabase.storage
-        .from(recording.unencrypted_storage_bucket || 'audio_raw')
-        .download(recording.unencrypted_file_path);
+      toast({
+        title: "Descarga iniciada",
+        description: "Procesando archivo sin cifrar..."
+      });
 
-      if (error) throw error;
+      const sessionToken = localStorage.getItem('admin_session_token');
+      if (!sessionToken) {
+        toast({
+          title: "Error de autorización",
+          description: "No tienes permisos para descargar archivos",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      const url = window.URL.createObjectURL(data);
+      const response = await supabase.functions.invoke('decrypt-download', {
+        body: {
+          recordingId: recording.id,
+          sessionToken: sessionToken,
+          downloadType: 'unencrypted'
+        }
+      });
+
+      if (response.error) {
+        throw response.error;
+      }
+
+      // Convert base64 to blob and download
+      const { base64, filename, mimeType } = response.data;
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `unencrypted_${recording.phrase_text.substring(0, 30)}_${new Date(recording.created_at).toISOString().slice(0, 10)}.${recording.audio_format}`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -171,7 +215,7 @@ export const AdminRecordings = () => {
 
       toast({
         title: "Descarga completada",
-        description: "Archivo sin cifrar descargado correctamente"
+        description: `Archivo ${filename} descargado correctamente`
       });
     } catch (error) {
       console.error('Error downloading unencrypted file:', error);
@@ -200,13 +244,39 @@ export const AdminRecordings = () => {
         return;
       }
 
-      const { data, error } = await supabase.storage
-        .from(recording.unencrypted_storage_bucket || 'audio_raw')
-        .download(recording.unencrypted_file_path);
+      const sessionToken = localStorage.getItem('admin_session_token');
+      if (!sessionToken) {
+        toast({
+          title: "Error de autorización",
+          description: "No tienes permisos para reproducir archivos",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      if (error) throw error;
+      const response = await supabase.functions.invoke('decrypt-download', {
+        body: {
+          recordingId: recording.id,
+          sessionToken: sessionToken,
+          downloadType: 'unencrypted'
+        }
+      });
 
-      const url = window.URL.createObjectURL(data);
+      if (response.error) {
+        throw response.error;
+      }
+
+      // Convert base64 to blob for playback
+      const { base64, mimeType } = response.data;
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+
+      const url = window.URL.createObjectURL(blob);
       const audio = new Audio(url);
       
       setPlayingId(recording.id);
