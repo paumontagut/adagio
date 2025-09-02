@@ -13,6 +13,7 @@ import { ConsentModal } from '@/components/ConsentModal';
 import { TrainingConsentModal } from '@/components/TrainingConsentModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { getGuestSessionId } from '@/lib/guestSession';
+import { getParticipantName, setParticipantName } from '@/lib/participant';
 
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
@@ -67,7 +68,28 @@ const TrainView = () => {
     
     // Generate or retrieve encryption key
     initializeEncryption();
-  }, []);
+
+    // Precargar nombre desde perfil de usuario si está disponible
+    loadUserProfile();
+  }, [user]);
+
+  const loadUserProfile = async () => {
+    // Si ya tenemos un nombre guardado, usarlo
+    const storedName = getParticipantName();
+    if (storedName) {
+      setFullName(storedName);
+      return;
+    }
+
+    // Si el usuario está autenticado con Google, precargar desde metadata
+    if (user?.user_metadata) {
+      const metaName = user.user_metadata.full_name || user.user_metadata.name;
+      if (metaName) {
+        setParticipantName(metaName);
+        setFullName(metaName);
+      }
+    }
+  };
 
   const initializeEncryption = async () => {
     try {
@@ -105,6 +127,17 @@ const TrainView = () => {
       return;
     }
 
+    // Verificar que tenemos el nombre del participante
+    const participantName = getParticipantName() || fullName.trim();
+    if (!participantName) {
+      toast({
+        title: "Nombre requerido",
+        description: "Necesitamos tu nombre para asociar la grabación a tu consentimiento",
+        variant: "destructive"
+      });
+      setShowTrainingConsentModal(true);
+      return;
+    }
 
     // Validate audio quality if processing result exists
     if (processingResult && !processingResult.isValid) {
@@ -182,7 +215,8 @@ const TrainView = () => {
           format: 'wav',
           device_label: `Browser MediaRecorder - ${navigator.userAgent.substring(0, 100)}`,
           consent_train: consentTrain,
-          consent_store: consentStore
+          consent_store: consentStore,
+          full_name: participantName
         };
 
         const { error: dbError } = await supabase

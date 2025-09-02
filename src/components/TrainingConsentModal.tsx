@@ -9,6 +9,7 @@ import { Shield, Info, ExternalLink, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { useNavigate } from 'react-router-dom';
+import { setParticipantName } from '@/lib/participant';
 
 interface TrainingConsentModalProps {
   isOpen: boolean;
@@ -33,6 +34,8 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: Train
 
   const handleAccept = () => {
     if (consentTrain && consentStore && fullName.trim()) {
+      // Persistir el nombre del participante
+      setParticipantName(fullName.trim());
       onConsentGiven(consentTrain, consentStore, fullName.trim());
     }
   };

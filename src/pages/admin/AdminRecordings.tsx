@@ -70,28 +70,50 @@ export const AdminRecordings = () => {
   const fetchRecordings = async () => {
     setLoading(true);
     try {
-      console.log('Fetching recordings using audio_metadata_with_identity view...');
+      console.log('Fetching recordings from recordings table...');
       
-      // Use the new view that pre-resolves full_name and email
+      // Use recordings table directly now that we have full_name column
       const { data, error } = await supabase
-        .from('audio_metadata_with_identity')
+        .from('recordings')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) {
-        console.error('Error from view query:', error);
+        console.error('Error from recordings query:', error);
         throw error;
       }
 
-      console.log(`Fetched ${data?.length || 0} recordings from view`);
+      console.log(`Fetched ${data?.length || 0} recordings from table`);
       console.log('Sample record:', data?.[0]);
       
       // Count how many have full_name
       const recordsWithNames = data?.filter(r => r.full_name) || [];
       console.log(`${recordsWithNames.length} recordings have full_name populated`);
 
-      setRecordings(data || []);
+      // Transform data to match AudioMetadata interface
+      const transformedData = data?.map(record => ({
+        id: record.id,
+        session_pseudonym: record.session_id || 'N/A',
+        phrase_text: record.phrase_text,
+        duration_ms: record.duration_ms,
+        sample_rate: record.sample_rate,
+        audio_format: record.format || 'wav',
+        device_info: record.device_label || 'Unknown device',
+        quality_score: null,
+        consent_train: record.consent_train,
+        consent_store: record.consent_store,
+        encryption_key_version: 1,
+        unencrypted_file_path: null,
+        unencrypted_storage_bucket: null,
+        file_size_bytes: null,
+        unencrypted_file_size_bytes: null,
+        created_at: record.created_at,
+        full_name: record.full_name,
+        email: null
+      })) || [];
+
+      setRecordings(transformedData);
     } catch (error) {
       console.error('Error fetching recordings:', error);
       toast({

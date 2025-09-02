@@ -523,12 +523,14 @@ export type Database = {
       recordings: {
         Row: {
           audio_url: string
+          consent_at: string | null
           consent_store: boolean | null
           consent_train: boolean | null
           created_at: string | null
           device_label: string | null
           duration_ms: number | null
           format: string | null
+          full_name: string | null
           id: string
           phrase_text: string | null
           sample_rate: number | null
@@ -537,12 +539,14 @@ export type Database = {
         }
         Insert: {
           audio_url: string
+          consent_at?: string | null
           consent_store?: boolean | null
           consent_train?: boolean | null
           created_at?: string | null
           device_label?: string | null
           duration_ms?: number | null
           format?: string | null
+          full_name?: string | null
           id?: string
           phrase_text?: string | null
           sample_rate?: number | null
@@ -551,12 +555,14 @@ export type Database = {
         }
         Update: {
           audio_url?: string
+          consent_at?: string | null
           consent_store?: boolean | null
           consent_train?: boolean | null
           created_at?: string | null
           device_label?: string | null
           duration_ms?: number | null
           format?: string | null
+          full_name?: string | null
           id?: string
           phrase_text?: string | null
           sample_rate?: number | null
@@ -628,6 +634,39 @@ export type Database = {
           key_hash?: string
           key_version?: number
           rotation_reason?: string | null
+        }
+        Relationships: []
+      }
+      train_consents: {
+        Row: {
+          consent_at: string | null
+          consent_store: boolean
+          consent_train: boolean
+          created_at: string | null
+          full_name: string
+          id: string
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          consent_at?: string | null
+          consent_store?: boolean
+          consent_train?: boolean
+          created_at?: string | null
+          full_name: string
+          id?: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          consent_at?: string | null
+          consent_store?: boolean
+          consent_train?: boolean
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          session_id?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
