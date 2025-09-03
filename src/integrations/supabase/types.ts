@@ -872,6 +872,10 @@ export type Database = {
         Args: { original_session_id: string }
         Returns: string
       }
+      get_current_admin_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_risk_level: {
         Args: { risk_score: number }
         Returns: string

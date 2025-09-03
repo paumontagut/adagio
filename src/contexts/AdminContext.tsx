@@ -81,11 +81,6 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      // Validate credentials for adminpau specifically
-      if (email !== 'adminpau@admin.local') {
-        return { success: false, error: 'Usuario no autorizado' };
-      }
-      
       const { data, error } = await supabase.rpc('validate_admin_login', {
         login_email: email,
         login_password: password
