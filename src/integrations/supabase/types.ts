@@ -870,6 +870,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_guest_data_for_deletion: {
+        Args: { pseudonym: string }
+        Returns: {
+          session_pseudonym: string
+          verification_required: boolean
+        }[]
+      }
       get_risk_level: {
         Args: { risk_score: number }
         Returns: string
@@ -894,6 +901,14 @@ export type Database = {
         Args: { token: string }
         Returns: {
           admin_user: Database["public"]["Tables"]["admin_users"]["Row"]
+        }[]
+      }
+      verify_guest_token: {
+        Args: { token_to_verify: string }
+        Returns: {
+          expires_at: string
+          is_valid: boolean
+          session_pseudonym: string
         }[]
       }
     }
