@@ -104,6 +104,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          is_data_protection_officer: boolean | null
           last_login: string | null
           role: Database["public"]["Enums"]["admin_role"]
           updated_at: string
@@ -115,6 +116,7 @@ export type Database = {
           full_name: string
           id?: string
           is_active?: boolean
+          is_data_protection_officer?: boolean | null
           last_login?: string | null
           role?: Database["public"]["Enums"]["admin_role"]
           updated_at?: string
@@ -126,6 +128,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          is_data_protection_officer?: boolean | null
           last_login?: string | null
           role?: Database["public"]["Enums"]["admin_role"]
           updated_at?: string
@@ -870,6 +873,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_deletion_request_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          completed_requests: number
+          failed_requests: number
+          pending_requests: number
+          recent_requests_24h: number
+          total_requests: number
+        }[]
+      }
       get_guest_data_for_deletion: {
         Args: { pseudonym: string }
         Returns: {
@@ -880,6 +893,10 @@ export type Database = {
       get_risk_level: {
         Args: { risk_score: number }
         Returns: string
+      }
+      is_current_user_dpo: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       rotate_encryption_key: {
         Args: Record<PropertyKey, never>
