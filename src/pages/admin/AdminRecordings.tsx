@@ -74,8 +74,7 @@ export const AdminRecordings = () => {
 
       const [metaRes, recRes] = await Promise.all([
         supabase
-          .from('audio_metadata_with_identity')
-          .select('*')
+          .rpc('get_audio_metadata_with_identity')
           .order('created_at', { ascending: false })
           .limit(500),
         supabase
