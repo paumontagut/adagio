@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Info, ExternalLink, User } from 'lucide-react';
+import { Shield, Info, ExternalLink, User, Calendar, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { useNavigate } from 'react-router-dom';
@@ -13,15 +14,16 @@ import { setParticipantName } from '@/lib/participant';
 
 interface TrainingConsentModalProps {
   isOpen: boolean;
-  onConsentGiven: (consentTrain: boolean, consentStore: boolean, fullName: string) => void;
+  onConsentGiven: (consentTrain: boolean, fullName: string, ageRange: string, region: string) => void;
   onCancel?: () => void;
 }
 
 export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: TrainingConsentModalProps) => {
   const navigate = useNavigate();
   const [consentTrain, setConsentTrain] = useState(false);
-  const [consentStore, setConsentStore] = useState(false);
   const [fullName, setFullName] = useState('');
+  const [ageRange, setAgeRange] = useState('');
+  const [region, setRegion] = useState('');
 
   const handleCancel = () => {
     if (onCancel) {
@@ -33,14 +35,14 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: Train
   };
 
   const handleAccept = () => {
-    if (consentTrain && consentStore && fullName.trim()) {
+    if (consentTrain && fullName.trim() && ageRange && region) {
       // Persistir el nombre del participante
       setParticipantName(fullName.trim());
-      onConsentGiven(consentTrain, consentStore, fullName.trim());
+      onConsentGiven(consentTrain, fullName.trim(), ageRange, region);
     }
   };
 
-  const isValid = consentTrain && consentStore && fullName.trim();
+  const isValid = consentTrain && fullName.trim() && ageRange && region;
 
   return (
     <Dialog open={isOpen} modal onOpenChange={() => {}}>
@@ -91,53 +93,103 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: Train
                 </p>
               </div>
             </div>
-
-            <div className="flex items-start space-x-3 p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5">
-              <Checkbox
-                id="consent-store"
-                checked={consentStore}
-                onCheckedChange={(checked) => setConsentStore(checked as boolean)}
-                className="mt-1"
-              />
-              <div className="flex-1">
-                <label htmlFor="consent-store" className="text-sm font-medium cursor-pointer flex items-center gap-2">
-                  Guardar mi audio en mi cuenta
-                  <span className="text-xs bg-adagio-primary text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
-                </label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  El audio se almacenará cifrado con AES-256 en tu cuenta para futuras referencias 
-                  y mejoras personalizadas del servicio.
-                </p>
-              </div>
-            </div>
           </div>
 
-          {/* Full Name Field */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-adagio-primary" />
-              <Label htmlFor="fullName" className="text-sm font-medium">
-                Nombre completo <span className="text-destructive">*</span>
-              </Label>
+          {/* Personal Information Fields */}
+          <div className="space-y-4">
+            {/* Full Name Field */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-adagio-primary" />
+                <Label htmlFor="fullName" className="text-sm font-medium">
+                  Nombre completo <span className="text-destructive">*</span>
+                </Label>
+              </div>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="Ingresa tu nombre completo"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tu nombre será asociado con las grabaciones para fines de entrenamiento
+              </p>
             </div>
-            <Input
-              id="fullName"
-              type="text"
-              placeholder="Ingresa tu nombre completo"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">
-              Tu nombre será asociado con las grabaciones para fines de entrenamiento
-            </p>
+
+            {/* Age Range Field */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-adagio-primary" />
+                <Label htmlFor="ageRange" className="text-sm font-medium">
+                  Rango de edad <span className="text-destructive">*</span>
+                </Label>
+              </div>
+              <Select value={ageRange} onValueChange={setAgeRange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona tu rango de edad" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="14-17">14–17 años (con autorización parental)</SelectItem>
+                  <SelectItem value="18-25">18–25 años</SelectItem>
+                  <SelectItem value="26-35">26–35 años</SelectItem>
+                  <SelectItem value="36-45">36–45 años</SelectItem>
+                  <SelectItem value="46-60">46–60 años</SelectItem>
+                  <SelectItem value="61+">61+ años</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Los rangos de edad ayudan a mejorar la precisión del modelo
+              </p>
+            </div>
+
+            {/* Region Field */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-adagio-primary" />
+                <Label htmlFor="region" className="text-sm font-medium">
+                  Región <span className="text-destructive">*</span>
+                </Label>
+              </div>
+              <Select value={region} onValueChange={setRegion}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona tu región" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="andalucia">Andalucía</SelectItem>
+                  <SelectItem value="aragon">Aragón</SelectItem>
+                  <SelectItem value="asturias">Asturias</SelectItem>
+                  <SelectItem value="baleares">Islas Baleares</SelectItem>
+                  <SelectItem value="canarias">Islas Canarias</SelectItem>
+                  <SelectItem value="cantabria">Cantabria</SelectItem>
+                  <SelectItem value="castilla-la-mancha">Castilla-La Mancha</SelectItem>
+                  <SelectItem value="castilla-leon">Castilla y León</SelectItem>
+                  <SelectItem value="cataluna">Cataluña</SelectItem>
+                  <SelectItem value="extremadura">Extremadura</SelectItem>
+                  <SelectItem value="galicia">Galicia</SelectItem>
+                  <SelectItem value="madrid">Comunidad de Madrid</SelectItem>
+                  <SelectItem value="murcia">Región de Murcia</SelectItem>
+                  <SelectItem value="navarra">Navarra</SelectItem>
+                  <SelectItem value="pais-vasco">País Vasco</SelectItem>
+                  <SelectItem value="rioja">La Rioja</SelectItem>
+                  <SelectItem value="valencia">Comunidad Valenciana</SelectItem>
+                  <SelectItem value="ceuta">Ceuta</SelectItem>
+                  <SelectItem value="melilla">Melilla</SelectItem>
+                  <SelectItem value="otro-pais">Otro país</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                La región ayuda a mejorar el reconocimiento de acentos y variaciones dialectales
+              </p>
+            </div>
           </div>
 
           {/* Validation Error */}
           {!isValid && (
             <Alert variant="destructive">
               <AlertDescription>
-                Debes aceptar ambas opciones y proporcionar tu nombre completo para continuar.
+                Debes aceptar el consentimiento y completar todos los campos obligatorios para continuar.
               </AlertDescription>
             </Alert>
           )}

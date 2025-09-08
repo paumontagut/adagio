@@ -54,6 +54,8 @@ const TrainView = () => {
   // const [encryptionKey, setEncryptionKey] = useState<string>(''); // removed
   const [currentKeyVersion, setCurrentKeyVersion] = useState<number>(1);
   const [fullName, setFullName] = useState<string>('');
+  const [ageRange, setAgeRange] = useState<string>('');
+  const [region, setRegion] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -313,12 +315,15 @@ const TrainView = () => {
   };
   const handleTrainingConsentGiven = async (
     consentTrainValue: boolean, 
-    consentStoreValue: boolean, 
-    fullNameValue: string
+    fullNameValue: string,
+    ageRangeValue: string,
+    regionValue: string
   ) => {
     setConsentTrain(consentTrainValue);
-    setConsentStore(consentStoreValue);
+    setConsentStore(true); // Set to true by default since storage consent is no longer asked
     setFullName(fullNameValue);
+    setAgeRange(ageRangeValue);
+    setRegion(regionValue);
     setShowTrainingConsentModal(false);
   };
 
