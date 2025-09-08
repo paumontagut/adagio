@@ -317,13 +317,14 @@ const TrainView = () => {
     consentTrainValue: boolean, 
     fullNameValue: string,
     ageRangeValue: string,
+    countryValue: string,
     regionValue: string
   ) => {
     setConsentTrain(consentTrainValue);
     setConsentStore(true); // Set to true by default since storage consent is no longer asked
     setFullName(fullNameValue);
     setAgeRange(ageRangeValue);
-    setRegion(regionValue);
+    setRegion(`${countryValue}-${regionValue}`); // Combine country and region
     setShowTrainingConsentModal(false);
   };
 

@@ -14,7 +14,7 @@ import { setParticipantName } from '@/lib/participant';
 
 interface TrainingConsentModalProps {
   isOpen: boolean;
-  onConsentGiven: (consentTrain: boolean, fullName: string, ageRange: string, region: string) => void;
+  onConsentGiven: (consentTrain: boolean, fullName: string, ageRange: string, country: string, region: string) => void;
   onCancel?: () => void;
 }
 
@@ -23,6 +23,7 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: Train
   const [consentTrain, setConsentTrain] = useState(false);
   const [fullName, setFullName] = useState('');
   const [ageRange, setAgeRange] = useState('');
+  const [country, setCountry] = useState('');
   const [region, setRegion] = useState('');
 
   const handleCancel = () => {
@@ -35,14 +36,99 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: Train
   };
 
   const handleAccept = () => {
-    if (consentTrain && fullName.trim() && ageRange && region) {
+    if (consentTrain && fullName.trim() && ageRange && country && region) {
       // Persistir el nombre del participante
       setParticipantName(fullName.trim());
-      onConsentGiven(consentTrain, fullName.trim(), ageRange, region);
+      onConsentGiven(consentTrain, fullName.trim(), ageRange, country, region);
     }
   };
 
-  const isValid = consentTrain && fullName.trim() && ageRange && region;
+  const isValid = consentTrain && fullName.trim() && ageRange && country && region;
+
+  // Reset region when country changes
+  const handleCountryChange = (value: string) => {
+    setCountry(value);
+    setRegion(''); // Reset region when country changes
+  };
+
+  // Get regions based on selected country
+  const getRegionsForCountry = (selectedCountry: string) => {
+    switch (selectedCountry) {
+      case 'spain':
+        return [
+          { value: 'andalucia', label: 'Andalucía' },
+          { value: 'aragon', label: 'Aragón' },
+          { value: 'asturias', label: 'Asturias' },
+          { value: 'baleares', label: 'Islas Baleares' },
+          { value: 'canarias', label: 'Islas Canarias' },
+          { value: 'cantabria', label: 'Cantabria' },
+          { value: 'castilla-la-mancha', label: 'Castilla-La Mancha' },
+          { value: 'castilla-leon', label: 'Castilla y León' },
+          { value: 'cataluna', label: 'Cataluña' },
+          { value: 'extremadura', label: 'Extremadura' },
+          { value: 'galicia', label: 'Galicia' },
+          { value: 'madrid', label: 'Comunidad de Madrid' },
+          { value: 'murcia', label: 'Región de Murcia' },
+          { value: 'navarra', label: 'Navarra' },
+          { value: 'pais-vasco', label: 'País Vasco' },
+          { value: 'rioja', label: 'La Rioja' },
+          { value: 'valencia', label: 'Comunidad Valenciana' },
+          { value: 'ceuta', label: 'Ceuta' },
+          { value: 'melilla', label: 'Melilla' }
+        ];
+      case 'mexico':
+        return [
+          { value: 'cdmx', label: 'Ciudad de México' },
+          { value: 'jalisco', label: 'Jalisco' },
+          { value: 'nuevo-leon', label: 'Nuevo León' },
+          { value: 'puebla', label: 'Puebla' },
+          { value: 'guanajuato', label: 'Guanajuato' },
+          { value: 'veracruz', label: 'Veracruz' },
+          { value: 'yucatan', label: 'Yucatán' },
+          { value: 'sonora', label: 'Sonora' },
+          { value: 'otros-estados', label: 'Otros estados' }
+        ];
+      case 'argentina':
+        return [
+          { value: 'buenos-aires', label: 'Buenos Aires' },
+          { value: 'caba', label: 'Ciudad Autónoma de Buenos Aires' },
+          { value: 'cordoba', label: 'Córdoba' },
+          { value: 'santa-fe', label: 'Santa Fe' },
+          { value: 'mendoza', label: 'Mendoza' },
+          { value: 'tucuman', label: 'Tucumán' },
+          { value: 'otras-provincias', label: 'Otras provincias' }
+        ];
+      case 'colombia':
+        return [
+          { value: 'bogota', label: 'Bogotá D.C.' },
+          { value: 'antioquia', label: 'Antioquia' },
+          { value: 'valle-del-cauca', label: 'Valle del Cauca' },
+          { value: 'cundinamarca', label: 'Cundinamarca' },
+          { value: 'atlantico', label: 'Atlántico' },
+          { value: 'santander', label: 'Santander' },
+          { value: 'otros-departamentos', label: 'Otros departamentos' }
+        ];
+      case 'peru':
+        return [
+          { value: 'lima', label: 'Lima' },
+          { value: 'arequipa', label: 'Arequipa' },
+          { value: 'trujillo', label: 'La Libertad' },
+          { value: 'cusco', label: 'Cusco' },
+          { value: 'otros-departamentos', label: 'Otros departamentos' }
+        ];
+      case 'chile':
+        return [
+          { value: 'santiago', label: 'Región Metropolitana' },
+          { value: 'valparaiso', label: 'Valparaíso' },
+          { value: 'biobio', label: 'Biobío' },
+          { value: 'otras-regiones', label: 'Otras regiones' }
+        ];
+      default:
+        return [
+          { value: 'region-general', label: 'Región no especificada' }
+        ];
+    }
+  };
 
   return (
     <Dialog open={isOpen} modal onOpenChange={() => {}}>
@@ -144,43 +230,67 @@ export const TrainingConsentModal = ({ isOpen, onConsentGiven, onCancel }: Train
               </p>
             </div>
 
+            {/* Country Field */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-adagio-primary" />
+                <Label htmlFor="country" className="text-sm font-medium">
+                  País <span className="text-destructive">*</span>
+                </Label>
+              </div>
+              <Select value={country} onValueChange={handleCountryChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona tu país" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="spain">España</SelectItem>
+                  <SelectItem value="mexico">México</SelectItem>
+                  <SelectItem value="argentina">Argentina</SelectItem>
+                  <SelectItem value="colombia">Colombia</SelectItem>
+                  <SelectItem value="peru">Perú</SelectItem>
+                  <SelectItem value="chile">Chile</SelectItem>
+                  <SelectItem value="otros">Otros países</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Region Field */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-adagio-primary" />
                 <Label htmlFor="region" className="text-sm font-medium">
-                  Región <span className="text-destructive">*</span>
+                  {country === 'spain' ? 'Comunidad Autónoma' : 
+                   country === 'mexico' ? 'Estado' : 
+                   country === 'argentina' ? 'Provincia' : 
+                   country === 'colombia' ? 'Departamento' : 
+                   country === 'peru' ? 'Departamento' : 
+                   country === 'chile' ? 'Región' : 
+                   'Región'} <span className="text-destructive">*</span>
                 </Label>
               </div>
-              <Select value={region} onValueChange={setRegion}>
+              <Select value={region} onValueChange={setRegion} disabled={!country}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona tu región" />
+                  <SelectValue placeholder={
+                    !country ? "Primero selecciona un país" : 
+                    country === 'spain' ? "Selecciona tu comunidad autónoma" :
+                    country === 'mexico' ? "Selecciona tu estado" :
+                    country === 'argentina' ? "Selecciona tu provincia" :
+                    country === 'colombia' ? "Selecciona tu departamento" :
+                    country === 'peru' ? "Selecciona tu departamento" :
+                    country === 'chile' ? "Selecciona tu región" :
+                    "Selecciona tu región"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="andalucia">Andalucía</SelectItem>
-                  <SelectItem value="aragon">Aragón</SelectItem>
-                  <SelectItem value="asturias">Asturias</SelectItem>
-                  <SelectItem value="baleares">Islas Baleares</SelectItem>
-                  <SelectItem value="canarias">Islas Canarias</SelectItem>
-                  <SelectItem value="cantabria">Cantabria</SelectItem>
-                  <SelectItem value="castilla-la-mancha">Castilla-La Mancha</SelectItem>
-                  <SelectItem value="castilla-leon">Castilla y León</SelectItem>
-                  <SelectItem value="cataluna">Cataluña</SelectItem>
-                  <SelectItem value="extremadura">Extremadura</SelectItem>
-                  <SelectItem value="galicia">Galicia</SelectItem>
-                  <SelectItem value="madrid">Comunidad de Madrid</SelectItem>
-                  <SelectItem value="murcia">Región de Murcia</SelectItem>
-                  <SelectItem value="navarra">Navarra</SelectItem>
-                  <SelectItem value="pais-vasco">País Vasco</SelectItem>
-                  <SelectItem value="rioja">La Rioja</SelectItem>
-                  <SelectItem value="valencia">Comunidad Valenciana</SelectItem>
-                  <SelectItem value="ceuta">Ceuta</SelectItem>
-                  <SelectItem value="melilla">Melilla</SelectItem>
-                  <SelectItem value="otro-pais">Otro país</SelectItem>
+                  {getRegionsForCountry(country).map((regionOption) => (
+                    <SelectItem key={regionOption.value} value={regionOption.value}>
+                      {regionOption.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                La región ayuda a mejorar el reconocimiento de acentos y variaciones dialectales
+                La ubicación ayuda a mejorar el reconocimiento de acentos y variaciones dialectales
               </p>
             </div>
           </div>
