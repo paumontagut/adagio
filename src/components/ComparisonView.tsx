@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Copy, Download, AlertCircle, CheckCircle2, Clock, Zap } from 'lucide-react';
+import { Copy, Download, AlertCircle, CheckCircle2, Clock, Zap, Volume2, Square, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { RecorderUploader } from '@/components/RecorderUploader';
 import { transcribeAdagio, type AdagioResult } from '@/services/adagio';
 import { startRealtimeTranscription, type RealtimeResult, type RealtimeCallbacks } from '@/services/realtime';
+import { speakWithElevenLabs } from '@/services/tts';
 
 interface ComparisonState {
   isProcessing: boolean;
@@ -38,6 +39,12 @@ const ComparisonView: React.FC = () => {
     adagio: { status: 'idle' },
     realtime: { status: 'idle', partialText: '' }
   });
+  
+  // TTS states
+  const [isLoadingTTSAdagio, setIsLoadingTTSAdagio] = useState(false);
+  const [isLoadingTTSChatGPT, setIsLoadingTTSChatGPT] = useState(false);
+  const [audioPlayerAdagio, setAudioPlayerAdagio] = useState<HTMLAudioElement | null>(null);
+  const [audioPlayerChatGPT, setAudioPlayerChatGPT] = useState<HTMLAudioElement | null>(null);
 
   const handleAudioReady = useCallback((audioBlob: Blob, metadata: any) => {
     console.log('Audio ready for comparison:', metadata);
@@ -182,12 +189,117 @@ const ComparisonView: React.FC = () => {
   }, [toast]);
 
   const resetComparison = useCallback(() => {
+    // Stop any playing audio
+    if (audioPlayerAdagio) {
+      audioPlayerAdagio.pause();
+      audioPlayerAdagio.currentTime = 0;
+      setAudioPlayerAdagio(null);
+    }
+    if (audioPlayerChatGPT) {
+      audioPlayerChatGPT.pause();
+      audioPlayerChatGPT.currentTime = 0;
+      setAudioPlayerChatGPT(null);
+    }
+    
+    setIsLoadingTTSAdagio(false);
+    setIsLoadingTTSChatGPT(false);
+    
     setState({
       isProcessing: false,
       adagio: { status: 'idle' },
       realtime: { status: 'idle', partialText: '' }
     });
-  }, []);
+  }, [audioPlayerAdagio, audioPlayerChatGPT]);
+
+  const handleSpeakAdagio = async () => {
+    if (!state.adagio.result?.text?.trim()) return;
+    
+    setIsLoadingTTSAdagio(true);
+    try {
+      const audio = await speakWithElevenLabs(state.adagio.result.text);
+      setAudioPlayerAdagio(audio);
+      
+      audio.onended = () => setAudioPlayerAdagio(null);
+      audio.onerror = () => {
+        setAudioPlayerAdagio(null);
+        toast({
+          title: "Error de audio",
+          description: "No se pudo reproducir el audio generado",
+          variant: "destructive"
+        });
+      };
+      
+      await audio.play();
+      
+      toast({
+        title: "Reproduciendo",
+        description: "Audio de Adagio generado con ElevenLabs"
+      });
+      
+    } catch (error) {
+      console.error('TTS error:', error);
+      toast({
+        title: "Error de síntesis de voz",
+        description: "No se pudo generar el audio",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingTTSAdagio(false);
+    }
+  };
+
+  const handleStopAdagio = () => {
+    if (audioPlayerAdagio) {
+      audioPlayerAdagio.pause();
+      audioPlayerAdagio.currentTime = 0;
+      setAudioPlayerAdagio(null);
+    }
+  };
+
+  const handleSpeakChatGPT = async () => {
+    if (!state.realtime.result?.text?.trim()) return;
+    
+    setIsLoadingTTSChatGPT(true);
+    try {
+      const audio = await speakWithElevenLabs(state.realtime.result.text);
+      setAudioPlayerChatGPT(audio);
+      
+      audio.onended = () => setAudioPlayerChatGPT(null);
+      audio.onerror = () => {
+        setAudioPlayerChatGPT(null);
+        toast({
+          title: "Error de audio",
+          description: "No se pudo reproducir el audio generado",
+          variant: "destructive"
+        });
+      };
+      
+      await audio.play();
+      
+      toast({
+        title: "Reproduciendo",
+        description: "Audio de ChatGPT generado con ElevenLabs"
+      });
+      
+    } catch (error) {
+      console.error('TTS error:', error);
+      toast({
+        title: "Error de síntesis de voz",
+        description: "No se pudo generar el audio",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingTTSChatGPT(false);
+    }
+  };
+
+  const handleStopChatGPT = () => {
+    if (audioPlayerChatGPT) {
+      audioPlayerChatGPT.pause();
+      audioPlayerChatGPT.currentTime = 0;
+      setAudioPlayerChatGPT(null);
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -327,6 +439,30 @@ const ComparisonView: React.FC = () => {
                     <Download className="h-4 w-4 mr-2" />
                     Descargar
                   </Button>
+                  {audioPlayerAdagio ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleStopAdagio}
+                      title="Detener reproducción"
+                    >
+                      <Square className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSpeakAdagio}
+                      disabled={isLoadingTTSAdagio || !state.adagio.result?.text?.trim()}
+                      title="Reproducir con ElevenLabs"
+                    >
+                      {isLoadingTTSAdagio ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Volume2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
               </>
             )}
@@ -416,6 +552,30 @@ const ComparisonView: React.FC = () => {
                     <Download className="h-4 w-4 mr-2" />
                     Descargar
                   </Button>
+                  {audioPlayerChatGPT ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleStopChatGPT}
+                      title="Detener reproducción"
+                    >
+                      <Square className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSpeakChatGPT}
+                      disabled={isLoadingTTSChatGPT || !state.realtime.result?.text?.trim()}
+                      title="Reproducir con ElevenLabs"
+                    >
+                      {isLoadingTTSChatGPT ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Volume2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
               </>
             )}
