@@ -13,22 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    let text: string | undefined;
-    try {
-      const payload = await req.json();
-      text = payload?.text;
-    } catch (_) {
-      // Fallbacks if body isn't JSON
-      const raw = await req.text().catch(() => '');
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          text = parsed?.text ?? '';
-        } catch {
-          text = raw; // Accept plain text body
-        }
-      }
-    }
+    const { text } = await req.json();
     
     if (!text || !text.trim()) {
       return new Response(

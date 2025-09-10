@@ -818,10 +818,6 @@ export type Database = {
         Args: { audit_id_param: string }
         Returns: number
       }
-      cleanup_expired_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       create_admin_session: {
         Args: { admin_email: string; session_duration_hours?: number }
         Returns: {
@@ -844,10 +840,6 @@ export type Database = {
       }
       evaluate_pipeline_risk: {
         Args: { audit_id_param: string; threshold?: number }
-        Returns: boolean
-      }
-      extend_admin_session: {
-        Args: { session_token: string }
         Returns: boolean
       }
       generate_pseudonym: {

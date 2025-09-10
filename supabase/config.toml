@@ -7,25 +7,22 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.data-export-handler]
-verify_jwt = true
+verify_jwt = false
 
 [functions.data-deletion-handler]
 verify_jwt = false
 
 [functions.storage-manager]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-bulk-download]
-verify_jwt = true
+verify_jwt = false
 
 [functions.decrypt-download]
-verify_jwt = true
+verify_jwt = false
 
 [functions.stt-openai]
 verify_jwt = false
 
 [functions.realtime-ephemeral]
-verify_jwt = false
-
-[functions.tts-elevenlabs]
 verify_jwt = false
