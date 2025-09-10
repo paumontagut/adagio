@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/secureLogger';
 
 interface Profile {
   id: string;
@@ -46,13 +47,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
+        logger.error('Error fetching profile', error as Error, {
+          component: 'AuthContext',
+          userId: userId
+        });
         return;
       }
 
       setProfile(data);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      logger.error('Error fetching profile', error as Error, {
+        component: 'AuthContext',
+        userId: userId
+      });
     }
   };
 
@@ -108,7 +115,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     if (error) {
-      console.error('Error signing in with Google:', error.message);
+      logger.error('Error signing in with Google', error, {
+        component: 'AuthContext',
+        action: 'signInWithGoogle'
+      });
       throw error;
     }
   };
@@ -116,7 +126,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error('Error signing out:', error.message);
+      logger.error('Error signing out', error, {
+        component: 'AuthContext',
+        action: 'signOut'
+      });
       throw error;
     }
     setProfile(null);

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/secureLogger';
+import { secureStorage } from '@/lib/secureStorage';
 
 export interface AdminUser {
   id: string;
@@ -52,7 +54,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
   const checkSession = async () => {
     try {
-      const sessionToken = localStorage.getItem('admin_session_token');
+      const sessionToken = await secureStorage.getAdminSession();
       if (!sessionToken) {
         setIsLoading(false);
         return;
@@ -63,14 +65,24 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       });
 
       if (error || !data || data.length === 0) {
-        localStorage.removeItem('admin_session_token');
+        await secureStorage.clearAdminSession();
         setAdminUser(null);
+        logger.warn('Invalid admin session detected', { 
+          component: 'AdminContext',
+          action: 'checkSession'
+        });
       } else {
         setAdminUser(data[0].admin_user);
+        logger.info('Admin session validated', {
+          component: 'AdminContext',
+          userId: data[0].admin_user.id
+        });
       }
     } catch (error) {
-      console.error('Error checking admin session:', error);
-      localStorage.removeItem('admin_session_token');
+      logger.error('Error checking admin session', error as Error, {
+        component: 'AdminContext'
+      });
+      await secureStorage.clearAdminSession();
       setAdminUser(null);
     } finally {
       setIsLoading(false);
@@ -92,7 +104,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
       if (data && data.length > 0) {
         const sessionData = data[0];
-        localStorage.setItem('admin_session_token', sessionData.session_token);
+        await secureStorage.setAdminSession(sessionData.session_token, 4);
         setAdminUser(sessionData.admin_user);
         
         // Log activity
@@ -103,12 +115,21 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
           description: `Bienvenido, ${sessionData.admin_user.full_name}`,
         });
         
+        logger.info('Admin login successful', {
+          component: 'AdminContext',
+          userId: sessionData.admin_user.id,
+          action: 'login'
+        });
+        
         return { success: true };
       } else {
         return { success: false, error: 'Credenciales incorrectas' };
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      logger.error('Login error', error, {
+        component: 'AdminContext',
+        action: 'login'
+      });
       return { success: false, error: error.message || 'Error de login' };
     } finally {
       setIsLoading(false);
@@ -119,15 +140,22 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     try {
       if (adminUser) {
         await logActivity('admin_logout', 'session', null, {});
+        logger.info('Admin logout initiated', {
+          component: 'AdminContext',
+          userId: adminUser.id,
+          action: 'logout'
+        });
       }
-      localStorage.removeItem('admin_session_token');
+      await secureStorage.clearAdminSession();
       setAdminUser(null);
       toast({
         title: "Sesión cerrada",
         description: "Has cerrado sesión correctamente",
       });
     } catch (error) {
-      console.error('Logout error:', error);
+      logger.error('Logout error', error as Error, {
+        component: 'AdminContext'
+      });
     }
   };
 
@@ -148,7 +176,10 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         user_agent: navigator.userAgent
       });
     } catch (error) {
-      console.error('Error logging activity:', error);
+      logger.error('Error logging admin activity', error as Error, {
+        component: 'AdminContext',
+        action: 'logActivity'
+      });
     }
   };
 
