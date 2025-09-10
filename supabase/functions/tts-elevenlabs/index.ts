@@ -53,7 +53,7 @@ serve(async (req) => {
 
     const voiceId = Deno.env.get('ELEVENLABS_VOICE_ID');
     const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
-    const modelId = 'eleven_multilingual_v2'; // Low latency model
+    const modelId = 'eleven_flash_v2_5'; // Low latency model
 
     if (!voiceId || !apiKey) {
       return new Response(
