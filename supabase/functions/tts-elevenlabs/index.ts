@@ -13,7 +13,22 @@ serve(async (req) => {
   }
 
   try {
-    const { text } = await req.json();
+    let text: string | undefined;
+    try {
+      const payload = await req.json();
+      text = payload?.text;
+    } catch (_) {
+      // Fallbacks if body isn't JSON
+      const raw = await req.text().catch(() => '');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          text = parsed?.text ?? '';
+        } catch {
+          text = raw; // Accept plain text body
+        }
+      }
+    }
     
     if (!text || !text.trim()) {
       return new Response(
