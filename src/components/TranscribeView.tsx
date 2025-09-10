@@ -12,7 +12,6 @@ import { ErrorState } from '@/components/ErrorState';
 import ComparisonView from '@/components/ComparisonView';
 import { sessionManager } from '@/lib/sessionManager';
 import { transcribeService, type TranscribeError, type TranscribeProvider } from '@/services/transcribe';
-import { speakWithElevenLabs } from '@/services/tts';
 import type { ConversionResult } from '@/lib/audioConverter';
 import { 
   Loader2, 
@@ -25,10 +24,7 @@ import {
   Bot,
   Server,
   Zap,
-  GitCompare,
-  Volume2,
-  Pause,
-  Square
+  GitCompare
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -47,8 +43,6 @@ export const TranscribeView = () => {
   const [error, setError] = useState<TranscribeError | null>(null);
   const [backendOnline, setBackendOnline] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isLoadingTTS, setIsLoadingTTS] = useState(false);
-  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   // Track page view analytics
@@ -211,63 +205,7 @@ export const TranscribeView = () => {
     setError(null);
     setState('idle');
     setUploadProgress(0);
-    // Stop any playing audio
-    if (audioPlayer) {
-      audioPlayer.pause();
-      audioPlayer.currentTime = 0;
-      setAudioPlayer(null);
-    }
-    setIsLoadingTTS(false);
     setResetKey(prev => prev + 1); // Force RecorderUploader to reset
-  };
-
-  const handleSpeak = async () => {
-    if (!adagioResult?.text?.trim()) return;
-    
-    setIsLoadingTTS(true);
-    try {
-      const audio = await speakWithElevenLabs(adagioResult.text);
-      setAudioPlayer(audio);
-      
-      // Set up event listeners
-      audio.onended = () => {
-        setAudioPlayer(null);
-      };
-      
-      audio.onerror = () => {
-        setAudioPlayer(null);
-        toast({
-          title: "Error de audio",
-          description: "No se pudo reproducir el audio generado",
-          variant: "destructive"
-        });
-      };
-      
-      await audio.play();
-      
-      toast({
-        title: "Reproduciendo",
-        description: "Audio generado con ElevenLabs"
-      });
-      
-    } catch (error) {
-      console.error('TTS error:', error);
-      toast({
-        title: "Error de síntesis de voz",
-        description: "No se pudo generar el audio",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoadingTTS(false);
-    }
-  };
-
-  const handleStopAudio = () => {
-    if (audioPlayer) {
-      audioPlayer.pause();
-      audioPlayer.currentTime = 0;
-      setAudioPlayer(null);
-    }
   };
 
   const getStateConfig = () => {
@@ -439,7 +377,6 @@ export const TranscribeView = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleCopyTranscription(adagioResult.text, 'Adagio')}
-                  title="Copiar transcripción"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -447,37 +384,9 @@ export const TranscribeView = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDownloadTranscription(adagioResult.text, 'Adagio')}
-                  title="Descargar transcripción"
                 >
                   <Download className="h-4 w-4" />
                 </Button>
-                {/* TTS Button */}
-                {audioPlayer ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleStopAudio}
-                    title="Detener reproducción"
-                    aria-live="polite"
-                  >
-                    <Square className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSpeak}
-                    disabled={isLoadingTTS || !adagioResult.text.trim()}
-                    title="Reproducir con ElevenLabs"
-                    aria-live="polite"
-                  >
-                    {isLoadingTTS ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Volume2 className="h-4 w-4" />
-                    )}
-                  </Button>
-                )}
               </div>
             </div>
             
