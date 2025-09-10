@@ -87,6 +87,7 @@ serve(async (req) => {
       headers: {
         ...corsHeaders,
         'Content-Type': 'audio/mpeg',
+        'Content-Disposition': 'attachment; filename="speech.mp3"',
       },
     });
 
