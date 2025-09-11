@@ -877,6 +877,29 @@ export type Database = {
           unencrypted_storage_bucket: string
         }[]
       }
+      get_audio_metadata_with_token: {
+        Args: { session_token: string }
+        Returns: {
+          audio_format: string
+          consent_store: boolean
+          consent_train: boolean
+          created_at: string
+          device_info: string
+          duration_ms: number
+          email: string
+          encryption_key_version: number
+          file_size_bytes: number
+          full_name: string
+          id: string
+          phrase_text: string
+          quality_score: number
+          sample_rate: number
+          session_pseudonym: string
+          unencrypted_file_path: string
+          unencrypted_file_size_bytes: number
+          unencrypted_storage_bucket: string
+        }[]
+      }
       get_current_admin_role: {
         Args: Record<PropertyKey, never>
         Returns: string

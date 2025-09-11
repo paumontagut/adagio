@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAdmin } from '@/contexts/AdminContext';
+import { secureStorage } from '@/lib/secureStorage';
 import { 
   Table,
   TableBody,
@@ -62,6 +64,7 @@ export const AdminRecordings = () => {
   const [sortField, setSortField] = useState<keyof AudioMetadata>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { toast } = useToast();
+  const { adminUser } = useAdmin();
 
   useEffect(() => {
     fetchRecordings();
@@ -70,11 +73,17 @@ export const AdminRecordings = () => {
   const fetchRecordings = async () => {
     setLoading(true);
     try {
-      console.log('Fetching recordings from audio_metadata_with_identity and recordings...');
+      console.log('Fetching recordings using admin session token...');
+
+      // Get admin session token
+      const sessionToken = await secureStorage.getAdminSession();
+      if (!sessionToken) {
+        throw new Error('No valid admin session found');
+      }
 
       const [metaRes, recRes] = await Promise.all([
         supabase
-          .rpc('get_audio_metadata_with_identity')
+          .rpc('get_audio_metadata_with_token', { session_token: sessionToken })
           .order('created_at', { ascending: false })
           .limit(500),
         supabase
@@ -153,7 +162,7 @@ export const AdminRecordings = () => {
         description: "Procesando archivo cifrado..."
       });
 
-      const sessionToken = localStorage.getItem('admin_session_token');
+      const sessionToken = await secureStorage.getAdminSession();
       if (!sessionToken) {
         toast({
           title: "Error de autorización",
@@ -245,7 +254,7 @@ export const AdminRecordings = () => {
         description: "Procesando archivo sin cifrar..."
       });
 
-      const sessionToken = localStorage.getItem('admin_session_token');
+      const sessionToken = await secureStorage.getAdminSession();
       if (!sessionToken) {
         toast({
           title: "Error de autorización",
@@ -317,7 +326,7 @@ export const AdminRecordings = () => {
         return;
       }
 
-      const sessionToken = localStorage.getItem('admin_session_token');
+      const sessionToken = await secureStorage.getAdminSession();
       if (!sessionToken) {
         toast({
           title: "Error de autorización",
@@ -420,6 +429,39 @@ export const AdminRecordings = () => {
     setSelectedRecordings(newSelected);
   };
 
+  const handleSingleDelete = async (recordingId: string) => {
+    const sessionToken = await secureStorage.getAdminSession();
+    if (!sessionToken) {
+      toast({ 
+        title: 'Error de autorización', 
+        description: 'No tienes permisos para eliminar', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    const response = await supabase.functions.invoke('admin-delete-recording', { 
+      body: { recordingId, sessionToken } 
+    });
+    
+    if (response.error) {
+      console.error(response.error);
+      toast({ 
+        title: 'Error', 
+        description: 'No se pudo eliminar', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    toast({ 
+      title: 'Eliminada', 
+      description: 'La grabación ha sido eliminada' 
+    });
+    
+    await fetchRecordings();
+  };
+
   const handleBulkDownloadEncrypted = async () => {
     const selectedIds = Array.from(selectedRecordings);
     if (selectedIds.length === 0) return;
@@ -467,7 +509,7 @@ export const AdminRecordings = () => {
     const selectedIds = Array.from(selectedRecordings);
     if (selectedIds.length === 0) return;
 
-    const sessionToken = localStorage.getItem('admin_session_token');
+    const sessionToken = await secureStorage.getAdminSession();
     if (!sessionToken) {
       toast({
         title: "Error de autorización",
@@ -853,27 +895,13 @@ export const AdminRecordings = () => {
                           </Button>
                         </>
                       )}
-                      <Button
-                        onClick={async () => {
-                          const sessionToken = localStorage.getItem('admin_session_token');
-                          if (!sessionToken) {
-                            toast({ title: 'Error de autorización', description: 'No tienes permisos para eliminar', variant: 'destructive' });
-                            return;
-                          }
-                          const response = await supabase.functions.invoke('admin-delete-recording', { body: { recordingId: recording.id, sessionToken } });
-                          if (response.error) {
-                            console.error(response.error);
-                            toast({ title: 'Error', description: 'No se pudo eliminar', variant: 'destructive' });
-                            return;
-                          }
-                          toast({ title: 'Eliminada', description: 'La grabación ha sido eliminada' });
-                          fetchRecordings();
-                        }}
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-destructive"
-                        title="Eliminar"
-                      >
+                       <Button
+                         onClick={() => handleSingleDelete(recording.id)}
+                         variant="ghost"
+                         size="sm"
+                         className="h-8 w-8 p-0 text-destructive"
+                         title="Eliminar"
+                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
