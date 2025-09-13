@@ -531,6 +531,7 @@ export type Database = {
           phrase_text: string | null
           sample_rate: number | null
           session_id: string | null
+          session_pseudonym: string | null
           user_id: string | null
         }
         Insert: {
@@ -547,6 +548,7 @@ export type Database = {
           phrase_text?: string | null
           sample_rate?: number | null
           session_id?: string | null
+          session_pseudonym?: string | null
           user_id?: string | null
         }
         Update: {
@@ -563,6 +565,7 @@ export type Database = {
           phrase_text?: string | null
           sample_rate?: number | null
           session_id?: string | null
+          session_pseudonym?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -814,6 +817,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_identity_for_pseudonym: {
+        Args: { admin_session_token: string; pseudonym: string }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          session_pseudonym: string
+        }[]
+      }
       calculate_membership_risk: {
         Args: { audit_id_param: string }
         Returns: number
@@ -920,6 +932,10 @@ export type Database = {
           session_pseudonym: string
           verification_required: boolean
         }[]
+      }
+      get_or_create_pseudonym_simple: {
+        Args: { original_session_id: string }
+        Returns: string
       }
       get_risk_level: {
         Args: { risk_score: number }

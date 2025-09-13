@@ -31,10 +31,12 @@ import {
   User,
   Trash2,
   Archive,
-  ArrowUpDown
+  ArrowUpDown,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
-interface AudioMetadata {
+interface RecordingData {
   id: string;
   session_pseudonym: string;
   phrase_text: string;
@@ -51,18 +53,26 @@ interface AudioMetadata {
   file_size_bytes: number | null;
   unencrypted_file_size_bytes: number | null;
   created_at: string;
-  full_name: string | null;
-  email: string | null;
+  identity_available: boolean;
+}
+
+interface IdentityData {
+  session_pseudonym: string;
+  email: string;
+  full_name: string;
+  created_at: string;
 }
 
 export const AdminRecordings = () => {
-  const [recordings, setRecordings] = useState<AudioMetadata[]>([]);
+  const [recordings, setRecordings] = useState<RecordingData[]>([]);
+  const [identityCache, setIdentityCache] = useState<Map<string, IdentityData>>(new Map());
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [selectedRecordings, setSelectedRecordings] = useState<Set<string>>(new Set());
-  const [sortField, setSortField] = useState<keyof AudioMetadata>('created_at');
+  const [sortField, setSortField] = useState<keyof RecordingData>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showIdentities, setShowIdentities] = useState(false);
   const { toast } = useToast();
   const { adminUser } = useAdmin();
 
@@ -75,7 +85,6 @@ export const AdminRecordings = () => {
     try {
       console.log('Fetching recordings using admin session token...');
 
-      // Get admin session token
       const sessionToken = await secureStorage.getAdminSession();
       if (!sessionToken) {
         throw new Error('No valid admin session found');
@@ -110,11 +119,14 @@ export const AdminRecordings = () => {
         file_size_bytes: m.file_size_bytes,
         unencrypted_file_size_bytes: m.unencrypted_file_size_bytes,
         created_at: m.created_at,
-        full_name: m.full_name,
-        email: m.email
-      })) as AudioMetadata[];
+        identity_available: m.identity_available || false
+      })) as RecordingData[];
 
-      console.log(`Fetched ${transformedData.length} recordings; with names: ${transformedData.filter(r => r.full_name).length}; with unencrypted: ${transformedData.filter(r => r.unencrypted_file_path).length}`);
+      console.log(`Fetched ${transformedData.length} recordings with pseudonyms; identity data separated for privacy`);
+      
+      if (response.data?.privacy_note) {
+        console.log('Privacy note:', response.data.privacy_note);
+      }
 
       setRecordings(transformedData);
     } catch (error) {
@@ -127,6 +139,96 @@ export const AdminRecordings = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Función para obtener identidad específica (con auditoría)
+  const getIdentityForPseudonym = async (pseudonym: string): Promise<IdentityData | null> => {
+    if (identityCache.has(pseudonym)) {
+      return identityCache.get(pseudonym) || null;
+    }
+
+    try {
+      const sessionToken = await secureStorage.getAdminSession();
+      if (!sessionToken) return null;
+
+      const { data, error } = await supabase.rpc('admin_get_identity_for_pseudonym', {
+        pseudonym,
+        admin_session_token: sessionToken
+      });
+
+      if (error || !data || data.length === 0) {
+        return null;
+      }
+
+      const identity = data[0] as IdentityData;
+      
+      const newCache = new Map(identityCache);
+      newCache.set(pseudonym, identity);
+      setIdentityCache(newCache);
+
+      return identity;
+    } catch (error) {
+      console.error('Error fetching identity:', error);
+      return null;
+    }
+  };
+
+  // Función para cargar todas las identidades
+  const loadAllIdentities = async () => {
+    const pseudonyms = recordings
+      .filter(r => r.identity_available && !identityCache.has(r.session_pseudonym))
+      .map(r => r.session_pseudonym);
+
+    for (const pseudonym of pseudonyms) {
+      await getIdentityForPseudonym(pseudonym);
+    }
+  };
+
+  // Función para mostrar identidad en la UI
+  const renderIdentityInfo = (recording: RecordingData) => {
+    if (!recording.identity_available) {
+      return <span className="text-muted-foreground">N/A</span>;
+    }
+
+    if (!showIdentities) {
+      return (
+        <div className="flex items-center text-muted-foreground">
+          <EyeOff className="w-3 h-3 mr-1" />
+          <span className="text-xs">Oculto</span>
+        </div>
+      );
+    }
+
+    const cachedIdentity = identityCache.get(recording.session_pseudonym);
+    if (cachedIdentity) {
+      return (
+        <div className="text-sm">
+          <div className="font-medium">{cachedIdentity.full_name}</div>
+          <div className="text-muted-foreground text-xs">{cachedIdentity.email}</div>
+        </div>
+      );
+    }
+
+    return (
+      <Button
+        variant="ghost" 
+        size="sm"
+        onClick={async () => {
+          const identity = await getIdentityForPseudonym(recording.session_pseudonym);
+          if (!identity) {
+            toast({
+              title: "Identidad no encontrada",
+              description: "No se pudo obtener la información de identidad",
+              variant: "destructive"
+            });
+          }
+        }}
+        className="h-auto p-1 text-xs"
+      >
+        <User className="w-3 h-3 mr-1" />
+        Ver identidad
+      </Button>
+    );
   };
 
   const handleDownloadEncrypted = async (recordingId: string) => {
@@ -169,7 +271,6 @@ export const AdminRecordings = () => {
         return;
       }
 
-      // Handle successful download (including legacy fallback)
       const { base64, filename, mimeType, isLegacyFallback, message } = response.data;
       
       if (isLegacyFallback) {
@@ -180,7 +281,6 @@ export const AdminRecordings = () => {
         });
       }
 
-      // Convert base64 to blob and download
       const byteCharacters = atob(base64);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -212,7 +312,7 @@ export const AdminRecordings = () => {
     }
   };
 
-  const handleDownloadUnencrypted = async (recording: AudioMetadata) => {
+  const handleDownloadUnencrypted = async (recording: RecordingData) => {
     if (!recording.unencrypted_file_path) {
       toast({
         title: "Archivo no disponible",
@@ -231,7 +331,7 @@ export const AdminRecordings = () => {
       const sessionToken = await secureStorage.getAdminSession();
       if (!sessionToken) {
         toast({
-          title: "Error de autorización",
+          title: "Error de autorización", 
           description: "No tienes permisos para descargar archivos",
           variant: "destructive"
         });
@@ -250,7 +350,6 @@ export const AdminRecordings = () => {
         throw response.error;
       }
 
-      // Convert base64 to blob and download
       const { base64, filename, mimeType } = response.data;
       const byteCharacters = atob(base64);
       const byteNumbers = new Array(byteCharacters.length);
@@ -283,7 +382,7 @@ export const AdminRecordings = () => {
     }
   };
 
-  const handlePlayUnencrypted = async (recording: AudioMetadata) => {
+  const handlePlayUnencrypted = async (recording: RecordingData) => {
     if (!recording.unencrypted_file_path) {
       toast({
         title: "Archivo no disponible",
@@ -295,7 +394,6 @@ export const AdminRecordings = () => {
 
     try {
       if (playingId === recording.id) {
-        // Stop current playback
         setPlayingId(null);
         return;
       }
@@ -322,7 +420,6 @@ export const AdminRecordings = () => {
         throw response.error;
       }
 
-      // Convert base64 to blob for playback
       const { base64, mimeType } = response.data;
       const byteCharacters = atob(base64);
       const byteNumbers = new Array(byteCharacters.length);
@@ -376,7 +473,7 @@ export const AdminRecordings = () => {
     return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
   };
 
-  const handleSort = (field: keyof AudioMetadata) => {
+  const handleSort = (field: keyof RecordingData) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -436,97 +533,26 @@ export const AdminRecordings = () => {
     await fetchRecordings();
   };
 
-  const handleBulkDownloadEncrypted = async () => {
-    const selectedIds = Array.from(selectedRecordings);
-    if (selectedIds.length === 0) return;
-
-    toast({
-      title: "Descarga masiva iniciada",
-      description: `Procesando ${selectedIds.length} archivos cifrados...`
-    });
-
-    for (const recordingId of selectedIds) {
-      await handleDownloadEncrypted(recordingId);
-      // Small delay to avoid overwhelming the server
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-  };
-
-  const handleBulkDownloadUnencrypted = async () => {
-    const selectedIds = Array.from(selectedRecordings);
-    const availableRecordings = recordings.filter(r => 
-      selectedIds.includes(r.id) && r.unencrypted_file_path
-    );
-    
-    if (availableRecordings.length === 0) {
-      toast({
-        title: "Sin archivos disponibles",
-        description: "Ninguna de las grabaciones seleccionadas tiene versión sin cifrar",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    toast({
-      title: "Descarga masiva iniciada",
-      description: `Procesando ${availableRecordings.length} archivos sin cifrar...`
-    });
-
-    for (const recording of availableRecordings) {
-      await handleDownloadUnencrypted(recording);
-      // Small delay to avoid overwhelming the server
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    const selectedIds = Array.from(selectedRecordings);
-    if (selectedIds.length === 0) return;
-
-    const sessionToken = await secureStorage.getAdminSession();
-    if (!sessionToken) {
-      toast({
-        title: "Error de autorización",
-        description: "No tienes permisos para eliminar archivos",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    toast({
-      title: "Eliminación masiva",
-      description: `Eliminando ${selectedIds.length} grabación(es)...`
-    });
-
-    for (const id of selectedIds) {
-      const response = await supabase.functions.invoke('admin-delete-recording', {
-        body: { recordingId: id, sessionToken }
-      });
-      if (response.error) {
-        console.error('Delete error:', response.error);
-      }
-      await new Promise(r => setTimeout(r, 250));
-    }
-
-    // Refresh list
-    await fetchRecordings();
-    setSelectedRecordings(new Set());
-
-    toast({
-      title: "Eliminación completada",
-      description: "Las grabaciones seleccionadas han sido eliminadas"
-    });
-  };
-
+  // Filtrado que incluye búsqueda en cache de identidades
   const filteredRecordings = recordings
     .filter(recording => {
-      const matchesSearch = !searchQuery || 
-        (recording.full_name && recording.full_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        recording.phrase_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recording.device_info.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (recording.email && recording.email.toLowerCase().includes(searchQuery.toLowerCase()));
+      const searchLower = searchQuery.toLowerCase();
+      
+      // Búsqueda básica en datos de grabación
+      const basicMatch = (
+        recording.phrase_text.toLowerCase().includes(searchLower) ||
+        recording.session_pseudonym.toLowerCase().includes(searchLower) ||
+        recording.device_info.toLowerCase().includes(searchLower)
+      );
 
-      return matchesSearch;
+      // Búsqueda en identidades cacheadas
+      const cachedIdentity = identityCache.get(recording.session_pseudonym);
+      const identityMatch = cachedIdentity && (
+        cachedIdentity.full_name.toLowerCase().includes(searchLower) ||
+        cachedIdentity.email.toLowerCase().includes(searchLower)
+      );
+
+      return basicMatch || identityMatch;
     })
     .sort((a, b) => {
       const aValue = a[sortField];
@@ -563,14 +589,34 @@ export const AdminRecordings = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold">Grabaciones de Audio</h1>
-          <Button onClick={fetchRecordings} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Actualizar
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant={showIdentities ? "default" : "outline"}
+              size="sm"
+              onClick={async () => {
+                if (!showIdentities) {
+                  await loadAllIdentities();
+                }
+                setShowIdentities(!showIdentities);
+              }}
+            >
+              {showIdentities ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
+              {showIdentities ? 'Ocultar identidades' : 'Mostrar identidades'}
+            </Button>
+            <Button onClick={fetchRecordings} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Actualizar
+            </Button>
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          Gestiona las grabaciones con selección múltiple y acciones masivas
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-muted-foreground">
+            Gestiona las grabaciones con separación de datos de identidad para privacidad
+          </p>
+          <Badge variant="secondary" className="text-xs">
+            Datos separados por privacidad
+          </Badge>
+        </div>
       </div>
 
       {/* Search */}
@@ -578,7 +624,7 @@ export const AdminRecordings = () => {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Buscar por nombre, frase o dispositivo..."
+            placeholder="Buscar por pseudónimo, frase o dispositivo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -589,137 +635,136 @@ export const AdminRecordings = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <FileAudio className="h-8 w-8 text-primary" />
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold">{recordings.length}</p>
+              <p className="text-sm font-medium text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold">{filteredRecordings.length}</p>
             </div>
+            <FileAudio className="h-8 w-8 text-muted-foreground" />
           </div>
         </Card>
+        
         <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-blue-600" />
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Cifradas</p>
-              <p className="text-2xl font-bold">{recordings.length}</p>
+              <p className="text-sm font-medium text-muted-foreground">Con identidad</p>
+              <p className="text-2xl font-bold">{filteredRecordings.filter(r => r.identity_available).length}</p>
             </div>
+            <User className="h-8 w-8 text-muted-foreground" />
           </div>
         </Card>
+
         <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <ShieldOff className="h-8 w-8 text-orange-600" />
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Sin Cifrar</p>
-              <p className="text-2xl font-bold">
-                {recordings.filter(r => r.unencrypted_file_path).length}
-              </p>
+              <p className="text-sm font-medium text-muted-foreground">Sin cifrar</p>
+              <p className="text-2xl font-bold">{filteredRecordings.filter(r => r.unencrypted_file_path).length}</p>
             </div>
+            <ShieldOff className="h-8 w-8 text-muted-foreground" />
           </div>
         </Card>
+
         <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <User className="h-8 w-8 text-green-600" />
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Con Nombre</p>
-              <p className="text-2xl font-bold">
-                {recordings.filter(r => r.full_name).length}
-              </p>
+              <p className="text-sm font-medium text-muted-foreground">Seleccionadas</p>
+              <p className="text-2xl font-bold">{selectedRecordings.size}</p>
             </div>
+            <CheckCircle className="h-8 w-8 text-muted-foreground" />
           </div>
         </Card>
       </div>
 
-      {/* Selection and Bulk Actions */}
+      {/* Bulk Actions */}
       {selectedRecordings.size > 0 && (
-        <Card className="p-4 mb-6 bg-primary/5 border-primary/20">
+        <Card className="p-4 mb-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">
-                {selectedRecordings.size} grabación(es) seleccionada(s)
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                onClick={handleBulkDownloadEncrypted}
-                variant="outline" 
+            <p className="text-sm text-muted-foreground">
+              {selectedRecordings.size} grabación(es) seleccionada(s)
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
                 size="sm"
+                onClick={async () => {
+                  const selectedIds = Array.from(selectedRecordings);
+                  for (const recordingId of selectedIds) {
+                    await handleDownloadEncrypted(recordingId);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                  }
+                }}
               >
-                <Download className="h-4 w-4 mr-1" />
-                Descargar Cifradas
+                <Download className="h-4 w-4 mr-2" />
+                Descargar cifrados
               </Button>
-              <Button 
-                onClick={handleBulkDownloadUnencrypted}
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
+                onClick={async () => {
+                  const selectedIds = Array.from(selectedRecordings);
+                  const availableRecordings = recordings.filter(r => 
+                    selectedIds.includes(r.id) && r.unencrypted_file_path
+                  );
+                  
+                  for (const recording of availableRecordings) {
+                    await handleDownloadUnencrypted(recording);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                  }
+                }}
               >
-                <Download className="h-4 w-4 mr-1" />
-                Descargar Sin Cifrar
+                <Download className="h-4 w-4 mr-2" />
+                Descargar sin cifrar
               </Button>
-              <Button 
-                onClick={handleBulkDelete}
-                variant="outline" 
+              <Button
+                variant="destructive"
                 size="sm"
-                className="text-destructive hover:text-destructive"
+                onClick={() => setSelectedRecordings(new Set())}
               >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Eliminar
+                Limpiar selección
               </Button>
             </div>
           </div>
         </Card>
       )}
 
-      {filteredRecordings.length === 0 ? (
-        <Card className="p-8 text-center">
-          <FileAudio className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium mb-2">No se encontraron grabaciones</h3>
-          <p className="text-muted-foreground">
-            {searchQuery 
-              ? 'Intenta ajustar los filtros de búsqueda'
-              : 'Aún no hay grabaciones de audio disponibles'
-            }
-          </p>
-        </Card>
-      ) : (
-        <Card>
+      {/* Recordings Table */}
+      <Card>
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
                   <Checkbox
-                    checked={selectedRecordings.size === filteredRecordings.length}
+                    checked={selectedRecordings.size === filteredRecordings.length && filteredRecordings.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('full_name')}
-                >
-                  <div className="flex items-center gap-2">
-                    Nombre Completo
-                    <ArrowUpDown className="h-4 w-4" />
+                <TableHead className="cursor-pointer" onClick={() => handleSort('session_pseudonym')}>
+                  <div className="flex items-center gap-1">
+                    Pseudónimo
+                    <ArrowUpDown className="w-4 h-4" />
                   </div>
                 </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('phrase_text')}
-                >
-                  <div className="flex items-center gap-2">
-                    Frase Grabada
-                    <ArrowUpDown className="h-4 w-4" />
+                <TableHead>Identidad</TableHead>
+                <TableHead className="cursor-pointer" onClick={() => handleSort('phrase_text')}>
+                  <div className="flex items-center gap-1">
+                    Frase
+                    <ArrowUpDown className="w-4 h-4" />
                   </div>
                 </TableHead>
-                <TableHead>Versión Cifrada</TableHead>
-                <TableHead>Versión Sin Cifrar</TableHead>
-                <TableHead>Consentimiento</TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort('created_at')}
-                >
-                  <div className="flex items-center gap-2">
+                <TableHead className="cursor-pointer" onClick={() => handleSort('duration_ms')}>
+                  <div className="flex items-center gap-1">
+                    Duración
+                    <ArrowUpDown className="w-4 h-4" />
+                  </div>
+                </TableHead>
+                <TableHead>Consentimientos</TableHead>
+                <TableHead>Cifrado</TableHead>
+                <TableHead>Tamaño</TableHead>
+                <TableHead className="cursor-pointer" onClick={() => handleSort('created_at')}>
+                  <div className="flex items-center gap-1">
                     Fecha
-                    <ArrowUpDown className="h-4 w-4" />
+                    <ArrowUpDown className="w-4 h-4" />
                   </div>
                 </TableHead>
                 <TableHead>Acciones</TableHead>
@@ -727,156 +772,105 @@ export const AdminRecordings = () => {
             </TableHeader>
             <TableBody>
               {filteredRecordings.map((recording) => (
-                <TableRow 
-                  key={recording.id}
-                  data-state={selectedRecordings.has(recording.id) ? "selected" : undefined}
-                >
+                <TableRow key={recording.id}>
                   <TableCell>
                     <Checkbox
                       checked={selectedRecordings.has(recording.id)}
-                      onCheckedChange={(checked) => 
-                        handleSelectRecording(recording.id, checked as boolean)
-                      }
+                      onCheckedChange={(checked) => handleSelectRecording(recording.id, !!checked)}
                     />
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <span className="font-medium">
-                          {recording.full_name || 'Sin nombre registrado'}
-                        </span>
-                        {recording.email && (
-                          <p className="text-xs text-muted-foreground">{recording.email}</p>
-                        )}
-                      </div>
-                    </div>
+                  <TableCell className="font-mono text-xs">
+                    {recording.session_pseudonym}
                   </TableCell>
                   <TableCell>
-                    <div className="max-w-xs">
-                      <p className="font-medium truncate">"{recording.phrase_text}"</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                        <Clock className="h-3 w-3" />
-                        {formatDuration(recording.duration_ms)}
-                        <span>•</span>
-                        <span>{recording.sample_rate} Hz</span>
-                        <span>•</span>
-                        <span>{recording.audio_format.toUpperCase()}</span>
-                      </div>
-                    </div>
+                    {renderIdentityInfo(recording)}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm">Disponible</span>
-                      <Badge variant="outline" className="text-xs">
-                        v{recording.encryption_key_version}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatFileSize(recording.file_size_bytes)}
-                    </p>
-                  </TableCell>
-                  <TableCell>
-                    {recording.unencrypted_file_path ? (
-                      <div className="flex items-center gap-2">
-                        <ShieldOff className="h-4 w-4 text-orange-600" />
-                        <span className="text-sm">Disponible</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <XCircle className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">No disponible</span>
-                      </div>
-                    )}
-                    {recording.unencrypted_file_path && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatFileSize(recording.unencrypted_file_size_bytes)}
-                      </p>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Badge 
-                        variant={recording.consent_train ? "default" : "secondary"} 
-                        className="text-xs"
-                      >
-                        {recording.consent_train ? (
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                        ) : (
-                          <XCircle className="h-3 w-3 mr-1" />
-                        )}
-                        Entrenamiento
-                      </Badge>
-                      <Badge 
-                        variant={recording.consent_store ? "default" : "secondary"} 
-                        className="text-xs"
-                      >
-                        {recording.consent_store ? (
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                        ) : (
-                          <XCircle className="h-3 w-3 mr-1" />
-                        )}
-                        Almacenamiento
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(recording.created_at).toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                  <TableCell className="max-w-xs">
+                    <div className="truncate" title={recording.phrase_text}>
+                      {recording.phrase_text}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Button
-                        onClick={() => handleDownloadEncrypted(recording.id)}
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        title="Descargar cifrada"
-                      >
-                        <Shield className="h-4 w-4" />
-                      </Button>
+                      <Clock className="h-3 w-3" />
+                      {formatDuration(recording.duration_ms)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Badge variant={recording.consent_train ? "default" : "secondary"} className="text-xs">
+                        {recording.consent_train ? <CheckCircle className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
+                        Entrenar
+                      </Badge>
+                      <Badge variant={recording.consent_store ? "default" : "secondary"} className="text-xs">
+                        {recording.consent_store ? <CheckCircle className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
+                        Almacenar
+                      </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      {recording.unencrypted_file_path ? (
+                        <Badge variant="destructive" className="text-xs">
+                          <ShieldOff className="w-3 h-3 mr-1" />
+                          Sin cifrar
+                        </Badge>
+                      ) : (
+                        <Badge variant="default" className="text-xs">
+                          <Shield className="w-3 h-3 mr-1" />
+                          Cifrado v{recording.encryption_key_version}
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-xs">
+                      <div>Cifrado: {formatFileSize(recording.file_size_bytes)}</div>
+                      {recording.unencrypted_file_size_bytes && (
+                        <div className="text-muted-foreground">Sin cifrar: {formatFileSize(recording.unencrypted_file_size_bytes)}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(recording.created_at).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
                       {recording.unencrypted_file_path && (
                         <>
                           <Button
-                            onClick={() => handlePlayUnencrypted(recording)}
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0"
-                            title={playingId === recording.id ? "Pausar" : "Reproducir"}
+                            onClick={() => handlePlayUnencrypted(recording)}
+                            title="Reproducir archivo sin cifrar"
                           >
-                            {playingId === recording.id ? (
-                              <Pause className="h-4 w-4" />
-                            ) : (
-                              <Play className="h-4 w-4" />
-                            )}
+                            {playingId === recording.id ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                           </Button>
                           <Button
-                            onClick={() => handleDownloadUnencrypted(recording)}
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0"
-                            title="Descargar sin cifrar"
+                            onClick={() => handleDownloadUnencrypted(recording)}
+                            title="Descargar archivo sin cifrar"
                           >
-                            <Download className="h-4 w-4" />
+                            <Download className="h-3 w-3" />
                           </Button>
                         </>
                       )}
-                       <Button
-                         onClick={() => handleSingleDelete(recording.id)}
-                         variant="ghost"
-                         size="sm"
-                         className="h-8 w-8 p-0 text-destructive"
-                         title="Eliminar"
-                       >
-                        <Trash2 className="h-4 w-4" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownloadEncrypted(recording.id)}
+                        title="Descargar archivo cifrado"
+                      >
+                        <Archive className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSingleDelete(recording.id)}
+                        title="Eliminar grabación"
+                      >
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   </TableCell>
@@ -884,7 +878,15 @@ export const AdminRecordings = () => {
               ))}
             </TableBody>
           </Table>
-        </Card>
+        </div>
+      </Card>
+
+      {filteredRecordings.length === 0 && (
+        <div className="text-center py-8">
+          <FileAudio className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">No hay grabaciones</h3>
+          <p className="text-muted-foreground">No se encontraron grabaciones que coincidan con tu búsqueda.</p>
+        </div>
       )}
     </div>
   );

@@ -77,34 +77,30 @@ Deno.serve(async (req) => {
 
     console.log(`Admin access granted for: ${adminUser.email} (${adminUser.role})`);
 
-    // Fetch audio metadata with identity information
-    const { data: audioData, error: audioError } = await supabase
-      .from('audio_metadata')
+    // Fetch recordings with pseudonyms (separación de datos)
+    const { data: recordingsData, error: recordingsError } = await supabase
+      .from('recordings')
       .select(`
         id,
         session_pseudonym,
         phrase_text,
-        audio_format,
-        sample_rate,
+        audio_url,
         duration_ms,
-        quality_score,
+        sample_rate,
+        format,
         consent_train,
         consent_store,
-        encryption_key_version,
-        file_size_bytes,
-        unencrypted_file_size_bytes,
-        unencrypted_storage_bucket,
-        unencrypted_file_path,
-        device_info,
-        created_at
+        device_label,
+        created_at,
+        consent_at
       `)
       .order('created_at', { ascending: false })
       .limit(500);
 
-    if (audioError) {
-      console.error('Error fetching audio metadata:', audioError);
+    if (recordingsError) {
+      console.error('Error fetching recordings:', recordingsError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch audio metadata' }),
+        JSON.stringify({ error: 'Failed to fetch recordings' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -112,40 +108,80 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch guest verification tokens to get identity information
-    const { data: guestData, error: guestError } = await supabase
-      .from('guest_verification_tokens')
-      .select('session_pseudonym, email, full_name');
+    // Fetch audio metadata separately (for technical details)
+    const { data: audioData, error: audioError } = await supabase
+      .from('audio_metadata')
+      .select(`
+        id,
+        session_pseudonym,
+        audio_format,
+        sample_rate,
+        duration_ms,
+        quality_score,
+        encryption_key_version,
+        file_size_bytes,
+        unencrypted_file_size_bytes,
+        unencrypted_storage_bucket,
+        unencrypted_file_path,
+        device_info
+      `)
+      .order('created_at', { ascending: false })
+      .limit(500);
 
-    if (guestError) {
-      console.warn('Warning: Could not fetch guest data:', guestError);
+    if (audioError) {
+      console.warn('Warning: Could not fetch audio metadata:', audioError);
     }
 
-    // Create a map for quick lookup
-    const guestMap = new Map();
-    if (guestData) {
-      guestData.forEach(guest => {
-        guestMap.set(guest.session_pseudonym, {
-          email: guest.email,
-          full_name: guest.full_name
-        });
+    // Create maps for quick lookup
+    const audioMap = new Map();
+    if (audioData) {
+      audioData.forEach(audio => {
+        audioMap.set(audio.session_pseudonym, audio);
       });
     }
 
-    // Combine audio metadata with identity information
-    const enrichedData = audioData.map(audio => {
-      const guestInfo = guestMap.get(audio.session_pseudonym);
+    // SEPARACIÓN DE DATOS: Solo devolver pseudónimos, NO nombres reales
+    // Los nombres se obtienen por separado cuando se necesiten específicamente
+    const enrichedData = recordingsData.map(recording => {
+      const audioInfo = audioMap.get(recording.session_pseudonym);
       return {
-        ...audio,
-        email: guestInfo?.email || null,
-        full_name: guestInfo?.full_name || null
+        // Datos de grabación (tabla recordings)
+        id: recording.id,
+        session_pseudonym: recording.session_pseudonym,
+        phrase_text: recording.phrase_text,
+        audio_url: recording.audio_url,
+        duration_ms: recording.duration_ms,
+        sample_rate: recording.sample_rate,
+        format: recording.format,
+        consent_train: recording.consent_train,
+        consent_store: recording.consent_store,
+        device_label: recording.device_label,
+        created_at: recording.created_at,
+        consent_at: recording.consent_at,
+        
+        // Datos técnicos de audio_metadata (si están disponibles)
+        audio_format: audioInfo?.audio_format || recording.format,
+        quality_score: audioInfo?.quality_score || null,
+        encryption_key_version: audioInfo?.encryption_key_version || 1,
+        file_size_bytes: audioInfo?.file_size_bytes || null,
+        unencrypted_file_size_bytes: audioInfo?.unencrypted_file_size_bytes || null,
+        unencrypted_storage_bucket: audioInfo?.unencrypted_storage_bucket || null,
+        unencrypted_file_path: audioInfo?.unencrypted_file_path || null,
+        device_info: audioInfo?.device_info || recording.device_label,
+        
+        // IMPORTANTE: NO incluir email ni full_name directamente
+        // Esto garantiza la separación de datos
+        identity_available: recording.session_pseudonym ? true : false
       };
     });
 
-    console.log(`Returning ${enrichedData.length} recordings for admin ${adminUser.email}`);
+    console.log(`Returning ${enrichedData.length} recordings for admin ${adminUser.email} (pseudonyms only, identity data separated)`);
 
     return new Response(
-      JSON.stringify({ data: enrichedData }),
+      JSON.stringify({ 
+        data: enrichedData,
+        privacy_note: "Identity data (names/emails) separated for privacy - use identity lookup function if needed"
+      }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
