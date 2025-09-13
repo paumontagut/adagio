@@ -81,66 +81,40 @@ export const AdminRecordings = () => {
         throw new Error('No valid admin session found');
       }
 
-      const [metaRes, recRes] = await Promise.all([
-        supabase
-          .rpc('get_audio_metadata_with_token', { session_token: sessionToken })
-          .order('created_at', { ascending: false })
-          .limit(500),
-        supabase
-          .from('recordings')
-          .select('id, session_id, created_at, phrase_text, full_name')
-          .order('created_at', { ascending: false })
-          .limit(1000)
-      ]);
-
-      if (metaRes.error) {
-        console.error('Error from audio_metadata_with_identity query:', metaRes.error);
-        throw metaRes.error;
-      }
-      if (recRes.error) {
-        console.warn('Non-fatal: recordings query had error:', recRes.error);
-      }
-
-      const meta = metaRes.data || [];
-      const recs = recRes.data || [];
-
-      // Build quick lookup by phrase + rounded minute timestamp
-      const recIndex = new Map<string, { full_name: string | null }>();
-      for (const r of recs) {
-        const key = `${(r.phrase_text || '').trim().toLowerCase()}__${new Date(r.created_at).toISOString().slice(0,16)}`; // yyyy-mm-ddThh:mm
-        if (!recIndex.has(key)) recIndex.set(key, { full_name: r.full_name || null });
-      }
-
-      const transformedData = meta.map((m: any) => {
-        let full_name: string | null = m.full_name || null;
-        if (!full_name) {
-          const key = `${(m.phrase_text || '').trim().toLowerCase()}__${new Date(m.created_at).toISOString().slice(0,16)}`;
-          full_name = recIndex.get(key)?.full_name || null;
-        }
-        return {
-          id: m.id,
-          session_pseudonym: m.session_pseudonym || 'N/A',
-          phrase_text: m.phrase_text || '',
-          duration_ms: m.duration_ms || 0,
-          sample_rate: m.sample_rate || 0,
-          audio_format: m.audio_format || 'wav',
-          device_info: m.device_info || 'Unknown device',
-          quality_score: m.quality_score,
-          consent_train: m.consent_train || false,
-          consent_store: m.consent_store || false,
-          encryption_key_version: m.encryption_key_version || 1,
-          unencrypted_file_path: m.unencrypted_file_path,
-          unencrypted_storage_bucket: m.unencrypted_storage_bucket,
-          file_size_bytes: m.file_size_bytes,
-          unencrypted_file_size_bytes: m.unencrypted_file_size_bytes,
-          created_at: m.created_at,
-          full_name,
-          email: m.email || null
-        } as AudioMetadata;
+      // Use the admin edge function to get recordings with proper session validation
+      const response = await supabase.functions.invoke('admin-get-recordings', {
+        body: { sessionToken }
       });
 
-      // Log counts
-      console.log(`Fetched ${transformedData.length} records; with names: ${transformedData.filter(r => r.full_name).length}; with unencrypted: ${transformedData.filter(r => r.unencrypted_file_path).length}`);
+      if (response.error) {
+        console.error('Error from admin-get-recordings function:', response.error);
+        throw response.error;
+      }
+
+      const recordings = response.data?.data || [];
+      
+      const transformedData = recordings.map((m: any) => ({
+        id: m.id,
+        session_pseudonym: m.session_pseudonym || 'N/A',
+        phrase_text: m.phrase_text || '',
+        duration_ms: m.duration_ms || 0,
+        sample_rate: m.sample_rate || 0,
+        audio_format: m.audio_format || 'wav',
+        device_info: m.device_info || 'Unknown device',
+        quality_score: m.quality_score,
+        consent_train: m.consent_train || false,
+        consent_store: m.consent_store || false,
+        encryption_key_version: m.encryption_key_version || 1,
+        unencrypted_file_path: m.unencrypted_file_path,
+        unencrypted_storage_bucket: m.unencrypted_storage_bucket,
+        file_size_bytes: m.file_size_bytes,
+        unencrypted_file_size_bytes: m.unencrypted_file_size_bytes,
+        created_at: m.created_at,
+        full_name: m.full_name,
+        email: m.email
+      })) as AudioMetadata[];
+
+      console.log(`Fetched ${transformedData.length} recordings; with names: ${transformedData.filter(r => r.full_name).length}; with unencrypted: ${transformedData.filter(r => r.unencrypted_file_path).length}`);
 
       setRecordings(transformedData);
     } catch (error) {
