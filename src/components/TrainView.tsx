@@ -22,14 +22,11 @@ import { sessionManager } from '@/lib/sessionManager';
 import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { phraseService } from '@/services/phraseService';
 
 // Get constants for direct fetch calls
 const SUPABASE_URL = "https://cydqkoohhzesogvctvhy.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5ZHFrb29oaHplc29ndmN0dmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMDE2NzEsImV4cCI6MjA3MTc3NzY3MX0.UP09-Y6AqFsmVQLAx6qkRqNjqXNG4FFt7dgYvuIFzN8";
-
-
-// Placeholder phrases - will be replaced with API call later
-const samplePhrases = ["Buenos días, ¿cómo está usted?", "Necesito ayuda con esto, por favor", "El clima está muy agradable hoy", "Me gustaría hacer una reservación", "¿Puede repetir eso, por favor?", "Muchas gracias por su ayuda", "Hasta luego, que tenga un buen día", "¿Dónde está la estación más cercana?"];
 interface RecordingData {
   phrase_text: string;
   audio_url: string;
@@ -40,7 +37,7 @@ interface RecordingData {
   created_at: string;
 }
 const TrainView = () => {
-  const [currentPhrase, setCurrentPhrase] = useState(() => samplePhrases[Math.floor(Math.random() * samplePhrases.length)]);
+  const [currentPhrase, setCurrentPhrase] = useState(() => phraseService.getRandomPhrase());
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [hasConsented, setHasConsented] = useState(false);
@@ -62,17 +59,27 @@ const TrainView = () => {
 
   // Check if user already gave consent and track page view
   useEffect(() => {
-    const session = sessionManager.getSession();
-    if (session) {
-      setHasConsented(session.consentGiven);
-    }
-    sessionManager.pageView('train');
-    
-    // Generate or retrieve encryption key
-    initializeEncryption();
+    const initializeComponent = async () => {
+      // Initialize phrase service
+      await phraseService.initialize();
+      
+      const session = sessionManager.getSession();
+      if (session) {
+        setHasConsented(session.consentGiven);
+      }
+      sessionManager.pageView('train');
+      
+      // Generate or retrieve encryption key
+      initializeEncryption();
 
-    // Precargar nombre desde perfil de usuario si está disponible
-    loadUserProfile();
+      // Precargar nombre desde perfil de usuario si está disponible
+      loadUserProfile();
+      
+      // Set initial random phrase after service is initialized
+      setCurrentPhrase(phraseService.getRandomPhrase());
+    };
+    
+    initializeComponent();
   }, [user]);
 
   const loadUserProfile = async () => {
@@ -107,7 +114,7 @@ const TrainView = () => {
     }
   };
   const getNewPhrase = useCallback(() => {
-    const newPhrase = samplePhrases[Math.floor(Math.random() * samplePhrases.length)];
+    const newPhrase = phraseService.getRandomPhrase();
     setCurrentPhrase(newPhrase);
     setAudioBlob(null);
     setError(null);
@@ -351,6 +358,9 @@ const TrainView = () => {
               💡 Inicia sesión para guardar tu progreso y ver tu historial
             </span>
           )}
+          <span className="block text-sm mt-1 text-muted-foreground/60">
+            📚 Dataset: {phraseService.getTotalCount()} frases disponibles
+          </span>
         </p>
       </div>
 
