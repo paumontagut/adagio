@@ -41,21 +41,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get total recordings from recordings table
-    const { count: recordingsCount } = await supabase
+    // Get recordings from audio_metadata (modern encrypted)
+    const { data: modernRecordings } = await supabase
+      .from('audio_metadata')
+      .select('id, session_pseudonym, consent_train, consent_store, duration_ms, unencrypted_file_path, created_at');
+
+    // Get recordings from recordings table (legacy)
+    const { data: legacyRecordings } = await supabase
       .from('recordings')
-      .select('*', { count: 'exact', head: true });
+      .select('id, session_pseudonym, consent_train, consent_store, duration_ms, created_at');
 
-    // Get encrypted recordings from audio_metadata
-    const { count: encryptedCount } = await supabase
-      .from('audio_metadata')
-      .select('*', { count: 'exact', head: true });
+    // Create a Set of session_pseudonyms from modern recordings to avoid duplicates
+    const modernPseudonyms = new Set(
+      modernRecordings?.map(r => r.session_pseudonym).filter(Boolean) || []
+    );
 
-    // Get unencrypted recordings (those with unencrypted_file_path)
-    const { count: unencryptedCount } = await supabase
-      .from('audio_metadata')
-      .select('*', { count: 'exact', head: true })
-      .not('unencrypted_file_path', 'is', null);
+    // Filter legacy recordings to exclude those that exist in modern
+    const uniqueLegacyRecordings = legacyRecordings?.filter(
+      r => r.session_pseudonym && !modernPseudonyms.has(r.session_pseudonym)
+    ) || [];
+
+    // Combine all unique recordings
+    const allRecordings = [
+      ...(modernRecordings || []),
+      ...uniqueLegacyRecordings
+    ];
+
+    // Count encrypted vs unencrypted from modern recordings
+    const encryptedCount = modernRecordings?.filter(r => !r.unencrypted_file_path).length || 0;
+    const unencryptedCount = modernRecordings?.filter(r => r.unencrypted_file_path).length || 0;
 
     // Get total users
     const { count: usersCount } = await supabase
@@ -64,25 +78,18 @@ Deno.serve(async (req) => {
 
     // Get recordings from today
     const today = new Date().toISOString().split('T')[0];
-    const { data: todayRecordings } = await supabase
-      .from('audio_metadata')
-      .select('id')
-      .gte('created_at', today);
+    const todayRecordings = allRecordings.filter(r => 
+      r.created_at && new Date(r.created_at).toISOString().split('T')[0] === today
+    );
 
     // Get consented recordings
-    const { data: consentedData } = await supabase
-      .from('audio_metadata')
-      .select('consent_train, consent_store');
+    const consentedCount = allRecordings.filter(r => r.consent_train || r.consent_store).length;
 
-    const consentedCount = consentedData?.filter(r => r.consent_train || r.consent_store).length || 0;
-
-    // Get average duration
-    const { data: durationData } = await supabase
-      .from('audio_metadata')
-      .select('duration_ms')
-      .not('duration_ms', 'is', null);
-
-    const avgDuration = durationData?.reduce((acc, r) => acc + (r.duration_ms || 0), 0) / (durationData?.length || 1) / 1000;
+    // Get average duration from all recordings
+    const durationsWithValue = allRecordings.filter(r => r.duration_ms && r.duration_ms > 0);
+    const avgDuration = durationsWithValue.length > 0
+      ? durationsWithValue.reduce((acc, r) => acc + (r.duration_ms || 0), 0) / durationsWithValue.length / 1000
+      : 0;
 
     // Get recent activity
     const { data: recentActivity } = await supabase
@@ -92,13 +99,14 @@ Deno.serve(async (req) => {
       .limit(10);
 
     const stats = {
-      totalRecordings: (recordingsCount || 0) + (encryptedCount || 0),
-      encryptedRecordings: (encryptedCount || 0) - (unencryptedCount || 0),
-      unencryptedRecordings: unencryptedCount || 0,
+      totalRecordings: allRecordings.length,
+      encryptedRecordings: encryptedCount,
+      unencryptedRecordings: unencryptedCount,
+      legacyRecordings: uniqueLegacyRecordings.length,
       totalUsers: usersCount || 0,
-      todayRecordings: todayRecordings?.length || 0,
+      todayRecordings: todayRecordings.length,
       consentedRecordings: consentedCount,
-      averageDuration: Math.round(avgDuration || 0),
+      averageDuration: Math.round(avgDuration),
       recentActivity: recentActivity || []
     };
 
