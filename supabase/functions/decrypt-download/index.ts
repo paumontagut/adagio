@@ -223,6 +223,16 @@ serve(async (req) => {
     if (downloadType === 'unencrypted') {
       console.log('Processing unencrypted download request');
       if (!meta.unencrypted_file_path) {
+        console.warn('No unencrypted path in metadata; attempting legacy search by pseudonym...');
+        if (meta.session_pseudonym) {
+          const located = await findUnencryptedByPseudonym(supabase, meta.session_pseudonym);
+          if (located) {
+            meta.unencrypted_storage_bucket = located.bucket;
+            meta.unencrypted_file_path = located.path;
+          }
+        }
+      }
+      if (!meta.unencrypted_file_path) {
         console.error('No unencrypted file path available');
         return json({ error: 'Unencrypted file not available for this recording' }, 404);
       }
@@ -265,10 +275,19 @@ serve(async (req) => {
 
     if (encErr) {
       console.error('Encrypted file query error:', encErr);
-      return json({ error: encErr.message }, 404);
+      // continue to fallback attempts below instead of immediate 404
     }
     if (!enc) {
       console.error('Encrypted file not found for metadata_id:', recordingId);
+      
+      // Intentar localizar versión sin cifrar por pseudónimo si no tenemos ruta
+      if (!meta.unencrypted_file_path && meta.session_pseudonym) {
+        const located = await findUnencryptedByPseudonym(supabase, meta.session_pseudonym);
+        if (located) {
+          meta.unencrypted_storage_bucket = located.bucket;
+          meta.unencrypted_file_path = located.path;
+        }
+      }
       
       // Fallback automático: intentar descarga sin cifrar si está disponible
       if (meta.unencrypted_file_path) {
@@ -448,4 +467,39 @@ async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint
     console.error('Decryption failed:', e);
     throw new Error(`DECRYPTION_FAILED: ${e.message}`);
   }
+}
+
+// Heurística: localizar archivo sin cifrar en storage por pseudónimo
+async function findUnencryptedByPseudonym(supabase: any, pseudonym: string): Promise<{ bucket: string; path: string } | null> {
+  const buckets = ['audio_raw', 'audio_clean'];
+  const searches = [
+    `training_audio_${pseudonym}_`,
+    pseudonym
+  ];
+  for (const bucket of buckets) {
+    for (const term of searches) {
+      try {
+        const { data: list, error } = await supabase.storage
+          .from(bucket)
+          .list('', { limit: 1000, offset: 0, search: term });
+        if (error) {
+          console.warn('Storage list error', { bucket, term, error });
+          continue;
+        }
+        if (list && list.length > 0) {
+          // Coger el más reciente por updated_at si existe, si no, el primero
+          const sorted = [...list].sort((a: any, b: any) => {
+            const da = new Date(a.updated_at || a.created_at || 0).getTime();
+            const db = new Date(b.updated_at || b.created_at || 0).getTime();
+            return db - da;
+          });
+          console.log('Found legacy unencrypted candidate', { bucket, name: sorted[0].name });
+          return { bucket, path: sorted[0].name };
+        }
+      } catch (err) {
+        console.warn('Error listing storage for legacy search', { bucket, term, err });
+      }
+    }
+  }
+  return null;
 }
