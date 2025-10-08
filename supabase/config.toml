@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.tts-elevenlabs]
 verify_jwt = false
+
+[functions.admin-backfill-unencrypted]
+verify_jwt = false

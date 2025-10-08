@@ -510,6 +510,26 @@ export const AdminRecordings = () => {
     }
   };
 
+  const handleBackfillUnencryptedSelected = async (ids: string[]) => {
+    try {
+      toast({ title: 'Generando versiones sin cifrar', description: `${ids.length} seleccionada(s)` });
+      const sessionToken = await secureStorage.getAdminSession();
+      if (!sessionToken) {
+        toast({ title: 'Error de autorización', description: 'No tienes permisos', variant: 'destructive' });
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('admin-backfill-unencrypted', {
+        body: { sessionToken, recordingIds: ids }
+      });
+      if (error) throw error;
+      await fetchRecordings();
+      toast({ title: 'Backfill completado', description: `OK: ${data.success} · Fallidos: ${data.failed} · Omitidos: ${data.skipped}` });
+    } catch (e) {
+      console.error('Backfill error:', e);
+      toast({ title: 'Error al generar sin cifrar', description: 'Revisa los logs', variant: 'destructive' });
+    }
+  };
+
   const handlePlayUnencrypted = async (recording: RecordingData) => {
     if (!recording.unencrypted_file_path) {
       toast({
