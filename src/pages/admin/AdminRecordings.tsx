@@ -449,6 +449,67 @@ export const AdminRecordings = () => {
     }
   };
 
+  const handleForceDownloadUnencrypted = async (recordingId: string) => {
+    try {
+      toast({
+        title: "Descarga iniciada",
+        description: "Buscando versión sin cifrar..."
+      });
+
+      const sessionToken = await secureStorage.getAdminSession();
+      if (!sessionToken) {
+        toast({
+          title: "Error de autorización",
+          description: "No tienes permisos para descargar archivos",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const response = await supabase.functions.invoke('decrypt-download', {
+        body: {
+          recordingId,
+          sessionToken,
+          downloadType: 'unencrypted'
+        }
+      });
+
+      if (response.error || !response.data?.base64) {
+        throw response.error || new Error('No se recibió contenido');
+      }
+
+      const { base64, filename, mimeType } = response.data;
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType || 'audio/wav' });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Descarga completada",
+        description: `Archivo ${filename} descargado correctamente`
+      });
+    } catch (error) {
+      console.error('Error forcing unencrypted download:', error);
+      toast({
+        title: "Error de descarga",
+        description: "No se pudo descargar la versión sin cifrar",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handlePlayUnencrypted = async (recording: RecordingData) => {
     if (!recording.unencrypted_file_path) {
       toast({
@@ -783,10 +844,18 @@ export const AdminRecordings = () => {
                 Descargar sin cifrar
               </Button>
               <Button
-                variant="destructive"
+                variant="outline"
                 size="sm"
-                onClick={() => setSelectedRecordings(new Set())}
+                onClick={async () => {
+                  const selectedIds = Array.from(selectedRecordings);
+                  for (const recordingId of selectedIds) {
+                    await handleForceDownloadUnencrypted(recordingId);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                  }
+                }}
               >
+                <Download className="h-4 w-4 mr-2" />
+                Forzar sin cifrar
                 Limpiar selección
               </Button>
             </div>
@@ -930,6 +999,14 @@ export const AdminRecordings = () => {
                         title="Descargar archivo cifrado"
                       >
                         <Archive className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleForceDownloadUnencrypted(recording.id)}
+                        title="Forzar descarga sin cifrar"
+                      >
+                        <Download className="h-3 w-3" />
                       </Button>
                       <Button
                         variant="ghost"
