@@ -74,6 +74,16 @@ Deno.serve(async (req) => {
       return await handleStoreAudioRaw(newReq, supabase)
     }
 
+    if (req.method === 'POST' && action === 'store-audio-plaintext') {
+      const { action: _a, ...clean } = body || {}
+      const newReq = new Request(req.url, {
+        method: 'POST',
+        headers: req.headers,
+        body: JSON.stringify(clean)
+      })
+      return await handleStoreAudioPlaintext(newReq, supabase)
+    }
+
     if ((req.method === 'GET' || req.method === 'POST') && (action === 'get-audio' || path.endsWith('/get-audio'))) {
       return await handleGetAudio(req, supabase)
     }
@@ -437,6 +447,120 @@ async function handleGetKeyVersion(supabase: any) {
     JSON.stringify({ currentKeyVersion: data.version, createdAt: data.created_at, expiresAt: data.expires_at }),
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
+}
+
+// New: Store plaintext audio without encryption
+async function handleStoreAudioPlaintext(req: Request, supabase: any) {
+  const data = await req.json() as {
+    sessionId: string;
+    phraseText: string;
+    rawBlob: string; // base64
+    durationMs: number;
+    sampleRate: number;
+    audioFormat: string;
+    deviceInfo: string;
+    qualityScore?: number;
+    consentTrain: boolean;
+    consentStore: boolean;
+    fullName: string;
+  };
+
+  if (!data?.rawBlob) return jsonError('Missing raw audio data', 400);
+
+  // Generate pseudonym
+  const { data: pseudo, error: pseudoErr } = await supabase
+    .rpc('generate_pseudonym', { original_session_id: data.sessionId })
+
+  if (pseudoErr) {
+    console.error('Pseudonym error', pseudoErr)
+    return jsonError('Failed to generate session pseudonym', 500)
+  }
+  const sessionPseudonym = pseudo;
+
+  // Decode raw audio
+  const rawBytes = base64ToUint8(data.rawBlob);
+
+  // Save unencrypted file
+  const unencryptedFileName = `training_audio_${sessionPseudonym}_${Date.now()}.wav`;
+  const { error: uploadErr } = await supabase.storage
+    .from('audio_raw')
+    .upload(unencryptedFileName, rawBytes, {
+      contentType: 'audio/wav',
+      upsert: false
+    });
+
+  if (uploadErr) {
+    console.error('Unencrypted upload error', uploadErr);
+    return jsonError('Failed to upload unencrypted audio', 500);
+  }
+
+  const unencryptedFileSize = rawBytes.byteLength;
+
+  console.log(`Stored unencrypted audio: ${unencryptedFileName}`);
+
+  // Insert metadata (without encryption info)
+  const { data: meta, error: metaErr } = await supabase
+    .from('audio_metadata')
+    .insert({
+      session_pseudonym: sessionPseudonym,
+      phrase_text: data.phraseText,
+      audio_format: data.audioFormat,
+      duration_ms: data.durationMs,
+      sample_rate: data.sampleRate,
+      quality_score: data.qualityScore || null,
+      consent_train: data.consentTrain,
+      consent_store: data.consentStore,
+      device_info: data.deviceInfo,
+      encryption_key_version: 0, // 0 indicates no encryption
+      file_size_bytes: 0,
+      unencrypted_file_path: unencryptedFileName,
+      unencrypted_storage_bucket: 'audio_raw',
+      unencrypted_file_size_bytes: unencryptedFileSize
+    })
+    .select()
+    .single();
+
+  if (metaErr) {
+    console.error('Metadata error', metaErr);
+    return jsonError('Failed to store audio metadata', 500);
+  }
+
+  // Save to recordings table as well
+  await supabase.from('recordings').insert({
+    session_id: data.sessionId,
+    phrase_text: data.phraseText,
+    audio_url: `audio_raw/${unencryptedFileName}`,
+    duration_ms: data.durationMs,
+    sample_rate: data.sampleRate,
+    format: data.audioFormat,
+    device_label: data.deviceInfo,
+    consent_train: data.consentTrain,
+    consent_store: data.consentStore,
+    full_name: data.fullName,
+    session_pseudonym: sessionPseudonym
+  });
+
+  // Consent log
+  await supabase.from('consent_logs').insert({
+    session_id: data.sessionId,
+    consent_train: data.consentTrain,
+    consent_store: data.consentStore,
+    full_name: data.fullName,
+    user_agent: req.headers.get('user-agent') || 'unknown'
+  });
+
+  console.log(`Plaintext audio stored successfully. Metadata ID: ${meta.id}, Pseudonym: ${sessionPseudonym}`);
+
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      metadataId: meta.id, 
+      sessionPseudonym,
+      unencryptedFilePath: unencryptedFileName,
+      bucket: 'audio_raw'
+    }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }
 
 async function handleGetAudio(req: Request, supabase: any) {

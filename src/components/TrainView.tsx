@@ -18,8 +18,7 @@ import { getParticipantName, setParticipantName } from '@/lib/participant';
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
 import { sessionManager } from '@/lib/sessionManager';
-// Removed client-side encryption (now server-side)
-import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Shield } from 'lucide-react';
+import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { phraseService } from '@/services/phraseService';
@@ -48,8 +47,6 @@ const TrainView = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  // const [encryptionKey, setEncryptionKey] = useState<string>(''); // removed
-  const [currentKeyVersion, setCurrentKeyVersion] = useState<number>(1);
   const [fullName, setFullName] = useState<string>('');
   const [ageRange, setAgeRange] = useState<string>('');
   const [region, setRegion] = useState<string>('');
@@ -68,9 +65,6 @@ const TrainView = () => {
         setHasConsented(session.consentGiven);
       }
       sessionManager.pageView('train');
-      
-      // Generate or retrieve encryption key
-      initializeEncryption();
 
       // Precargar nombre desde perfil de usuario si está disponible
       loadUserProfile();
@@ -100,19 +94,7 @@ const TrainView = () => {
     }
   };
 
-  const initializeEncryption = async () => {
-    try {
-      // Get current key version from server (for display only)
-      const { data, error } = await supabase.functions.invoke('encrypted-audio-api', {
-        body: { action: 'get-key-version' }
-      });
-      if (!error && data && typeof data.currentKeyVersion === 'number') {
-        setCurrentKeyVersion(data.currentKeyVersion);
-      }
-    } catch (error) {
-      console.error('Error initializing encryption:', error);
-    }
-  };
+  // No encryption initialization needed anymore
   const getNewPhrase = useCallback(() => {
     const newPhrase = phraseService.getRandomPhrase();
     setCurrentPhrase(newPhrase);
@@ -161,8 +143,6 @@ const TrainView = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      // Server-side encryption: no client key needed
-
       const session = sessionManager.getSession();
       if (!session) {
         throw new Error('No session found');
@@ -175,21 +155,21 @@ const TrainView = () => {
       const duration_ms = processingResult?.metrics.duration ? 
         Math.round(processingResult.metrics.duration * 1000) : 5000;
 
-      // Convert raw audio to base64 for server-side encryption
+      // Convert audio to base64 for plaintext upload
       const buffer = await audioToUpload.arrayBuffer();
       const bytes = new Uint8Array(buffer);
       let binary = '';
       for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
       const rawBase64 = btoa(binary);
 
-      console.log('Sending raw audio for server-side encryption...');
+      console.log('Sending plaintext audio...');
 
-      // Send RAW data to secure edge function (server encrypts & stores)
+      // Send plaintext audio to edge function
       const { data: responseData, error: uploadError } = await supabase.functions.invoke(
         'encrypted-audio-api',
         {
           body: {
-            action: 'store-audio-raw',
+            action: 'store-audio-plaintext',
             sessionId: session.sessionId,
             phraseText: currentPhrase,
             rawBlob: rawBase64,
@@ -210,7 +190,7 @@ const TrainView = () => {
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
-      console.log('Encrypted audio stored successfully:', responseData);
+      console.log('Plaintext audio stored successfully:', responseData);
 
       // Save recording to database (if user is logged in or as guest)
       try {
@@ -218,7 +198,7 @@ const TrainView = () => {
           user_id: user?.id || null,
           session_id: user ? null : getGuestSessionId(),
           phrase_text: currentPhrase,
-          audio_url: responseData?.fileUrl || 'encrypted_storage',
+          audio_url: responseData?.unencryptedFilePath || 'audio_raw/unknown',
           duration_ms: duration_ms,
           sample_rate: processingResult?.metrics.sampleRate || 16000,
           format: 'wav',
@@ -249,10 +229,10 @@ const TrainView = () => {
 
       setIsSuccess(true);
       toast({
-        title: "¡Grabación cifrada y guardada!",
+        title: "¡Grabación guardada!",
         description: user ? 
-          "Tu audio ha sido cifrado y guardado en tu cuenta" :
-          "Tu audio ha sido cifrado y almacenado de forma segura"
+          "Tu audio ha sido guardado en tu cuenta" :
+          "Tu audio ha sido almacenado correctamente"
       });
 
       // Reset for next recording after a delay
@@ -271,8 +251,8 @@ const TrainView = () => {
 
       sessionManager.trainUploadError(errorMessage);
       toast({
-        title: "Error de cifrado",
-        description: "No se pudo cifrar y guardar la grabación",
+        title: "Error al guardar",
+        description: "No se pudo guardar la grabación",
         variant: "destructive"
       });
     } finally {
@@ -385,12 +365,6 @@ const TrainView = () => {
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-lg font-medium text-foreground">Frase a grabar:</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <Shield className="h-4 w-4 text-primary" />
-              <span className="text-xs text-muted-foreground">
-                Cifrado AES-256 • Clave v{currentKeyVersion}
-              </span>
-            </div>
           </div>
           <Button variant="outline" size="sm" onClick={getNewPhrase} className="flex items-center gap-2 bg-[#0d0c1d] text-white">
             <RefreshCw className="h-4 w-4" />
@@ -447,13 +421,10 @@ const TrainView = () => {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Cifrando y enviando...
+                Enviando...
               </>
             ) : (
-              <>
-                <Shield className="mr-2 h-4 w-4" />
-                Enviar Cifrado (AES-256)
-              </>
+              'Enviar Grabación'
             )}
           </Button>
         </div>

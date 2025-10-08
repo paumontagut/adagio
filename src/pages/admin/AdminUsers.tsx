@@ -60,10 +60,22 @@ export const AdminUsers: React.FC = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .order('created_at', { ascending: false });
+      
+      const { secureStorage } = await import('@/lib/secureStorage');
+      const sessionToken = await secureStorage.getAdminSession();
+      
+      if (!sessionToken) {
+        toast({
+          title: "Error",
+          description: "No se encontró sesión de administrador",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-users-api', {
+        body: { action: 'list-users', sessionToken }
+      });
 
       if (error) {
         console.error('Error loading users:', error);
@@ -75,7 +87,7 @@ export const AdminUsers: React.FC = () => {
         return;
       }
 
-      setUsers(data || []);
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -99,10 +111,26 @@ export const AdminUsers: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('admin_users')
-        .update({ is_active: !currentStatus, updated_at: new Date().toISOString() })
-        .eq('id', userId);
+      const { secureStorage } = await import('@/lib/secureStorage');
+      const sessionToken = await secureStorage.getAdminSession();
+      
+      if (!sessionToken) {
+        toast({
+          title: "Error",
+          description: "No se encontró sesión de administrador",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke('admin-users-api', {
+        body: { 
+          action: 'set-user-active', 
+          sessionToken, 
+          userId, 
+          isActive: !currentStatus 
+        }
+      });
 
       if (error) {
         console.error('Error updating user:', error);

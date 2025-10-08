@@ -42,46 +42,22 @@ export const AdminDashboard: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Get recordings stats
-      const [
-        { count: totalRecordings },
-        { count: encryptedRecordings },
-        { data: todayRecordings },
-        { data: consentedData },
-        { data: durationData },
-        { count: totalUsers },
-        { data: recentActivity }
-      ] = await Promise.all([
-        supabase.from('recordings').select('*', { count: 'exact', head: true }),
-        supabase.from('audio_metadata').select('*', { count: 'exact', head: true }),
-        supabase.from('recordings')
-          .select('id')
-          .gte('created_at', new Date().toISOString().split('T')[0]),
-        supabase.from('recordings')
-          .select('consent_store, consent_train'),
-        supabase.from('recordings')
-          .select('duration_ms')
-          .not('duration_ms', 'is', null),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('admin_activity_log')
-          .select('*, admin_users(full_name, email)')
-          .order('created_at', { ascending: false })
-          .limit(10)
-      ]);
+      const { secureStorage } = await import('@/lib/secureStorage');
+      const sessionToken = await secureStorage.getAdminSession();
+      
+      if (!sessionToken) {
+        throw new Error('No admin session found');
+      }
 
-      const consentedCount = consentedData?.filter(r => r.consent_store || r.consent_train).length || 0;
-      const avgDuration = durationData?.reduce((acc, r) => acc + (r.duration_ms || 0), 0) / (durationData?.length || 1) / 1000;
-
-      setStats({
-        totalRecordings: (totalRecordings || 0) + (encryptedRecordings || 0),
-        encryptedRecordings: encryptedRecordings || 0,
-        unencryptedRecordings: totalRecordings || 0,
-        totalUsers: totalUsers || 0,
-        todayRecordings: todayRecordings?.length || 0,
-        consentedRecordings: consentedCount,
-        averageDuration: Math.round(avgDuration || 0),
-        recentActivity: recentActivity || []
+      const { data, error } = await supabase.functions.invoke('admin-dashboard-stats', {
+        body: { sessionToken }
       });
+
+      if (error) {
+        throw error;
+      }
+
+      setStats(data);
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
     } finally {
