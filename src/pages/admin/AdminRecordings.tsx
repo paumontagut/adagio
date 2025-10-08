@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,6 +76,24 @@ export const AdminRecordings = () => {
   const [showIdentities, setShowIdentities] = useState(false);
   const { toast } = useToast();
   const { adminUser } = useAdmin();
+  
+  // Refs para sincronizar los scrolls
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const bottomScrollRef = useRef<HTMLDivElement>(null);
+
+  // Sincronizar scroll superior con el inferior
+  const handleTopScroll = () => {
+    if (topScrollRef.current && bottomScrollRef.current) {
+      bottomScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft;
+    }
+  };
+
+  // Sincronizar scroll inferior con el superior
+  const handleBottomScroll = () => {
+    if (topScrollRef.current && bottomScrollRef.current) {
+      topScrollRef.current.scrollLeft = bottomScrollRef.current.scrollLeft;
+    }
+  };
 
   useEffect(() => {
     fetchRecordings();
@@ -947,13 +965,25 @@ export const AdminRecordings = () => {
 
       {/* Recordings Table */}
       <Card>
-        <div className="border-b">
-          <ScrollArea className="w-full">
-            <div className="h-3 min-w-[1200px]" />
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+        {/* Scroll superior sincronizado */}
+        <div className="border-b overflow-hidden">
+          <div 
+            ref={topScrollRef}
+            className="overflow-x-auto overflow-y-hidden"
+            onScroll={handleTopScroll}
+            style={{ height: '20px' }}
+          >
+            <div style={{ width: '1200px', height: '1px' }} />
+          </div>
         </div>
-        <ScrollArea className="w-full h-[600px]">
+        
+        {/* Contenido principal con scroll inferior */}
+        <div 
+          ref={bottomScrollRef}
+          className="overflow-auto"
+          onScroll={handleBottomScroll}
+          style={{ maxHeight: '600px' }}
+        >
           <div className="min-w-[1200px]">
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10">
@@ -1115,8 +1145,7 @@ export const AdminRecordings = () => {
             </TableBody>
           </Table>
           </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        </div>
       </Card>
 
       {filteredRecordings.length === 0 && (
