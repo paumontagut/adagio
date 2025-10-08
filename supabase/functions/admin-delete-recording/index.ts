@@ -55,17 +55,72 @@ serve(async (req) => {
       return json({ error: 'Forbidden' }, 403);
     }
 
-    // Load metadata
-    const { data: meta, error: metaErr } = await supabase
+    // Load metadata from audio_metadata OR recordings (legacy)
+    let meta: any = null;
+    let isLegacy = false;
+    
+    // Try audio_metadata first
+    const { data: audioMeta, error: audioMetaErr } = await supabase
       .from('audio_metadata')
-      .select('id, unencrypted_file_path, unencrypted_storage_bucket')
+      .select('id, session_pseudonym, unencrypted_file_path, unencrypted_storage_bucket')
       .eq('id', recordingId)
       .maybeSingle();
+    
+    if (audioMeta) {
+      meta = audioMeta;
+    } else {
+      // Try recordings table (legacy)
+      const { data: recordingData, error: recordingErr } = await supabase
+        .from('recordings')
+        .select('id, session_pseudonym, audio_url')
+        .eq('id', recordingId)
+        .maybeSingle();
+      
+      if (recordingData) {
+        meta = recordingData;
+        isLegacy = true;
+      }
+    }
 
-    if (metaErr || !meta) {
+    if (!meta) {
+      console.log('Recording not found in either table:', recordingId);
       return json({ error: 'Recording not found' }, 404);
     }
 
+    console.log(`Found recording in ${isLegacy ? 'recordings (legacy)' : 'audio_metadata'} table`);
+
+    if (isLegacy) {
+      // Legacy recording deletion
+      // Delete from recordings table
+      const { error: recDelErr } = await supabase
+        .from('recordings')
+        .delete()
+        .eq('id', recordingId);
+      
+      if (recDelErr) {
+        console.error('Recordings delete error:', recDelErr);
+        return json({ error: 'Failed to delete legacy recording' }, 500);
+      }
+      
+      // Try to delete from storage if audio_url exists
+      if (meta.audio_url && meta.audio_url !== 'encrypted_storage') {
+        // Parse audio_url to get bucket and path
+        const urlMatch = meta.audio_url.match(/^([^/]+)\/(.+)$/);
+        if (urlMatch) {
+          const bucket = urlMatch[1];
+          const path = urlMatch[2];
+          const { error: storageErr } = await supabase.storage
+            .from(bucket)
+            .remove([path]);
+          if (storageErr) console.error('Legacy storage delete error:', storageErr);
+        }
+      }
+      
+      console.log('Legacy recording deleted successfully');
+      return json({ success: true, legacy: true });
+    }
+
+    // Modern recording deletion (audio_metadata)
     // Delete encrypted files rows
     const { data: encRows, error: encSelErr } = await supabase
       .from('encrypted_audio_files')
@@ -101,7 +156,16 @@ serve(async (req) => {
       console.error('Metadata delete error:', metaDelErr);
       return json({ error: 'Failed to delete metadata' }, 500);
     }
+    
+    // Also delete from recordings if exists there with same pseudonym
+    if (meta.session_pseudonym) {
+      await supabase
+        .from('recordings')
+        .delete()
+        .eq('session_pseudonym', meta.session_pseudonym);
+    }
 
+    console.log('Modern recording deleted successfully');
     return json({ success: true });
   } catch (error) {
     console.error('Error in admin-delete-recording:', error);
