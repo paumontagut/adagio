@@ -184,6 +184,7 @@ serve(async (req) => {
             meta.unencrypted_storage_bucket = amMatch.unencrypted_storage_bucket || 'audio_raw';
             meta.unencrypted_file_path = amMatch.unencrypted_file_path;
             console.log('Matched audio_metadata for legacy record:', amMatch.id);
+          }
         }
         
         // Si aún no hay, intentar por pseudónimo únicamente (último registro)
