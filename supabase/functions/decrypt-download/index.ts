@@ -7,6 +7,52 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Parser robusto para audio_url que maneja múltiples formatos
+function parseAudioUrl(audioUrl: string): { bucket: string; path: string } | null {
+  if (!audioUrl) return null;
+  
+  console.log('Parsing audio_url:', audioUrl);
+  
+  try {
+    // Remover query strings
+    const cleanUrl = audioUrl.split('?')[0];
+    
+    // Patrón 1: /storage/v1/object/sign/{bucket}/{path}
+    let match = cleanUrl.match(/\/storage\/v1\/object\/sign\/([^/]+)\/(.+)/);
+    if (match) {
+      console.log('Matched sign pattern:', { bucket: match[1], path: match[2] });
+      return { bucket: match[1], path: decodeURIComponent(match[2]) };
+    }
+    
+    // Patrón 2: /storage/v1/object/authenticated/{bucket}/{path}
+    match = cleanUrl.match(/\/storage\/v1\/object\/authenticated\/([^/]+)\/(.+)/);
+    if (match) {
+      console.log('Matched authenticated pattern:', { bucket: match[1], path: match[2] });
+      return { bucket: match[1], path: decodeURIComponent(match[2]) };
+    }
+    
+    // Patrón 3: /storage/v1/object/public/{bucket}/{path}
+    match = cleanUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
+    if (match) {
+      console.log('Matched public pattern:', { bucket: match[1], path: match[2] });
+      return { bucket: match[1], path: decodeURIComponent(match[2]) };
+    }
+    
+    // Patrón 4: Simplemente {bucket}/{path} después de cualquier prefijo
+    match = cleanUrl.match(/\/([^/]+)\/(.+)/);
+    if (match && (match[1] === 'audio_raw' || match[1] === 'audio_clean')) {
+      console.log('Matched simple bucket/path pattern:', { bucket: match[1], path: match[2] });
+      return { bucket: match[1], path: decodeURIComponent(match[2]) };
+    }
+    
+    console.warn('Could not parse audio_url:', audioUrl);
+    return null;
+  } catch (error) {
+    console.error('Error parsing audio_url:', error);
+    return null;
+  }
+}
+
 type UUID = string;
 
 interface DecryptRequest {
@@ -102,6 +148,9 @@ serve(async (req) => {
       }
       
       if (legacyRec) {
+        // Parse audio_url usando el parser robusto
+        const parsed = parseAudioUrl(legacyRec.audio_url);
+        
         // Convert legacy recording format to metadata format
         meta = {
           id: legacyRec.id,
@@ -114,11 +163,11 @@ serve(async (req) => {
           consent_store: legacyRec.consent_store,
           encryption_key_version: 1, // Legacy recordings use version 1
           created_at: legacyRec.created_at,
-          unencrypted_storage_bucket: 'audio_raw',
-          unencrypted_file_path: legacyRec.audio_url?.includes('audio_raw') ? legacyRec.audio_url.split('audio_raw/')[1] : null
+          unencrypted_storage_bucket: parsed?.bucket || 'audio_raw',
+          unencrypted_file_path: parsed?.path || null
         };
         isLegacyRecording = true;
-        console.log('Found in recordings (legacy)');
+        console.log('Found in recordings (legacy), parsed audio_url:', parsed);
       }
     }
 
@@ -173,33 +222,6 @@ serve(async (req) => {
     // 4) Handle encrypted download (default behavior)
     console.log('Processing encrypted download request');
     
-    // For legacy recordings from 'recordings' table, they might not have encrypted files
-    if (isLegacyRecording && meta.unencrypted_file_path) {
-      console.log('Legacy recording detected, attempting unencrypted download');
-      try {
-        const { data: fileData, error: downloadError } = await supabase.storage
-          .from(meta.unencrypted_storage_bucket || 'audio_raw')
-          .download(meta.unencrypted_file_path);
-        
-        if (!downloadError && fileData) {
-          const arrayBuffer = await fileData.arrayBuffer();
-          const base64 = b64encode(new Uint8Array(arrayBuffer));
-          const filename = `legacy_${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
-          
-          console.log('Legacy unencrypted download successful');
-          return json({ 
-            base64, 
-            filename, 
-            mimeType: 'audio/wav',
-            isLegacyFallback: true,
-            message: 'Grabación legacy descargada correctamente'
-          }, 200);
-        }
-      } catch (error) {
-        console.error('Legacy download failed:', error);
-      }
-    }
-    
     const { data: enc, error: encErr } = await supabase
       .from('encrypted_audio_files')
       .select('*')
@@ -213,16 +235,36 @@ serve(async (req) => {
     if (!enc) {
       console.error('Encrypted file not found for metadata_id:', recordingId);
       
-      // If no encrypted file, suggest trying unencrypted
+      // Fallback automático: intentar descarga sin cifrar si está disponible
       if (meta.unencrypted_file_path) {
-        return json({ 
-          error: 'No encrypted version available', 
-          details: 'Esta grabación no tiene versión cifrada. Usa la descarga sin cifrar.',
-          hasUnencrypted: true
-        }, 404);
+        console.log('No encrypted file found, automatically falling back to unencrypted download');
+        try {
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from(meta.unencrypted_storage_bucket || 'audio_raw')
+            .download(meta.unencrypted_file_path);
+          
+          if (!downloadError && fileData) {
+            const arrayBuffer = await fileData.arrayBuffer();
+            const base64 = b64encode(new Uint8Array(arrayBuffer));
+            const filename = `${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
+            
+            console.log('Auto-fallback to unencrypted download successful:', filename);
+            return json({ 
+              base64, 
+              filename, 
+              mimeType: 'audio/wav',
+              isLegacyFallback: true,
+              message: 'No había versión cifrada, se descargó la versión sin cifrar'
+            }, 200);
+          }
+          
+          console.error('Fallback download failed:', downloadError);
+        } catch (fallbackError) {
+          console.error('Fallback to unencrypted failed:', fallbackError);
+        }
       }
       
-      return json({ error: 'Encrypted file not found' }, 404);
+      return json({ error: 'Encrypted file not found and no unencrypted fallback available' }, 404);
     }
 
     console.log('Encrypted file found, blob size:', enc.encrypted_blob?.length || 0);

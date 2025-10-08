@@ -259,11 +259,51 @@ export const AdminRecordings = () => {
       if (response.error) {
         console.error('Edge function error:', response.error);
         
-        // Handle FunctionsHttpError (non-2xx responses)
+        // Handle FunctionsHttpError (non-2xx responses) - intentar con unencrypted
         if (response.error.name === 'FunctionsHttpError') {
+          console.log('FunctionsHttpError received, attempting unencrypted download as fallback...');
+          
+          try {
+            const unencryptedResponse = await supabase.functions.invoke('decrypt-download', {
+              body: {
+                recordingId: recordingId,
+                sessionToken: sessionToken,
+                downloadType: 'unencrypted'
+              }
+            });
+            
+            if (!unencryptedResponse.error && unencryptedResponse.data) {
+              const { base64, filename, mimeType } = unencryptedResponse.data;
+              const byteCharacters = atob(base64);
+              const byteNumbers = new Array(byteCharacters.length);
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+              }
+              const byteArray = new Uint8Array(byteNumbers);
+              const blob = new Blob([byteArray], { type: mimeType || 'audio/wav' });
+              
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              document.body.removeChild(a);
+              
+              toast({
+                title: "Descarga completada",
+                description: "No había versión cifrada. Se descargó la versión sin cifrar."
+              });
+              return;
+            }
+          } catch (fallbackError) {
+            console.error('Unencrypted fallback also failed:', fallbackError);
+          }
+          
           toast({
             title: "Error del servidor",
-            description: "El servidor no pudo procesar la descarga. Verifica los permisos y los logs.",
+            description: "El servidor no pudo procesar la descarga en ningún formato.",
             variant: "destructive"
           });
           return;
@@ -319,10 +359,13 @@ export const AdminRecordings = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      toast({
-        title: "Descarga completada",
-        description: `Archivo ${filename} descargado correctamente`
-      });
+      // Solo mostrar toast de éxito si no es legacyFallback (que ya tiene su propio toast)
+      if (!isLegacyFallback) {
+        toast({
+          title: "Descarga completada",
+          description: `Archivo ${filename} descargado correctamente`
+        });
+      }
     } catch (error: any) {
       console.error('Error downloading encrypted file:', error);
       

@@ -5,6 +5,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Parser robusto para audio_url (mismo que en decrypt-download)
+function parseAudioUrl(audioUrl: string): { bucket: string; path: string } | null {
+  if (!audioUrl) return null;
+  
+  try {
+    const cleanUrl = audioUrl.split('?')[0];
+    
+    let match = cleanUrl.match(/\/storage\/v1\/object\/sign\/([^/]+)\/(.+)/);
+    if (match) return { bucket: match[1], path: decodeURIComponent(match[2]) };
+    
+    match = cleanUrl.match(/\/storage\/v1\/object\/authenticated\/([^/]+)\/(.+)/);
+    if (match) return { bucket: match[1], path: decodeURIComponent(match[2]) };
+    
+    match = cleanUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
+    if (match) return { bucket: match[1], path: decodeURIComponent(match[2]) };
+    
+    match = cleanUrl.match(/\/([^/]+)\/(.+)/);
+    if (match && (match[1] === 'audio_raw' || match[1] === 'audio_clean')) {
+      return { bucket: match[1], path: decodeURIComponent(match[2]) };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error parsing audio_url:', error);
+    return null;
+  }
+}
+
 interface RequestBody {
   sessionToken: string;
 }
@@ -144,6 +172,19 @@ Deno.serve(async (req) => {
     // Los nombres se obtienen por separado cuando se necesiten específicamente
     const enrichedData = recordingsData.map(recording => {
       const audioInfo = audioMap.get(recording.session_pseudonym);
+      
+      // Para legacy recordings sin audio_metadata, parsear audio_url
+      let unencryptedBucket = audioInfo?.unencrypted_storage_bucket || null;
+      let unencryptedPath = audioInfo?.unencrypted_file_path || null;
+      
+      if (!audioInfo && recording.audio_url) {
+        const parsed = parseAudioUrl(recording.audio_url);
+        if (parsed) {
+          unencryptedBucket = parsed.bucket;
+          unencryptedPath = parsed.path;
+        }
+      }
+      
       return {
         // Datos de grabación (tabla recordings)
         id: recording.id,
@@ -165,8 +206,8 @@ Deno.serve(async (req) => {
         encryption_key_version: audioInfo?.encryption_key_version || 1,
         file_size_bytes: audioInfo?.file_size_bytes || null,
         unencrypted_file_size_bytes: audioInfo?.unencrypted_file_size_bytes || null,
-        unencrypted_storage_bucket: audioInfo?.unencrypted_storage_bucket || null,
-        unencrypted_file_path: audioInfo?.unencrypted_file_path || null,
+        unencrypted_storage_bucket: unencryptedBucket,
+        unencrypted_file_path: unencryptedPath,
         device_info: audioInfo?.device_info || recording.device_label,
         
         // IMPORTANTE: NO incluir email ni full_name directamente
