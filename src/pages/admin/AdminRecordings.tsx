@@ -1028,7 +1028,7 @@ export const AdminRecordings = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      {recording.unencrypted_file_path && (
+                      {recording.unencrypted_file_path ? (
                         <>
                           <Button
                             variant="ghost"
@@ -1042,36 +1042,39 @@ export const AdminRecordings = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDownloadUnencrypted(recording)}
-                            title="Descargar archivo sin cifrar"
+                            title="Descargar sin cifrar"
                           >
                             <Download className="h-3 w-3" />
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSingleDelete(recording.id)}
+                            title="Eliminar grabación"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDownloadEncrypted(recording.id)}
+                            title="Descargar cifrado"
+                          >
+                            <Archive className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSingleDelete(recording.id)}
+                            title="Eliminar grabación"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownloadEncrypted(recording.id)}
-                        title="Descargar archivo cifrado"
-                      >
-                        <Archive className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleForceDownloadUnencrypted(recording.id)}
-                        title="Forzar descarga sin cifrar"
-                      >
-                        <Download className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSingleDelete(recording.id)}
-                        title="Eliminar grabación"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
