@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useAdmin } from '@/contexts/AdminContext';
 import { secureStorage } from '@/lib/secureStorage';
 import { 
@@ -946,18 +947,19 @@ export const AdminRecordings = () => {
 
       {/* Recordings Table */}
       <Card>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectedRecordings.size === filteredRecordings.length && filteredRecordings.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort('session_pseudonym')}>
-                  <div className="flex items-center gap-1">
+        <ScrollArea className="w-full">
+          <div className="min-w-[1200px]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedRecordings.size === filteredRecordings.length && filteredRecordings.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('session_pseudonym')}>
+                    <div className="flex items-center gap-1">
                     Pseudónimo
                     <ArrowUpDown className="w-4 h-4" />
                   </div>
@@ -1106,7 +1108,9 @@ export const AdminRecordings = () => {
               ))}
             </TableBody>
           </Table>
-        </div>
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </Card>
 
       {filteredRecordings.length === 0 && (
