@@ -73,20 +73,57 @@ serve(async (req) => {
 
     console.log('Admin authorized:', admin.email);
 
-    // 2) Load metadata
+    // 2) Load metadata - try audio_metadata first, then recordings (legacy)
     console.log('Loading metadata for recording:', recordingId);
-    const { data: meta, error: metaErr } = await supabase
+    let meta = null;
+    let isLegacyRecording = false;
+    
+    // Try audio_metadata first
+    const { data: audioMeta, error: audioMetaErr } = await supabase
       .from('audio_metadata')
       .select('*')
       .eq('id', recordingId)
       .maybeSingle();
 
-    if (metaErr) {
-      console.error('Metadata query error:', metaErr);
-      return json({ error: metaErr.message }, 404);
+    if (audioMeta) {
+      meta = audioMeta;
+      console.log('Found in audio_metadata');
+    } else {
+      // Try recordings table (legacy)
+      console.log('Not found in audio_metadata, trying recordings table');
+      const { data: legacyRec, error: legacyErr } = await supabase
+        .from('recordings')
+        .select('*')
+        .eq('id', recordingId)
+        .maybeSingle();
+      
+      if (legacyErr) {
+        console.error('Error querying recordings:', legacyErr);
+      }
+      
+      if (legacyRec) {
+        // Convert legacy recording format to metadata format
+        meta = {
+          id: legacyRec.id,
+          session_pseudonym: legacyRec.session_pseudonym,
+          phrase_text: legacyRec.phrase_text,
+          audio_format: legacyRec.format || 'wav',
+          sample_rate: legacyRec.sample_rate,
+          duration_ms: legacyRec.duration_ms,
+          consent_train: legacyRec.consent_train,
+          consent_store: legacyRec.consent_store,
+          encryption_key_version: 1, // Legacy recordings use version 1
+          created_at: legacyRec.created_at,
+          unencrypted_storage_bucket: 'audio_raw',
+          unencrypted_file_path: legacyRec.audio_url?.includes('audio_raw') ? legacyRec.audio_url.split('audio_raw/')[1] : null
+        };
+        isLegacyRecording = true;
+        console.log('Found in recordings (legacy)');
+      }
     }
+
     if (!meta) {
-      console.error('Recording not found:', recordingId);
+      console.error('Recording not found in any table:', recordingId);
       return json({ error: 'Recording not found' }, 404);
     }
 
@@ -94,7 +131,8 @@ serve(async (req) => {
       id: meta.id, 
       format: meta.audio_format, 
       hasUnencrypted: !!meta.unencrypted_file_path,
-      encryptionVersion: meta.encryption_key_version 
+      encryptionVersion: meta.encryption_key_version,
+      isLegacy: isLegacyRecording
     });
 
     // 3) Handle unencrypted download
@@ -134,6 +172,34 @@ serve(async (req) => {
 
     // 4) Handle encrypted download (default behavior)
     console.log('Processing encrypted download request');
+    
+    // For legacy recordings from 'recordings' table, they might not have encrypted files
+    if (isLegacyRecording && meta.unencrypted_file_path) {
+      console.log('Legacy recording detected, attempting unencrypted download');
+      try {
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from(meta.unencrypted_storage_bucket || 'audio_raw')
+          .download(meta.unencrypted_file_path);
+        
+        if (!downloadError && fileData) {
+          const arrayBuffer = await fileData.arrayBuffer();
+          const base64 = b64encode(new Uint8Array(arrayBuffer));
+          const filename = `legacy_${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
+          
+          console.log('Legacy unencrypted download successful');
+          return json({ 
+            base64, 
+            filename, 
+            mimeType: 'audio/wav',
+            isLegacyFallback: true,
+            message: 'Grabación legacy descargada correctamente'
+          }, 200);
+        }
+      } catch (error) {
+        console.error('Legacy download failed:', error);
+      }
+    }
+    
     const { data: enc, error: encErr } = await supabase
       .from('encrypted_audio_files')
       .select('*')
@@ -146,6 +212,16 @@ serve(async (req) => {
     }
     if (!enc) {
       console.error('Encrypted file not found for metadata_id:', recordingId);
+      
+      // If no encrypted file, suggest trying unencrypted
+      if (meta.unencrypted_file_path) {
+        return json({ 
+          error: 'No encrypted version available', 
+          details: 'Esta grabación no tiene versión cifrada. Usa la descarga sin cifrar.',
+          hasUnencrypted: true
+        }, 404);
+      }
+      
       return json({ error: 'Encrypted file not found' }, 404);
     }
 
