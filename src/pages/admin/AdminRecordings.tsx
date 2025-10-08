@@ -906,19 +906,32 @@ export const AdminRecordings = () => {
                     return;
                   }
                   
-                  let deletedCount = 0;
-                  for (const recordingId of selectedIds) {
-                    await handleSingleDelete(recordingId);
-                    deletedCount++;
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                  }
+                  toast({
+                    title: "Eliminando...",
+                    description: `Eliminando ${selectedIds.length} grabación(es) en paralelo`
+                  });
+                  
+                  // Ejecutar todas las eliminaciones en paralelo
+                  const deletePromises = selectedIds.map(recordingId => handleSingleDelete(recordingId));
+                  const results = await Promise.allSettled(deletePromises);
+                  
+                  const successCount = results.filter(r => r.status === 'fulfilled').length;
+                  const failedCount = results.filter(r => r.status === 'rejected').length;
                   
                   setSelectedRecordings(new Set());
                   
-                  toast({
-                    title: "Eliminación completada",
-                    description: `${deletedCount} grabación(es) eliminada(s)`
-                  });
+                  if (failedCount > 0) {
+                    toast({
+                      title: "Eliminación parcial",
+                      description: `${successCount} eliminadas correctamente, ${failedCount} fallaron`,
+                      variant: "default"
+                    });
+                  } else {
+                    toast({
+                      title: "Eliminación completada",
+                      description: `${successCount} grabación(es) eliminada(s)`
+                    });
+                  }
                   
                   await fetchRecordings();
                 }}
