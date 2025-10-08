@@ -947,6 +947,12 @@ export const AdminRecordings = () => {
 
       {/* Recordings Table */}
       <Card>
+        <div className="border-b">
+          <ScrollArea className="w-full">
+            <div className="h-3 min-w-[1200px]" />
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
         <ScrollArea className="w-full h-[600px]">
           <div className="min-w-[1200px]">
             <Table>
