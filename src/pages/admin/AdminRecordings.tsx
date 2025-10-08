@@ -512,21 +512,40 @@ export const AdminRecordings = () => {
 
   const handleBackfillUnencryptedSelected = async (ids: string[]) => {
     try {
-      toast({ title: 'Generando versiones sin cifrar', description: `${ids.length} seleccionada(s)` });
+      toast({ 
+        title: 'Generando versiones sin cifrar', 
+        description: `Procesando ${ids.length} grabación(es)...` 
+      });
+      
       const sessionToken = await secureStorage.getAdminSession();
       if (!sessionToken) {
-        toast({ title: 'Error de autorización', description: 'No tienes permisos', variant: 'destructive' });
+        toast({ 
+          title: 'Error de autorización', 
+          description: 'No tienes permisos', 
+          variant: 'destructive' 
+        });
         return;
       }
+      
       const { data, error } = await supabase.functions.invoke('admin-backfill-unencrypted', {
         body: { sessionToken, recordingIds: ids }
       });
+      
       if (error) throw error;
+      
       await fetchRecordings();
-      toast({ title: 'Backfill completado', description: `OK: ${data.success} · Fallidos: ${data.failed} · Omitidos: ${data.skipped}` });
+      
+      toast({ 
+        title: 'Generación completada', 
+        description: `Éxito: ${data.success} · Fallidos: ${data.failed} · Omitidos: ${data.skipped}` 
+      });
     } catch (e) {
       console.error('Backfill error:', e);
-      toast({ title: 'Error al generar sin cifrar', description: 'Revisa los logs', variant: 'destructive' });
+      toast({ 
+        title: 'Error al generar sin cifrar', 
+        description: 'Revisa los logs del servidor', 
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -868,6 +887,17 @@ export const AdminRecordings = () => {
                 size="sm"
                 onClick={async () => {
                   const selectedIds = Array.from(selectedRecordings);
+                  await handleBackfillUnencryptedSelected(selectedIds);
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Generar sin cifrar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const selectedIds = Array.from(selectedRecordings);
                   for (const recordingId of selectedIds) {
                     await handleForceDownloadUnencrypted(recordingId);
                     await new Promise(resolve => setTimeout(resolve, 500));
@@ -876,6 +906,12 @@ export const AdminRecordings = () => {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Forzar sin cifrar
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setSelectedRecordings(new Set())}
+              >
                 Limpiar selección
               </Button>
             </div>

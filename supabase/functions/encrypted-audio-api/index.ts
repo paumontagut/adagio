@@ -115,7 +115,7 @@ async function handleStoreAudio(req: Request, supabase: any) {
   // Get active key version
   const { data: keyData, error: keyErr } = await supabase
     .from('encryption_keys')
-    .select('version')
+    .select('version, key_hash')
     .eq('is_active', true)
     .single()
 
@@ -139,6 +139,50 @@ async function handleStoreAudio(req: Request, supabase: any) {
   })
   if (mapErr) console.warn('Session mapping warning', mapErr)
 
+  // IMPORTANTE: Descifrar el audio cifrado por el cliente para guardar versión sin cifrar
+  let unencryptedFileName: string | null = null
+  let unencryptedFileSize: number | null = null
+  
+  try {
+    const encryptedBytes = base64ToUint8(data.encryptedBlob)
+    const iv = base64ToUint8(data.iv)
+    const keyBytes = await decodeKeyMaterial(keyData.key_hash)
+    
+    // Intentar descifrar
+    const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt'])
+    let processedIv = iv
+    if (iv.length !== 12 && iv.length !== 16) {
+      if (iv.length > 12) processedIv = iv.slice(0, 12)
+      else {
+        const paddedIv = new Uint8Array(12)
+        paddedIv.set(iv)
+        processedIv = paddedIv
+      }
+    }
+    const decryptedBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: processedIv }, cryptoKey, encryptedBytes)
+    const decryptedBytes = new Uint8Array(decryptedBuf)
+    
+    // Guardar versión sin cifrar
+    unencryptedFileName = `training_audio_${sessionPseudonym}_${Date.now()}.wav`
+    const { error: unencryptedErr } = await supabase.storage
+      .from('audio_raw')
+      .upload(unencryptedFileName, decryptedBytes, {
+        contentType: 'audio/wav',
+        upsert: false
+      })
+    
+    if (unencryptedErr) {
+      console.error('Error storing unencrypted audio:', unencryptedErr)
+      unencryptedFileName = null
+    } else {
+      unencryptedFileSize = decryptedBytes.byteLength
+      console.log('Unencrypted version stored successfully:', unencryptedFileName)
+    }
+  } catch (decryptErr) {
+    console.warn('Could not decrypt client-side encrypted audio for backup:', decryptErr)
+    // Continue without unencrypted version
+  }
+
   // Insert metadata
   const { data: meta, error: metaErr } = await supabase
     .from('audio_metadata')
@@ -152,7 +196,10 @@ async function handleStoreAudio(req: Request, supabase: any) {
       quality_score: data.qualityScore,
       consent_train: data.consentTrain,
       consent_store: data.consentStore,
-      encryption_key_version: currentKeyVersion
+      encryption_key_version: currentKeyVersion,
+      unencrypted_file_path: unencryptedFileName,
+      unencrypted_storage_bucket: unencryptedFileName ? 'audio_raw' : null,
+      unencrypted_file_size_bytes: unencryptedFileSize
     })
     .select()
     .single()
