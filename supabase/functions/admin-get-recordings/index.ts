@@ -105,7 +105,35 @@ Deno.serve(async (req) => {
 
     console.log(`Admin access granted for: ${adminUser.email} (${adminUser.role})`);
 
-    // Fetch recordings with pseudonyms (separación de datos)
+    // Fetch modern recordings from audio_metadata (encrypted storage)
+    const { data: audioData, error: audioError } = await supabase
+      .from('audio_metadata')
+      .select(`
+        id,
+        session_pseudonym,
+        phrase_text,
+        audio_format,
+        sample_rate,
+        duration_ms,
+        quality_score,
+        consent_train,
+        consent_store,
+        encryption_key_version,
+        file_size_bytes,
+        unencrypted_file_size_bytes,
+        unencrypted_storage_bucket,
+        unencrypted_file_path,
+        device_info,
+        created_at
+      `)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    if (audioError) {
+      console.error('Error fetching audio metadata:', audioError);
+    }
+
+    // Fetch legacy recordings from recordings table
     const { data: recordingsData, error: recordingsError } = await supabase
       .from('recordings')
       .select(`
@@ -126,101 +154,85 @@ Deno.serve(async (req) => {
       .limit(500);
 
     if (recordingsError) {
-      console.error('Error fetching recordings:', recordingsError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch recordings' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      console.warn('Warning: Could not fetch legacy recordings:', recordingsError);
+    }
+
+    // Create a Set of session_pseudonyms from modern recordings to track them
+    const modernPseudonyms = new Set(
+      audioData?.map(r => r.session_pseudonym).filter(Boolean) || []
+    );
+
+    // Transform modern recordings (from audio_metadata)
+    const modernRecordings = (audioData || []).map(audio => ({
+      id: audio.id,
+      session_pseudonym: audio.session_pseudonym,
+      phrase_text: audio.phrase_text,
+      audio_url: null, // Modern recordings use encrypted storage
+      duration_ms: audio.duration_ms,
+      sample_rate: audio.sample_rate,
+      format: audio.audio_format,
+      audio_format: audio.audio_format,
+      consent_train: audio.consent_train,
+      consent_store: audio.consent_store,
+      device_label: audio.device_info,
+      device_info: audio.device_info,
+      created_at: audio.created_at,
+      consent_at: audio.created_at,
+      quality_score: audio.quality_score,
+      encryption_key_version: audio.encryption_key_version,
+      file_size_bytes: audio.file_size_bytes,
+      unencrypted_file_size_bytes: audio.unencrypted_file_size_bytes,
+      unencrypted_storage_bucket: audio.unencrypted_storage_bucket,
+      unencrypted_file_path: audio.unencrypted_file_path,
+      identity_available: audio.session_pseudonym ? true : false,
+      source: 'audio_metadata' // Mark as modern
+    }));
+
+    // Transform legacy recordings (from recordings table), excluding duplicates
+    const legacyRecordings = (recordingsData || [])
+      .filter(recording => !recording.session_pseudonym || !modernPseudonyms.has(recording.session_pseudonym))
+      .map(recording => {
+        // Parse audio_url for legacy recordings
+        let unencryptedBucket = null;
+        let unencryptedPath = null;
+        
+        if (recording.audio_url) {
+          const parsed = parseAudioUrl(recording.audio_url);
+          if (parsed) {
+            unencryptedBucket = parsed.bucket;
+            unencryptedPath = parsed.path;
+          }
         }
-      );
-    }
-
-    // Fetch audio metadata separately (for technical details)
-    const { data: audioData, error: audioError } = await supabase
-      .from('audio_metadata')
-      .select(`
-        id,
-        session_pseudonym,
-        phrase_text,
-        audio_format,
-        sample_rate,
-        duration_ms,
-        quality_score,
-        encryption_key_version,
-        file_size_bytes,
-        unencrypted_file_size_bytes,
-        unencrypted_storage_bucket,
-        unencrypted_file_path,
-        device_info,
-        created_at
-      `)
-      .order('created_at', { ascending: false })
-      .limit(500);
-
-    if (audioError) {
-      console.warn('Warning: Could not fetch audio metadata:', audioError);
-    }
-
-    // Create maps for quick lookup
-    const audioMapByPseudo = new Map();
-    const audioMapByPair = new Map();
-    if (audioData) {
-      audioData.forEach(audio => {
-        audioMapByPseudo.set(audio.session_pseudonym, audio);
-        const pairKey = `${audio.session_pseudonym}__${audio.phrase_text}`;
-        audioMapByPair.set(pairKey, audio);
+        
+        return {
+          id: recording.id,
+          session_pseudonym: recording.session_pseudonym,
+          phrase_text: recording.phrase_text,
+          audio_url: recording.audio_url,
+          duration_ms: recording.duration_ms,
+          sample_rate: recording.sample_rate,
+          format: recording.format,
+          audio_format: recording.format,
+          consent_train: recording.consent_train,
+          consent_store: recording.consent_store,
+          device_label: recording.device_label,
+          device_info: recording.device_label,
+          created_at: recording.created_at,
+          consent_at: recording.consent_at,
+          quality_score: null,
+          encryption_key_version: 1,
+          file_size_bytes: null,
+          unencrypted_file_size_bytes: null,
+          unencrypted_storage_bucket: unencryptedBucket,
+          unencrypted_file_path: unencryptedPath,
+          identity_available: recording.session_pseudonym ? true : false,
+          source: 'recordings' // Mark as legacy
+        };
       });
-    }
 
-    // SEPARACIÓN DE DATOS: Solo devolver pseudónimos, NO nombres reales
-    // Los nombres se obtienen por separado cuando se necesiten específicamente
-    const enrichedData = recordingsData.map(recording => {
-      const pairKey = `${recording.session_pseudonym}__${recording.phrase_text}`;
-      const audioInfo = audioMapByPair.get(pairKey) || audioMapByPseudo.get(recording.session_pseudonym);
-      
-      // Para legacy recordings sin audio_metadata, parsear audio_url
-      let unencryptedBucket = audioInfo?.unencrypted_storage_bucket || null;
-      let unencryptedPath = audioInfo?.unencrypted_file_path || null;
-      
-      if (!audioInfo && recording.audio_url) {
-        const parsed = parseAudioUrl(recording.audio_url);
-        if (parsed) {
-          unencryptedBucket = parsed.bucket;
-          unencryptedPath = parsed.path;
-        }
-      }
-      
-      return {
-        // Datos de grabación (tabla recordings)
-        id: recording.id,
-        session_pseudonym: recording.session_pseudonym,
-        phrase_text: recording.phrase_text,
-        audio_url: recording.audio_url,
-        duration_ms: recording.duration_ms,
-        sample_rate: recording.sample_rate,
-        format: recording.format,
-        consent_train: recording.consent_train,
-        consent_store: recording.consent_store,
-        device_label: recording.device_label,
-        created_at: recording.created_at,
-        consent_at: recording.consent_at,
-        
-        // Datos técnicos de audio_metadata (si están disponibles)
-        audio_format: audioInfo?.audio_format || recording.format,
-        quality_score: audioInfo?.quality_score || null,
-        encryption_key_version: audioInfo?.encryption_key_version || 1,
-        file_size_bytes: audioInfo?.file_size_bytes || null,
-        unencrypted_file_size_bytes: audioInfo?.unencrypted_file_size_bytes || null,
-        unencrypted_storage_bucket: unencryptedBucket,
-        unencrypted_file_path: unencryptedPath,
-        device_info: audioInfo?.device_info || recording.device_label,
-        
-        // IMPORTANTE: NO incluir email ni full_name directamente
-        // Esto garantiza la separación de datos
-        identity_available: recording.session_pseudonym ? true : false
-      };
-    });
+    // Combine all recordings and sort by created_at
+    const enrichedData = [...modernRecordings, ...legacyRecordings]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     console.log(`Returning ${enrichedData.length} recordings for admin ${adminUser.email} (pseudonyms only, identity data separated)`);
 
