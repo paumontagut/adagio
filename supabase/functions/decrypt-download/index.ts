@@ -163,11 +163,46 @@ serve(async (req) => {
           consent_store: legacyRec.consent_store,
           encryption_key_version: 1, // Legacy recordings use version 1
           created_at: legacyRec.created_at,
-          unencrypted_storage_bucket: parsed?.bucket || 'audio_raw',
+          unencrypted_storage_bucket: parsed?.bucket || null,
           unencrypted_file_path: parsed?.path || null
         };
         isLegacyRecording = true;
         console.log('Found in recordings (legacy), parsed audio_url:', parsed);
+        
+        // Si no hay ruta sin cifrar, intenta encontrarla en audio_metadata por pseudónimo + frase
+        if (!meta.unencrypted_file_path && legacyRec.session_pseudonym && legacyRec.phrase_text) {
+          console.log('Trying to locate matching audio_metadata by pseudonym + phrase...');
+          const { data: amMatch, error: amErr } = await supabase
+            .from('audio_metadata')
+            .select('unencrypted_storage_bucket, unencrypted_file_path, created_at, id')
+            .eq('session_pseudonym', legacyRec.session_pseudonym)
+            .eq('phrase_text', legacyRec.phrase_text)
+            .order('created_at', { ascending: false })
+            .maybeSingle();
+          if (amErr) console.warn('Lookup audio_metadata by pair failed:', amErr);
+          if (amMatch && amMatch.unencrypted_file_path) {
+            meta.unencrypted_storage_bucket = amMatch.unencrypted_storage_bucket || 'audio_raw';
+            meta.unencrypted_file_path = amMatch.unencrypted_file_path;
+            console.log('Matched audio_metadata for legacy record:', amMatch.id);
+        }
+        
+        // Si aún no hay, intentar por pseudónimo únicamente (último registro)
+        if (!meta.unencrypted_file_path && legacyRec.session_pseudonym) {
+          console.log('Trying to locate audio_metadata by pseudonym only...');
+          const { data: amPseudo, error: amPseudoErr } = await supabase
+            .from('audio_metadata')
+            .select('unencrypted_storage_bucket, unencrypted_file_path, created_at, id')
+            .eq('session_pseudonym', legacyRec.session_pseudonym)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (amPseudoErr) console.warn('Lookup audio_metadata by pseudonym failed:', amPseudoErr);
+          if (amPseudo && amPseudo.unencrypted_file_path) {
+            meta.unencrypted_storage_bucket = amPseudo.unencrypted_storage_bucket || 'audio_raw';
+            meta.unencrypted_file_path = amPseudo.unencrypted_file_path;
+            console.log('Matched audio_metadata by pseudonym for legacy record:', amPseudo.id);
+          }
+        }
       }
     }
 

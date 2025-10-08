@@ -142,6 +142,7 @@ Deno.serve(async (req) => {
       .select(`
         id,
         session_pseudonym,
+        phrase_text,
         audio_format,
         sample_rate,
         duration_ms,
@@ -151,7 +152,8 @@ Deno.serve(async (req) => {
         unencrypted_file_size_bytes,
         unencrypted_storage_bucket,
         unencrypted_file_path,
-        device_info
+        device_info,
+        created_at
       `)
       .order('created_at', { ascending: false })
       .limit(500);
@@ -161,17 +163,21 @@ Deno.serve(async (req) => {
     }
 
     // Create maps for quick lookup
-    const audioMap = new Map();
+    const audioMapByPseudo = new Map();
+    const audioMapByPair = new Map();
     if (audioData) {
       audioData.forEach(audio => {
-        audioMap.set(audio.session_pseudonym, audio);
+        audioMapByPseudo.set(audio.session_pseudonym, audio);
+        const pairKey = `${audio.session_pseudonym}__${audio.phrase_text}`;
+        audioMapByPair.set(pairKey, audio);
       });
     }
 
     // SEPARACIÓN DE DATOS: Solo devolver pseudónimos, NO nombres reales
     // Los nombres se obtienen por separado cuando se necesiten específicamente
     const enrichedData = recordingsData.map(recording => {
-      const audioInfo = audioMap.get(recording.session_pseudonym);
+      const pairKey = `${recording.session_pseudonym}__${recording.phrase_text}`;
+      const audioInfo = audioMapByPair.get(pairKey) || audioMapByPseudo.get(recording.session_pseudonym);
       
       // Para legacy recordings sin audio_metadata, parsear audio_url
       let unencryptedBucket = audioInfo?.unencrypted_storage_bucket || null;
