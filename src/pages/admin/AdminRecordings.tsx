@@ -257,6 +257,19 @@ export const AdminRecordings = () => {
       });
 
       if (response.error) {
+        console.error('Edge function error:', response.error);
+        
+        // Handle FunctionsHttpError (non-2xx responses)
+        if (response.error.name === 'FunctionsHttpError') {
+          toast({
+            title: "Error del servidor",
+            description: "El servidor no pudo procesar la descarga. Verifica los permisos y los logs.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Handle specific error cases from the edge function
         if (response.error.error === 'LEGACY_CLIENT_ENCRYPTED') {
           toast({
             title: "Archivo legacy detectado",
@@ -265,13 +278,21 @@ export const AdminRecordings = () => {
               : "Esta grabación legacy no se puede descifrar y no tiene versión sin cifrar.",
             variant: "destructive"
           });
-        } else {
-          throw response.error;
+          return;
         }
-        return;
+        
+        throw response.error;
+      }
+
+      if (!response.data) {
+        throw new Error('No data received from server');
       }
 
       const { base64, filename, mimeType, isLegacyFallback, message } = response.data;
+      
+      if (!base64 || !filename) {
+        throw new Error('Invalid response format from server');
+      }
       
       if (isLegacyFallback) {
         toast({
@@ -287,7 +308,7 @@ export const AdminRecordings = () => {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
       const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: mimeType });
+      const blob = new Blob([byteArray], { type: mimeType || 'audio/wav' });
 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -302,11 +323,14 @@ export const AdminRecordings = () => {
         title: "Descarga completada",
         description: `Archivo ${filename} descargado correctamente`
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error downloading encrypted file:', error);
+      
+      const errorMessage = error?.message || error?.details || 'Error desconocido al descargar el archivo';
+      
       toast({
         title: "Error de descarga",
-        description: "No se pudo descargar el archivo cifrado",
+        description: errorMessage,
         variant: "destructive"
       });
     }

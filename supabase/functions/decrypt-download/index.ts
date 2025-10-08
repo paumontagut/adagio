@@ -30,11 +30,15 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
     const { recordingId, sessionToken, downloadType = 'encrypted' }: DecryptRequest = await req.json();
+    console.log('Request received:', { recordingId, downloadType, hasSessionToken: !!sessionToken });
+    
     if (!recordingId || !sessionToken) {
+      console.error('Missing required fields');
       return json({ error: 'recordingId and sessionToken are required' }, 400);
     }
 
     // 1) Validate session
+    console.log('Validating admin session...');
     const { data: session, error: sessionErr } = await supabase
       .from('admin_sessions')
       .select('admin_user_id, expires_at')
@@ -42,63 +46,110 @@ serve(async (req) => {
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
 
-    if (sessionErr) return json({ error: sessionErr.message }, 401);
-    if (!session) return json({ error: 'Invalid session' }, 401);
+    if (sessionErr) {
+      console.error('Session validation error:', sessionErr);
+      return json({ error: sessionErr.message }, 401);
+    }
+    if (!session) {
+      console.error('Invalid or expired session');
+      return json({ error: 'Invalid or expired session' }, 401);
+    }
 
+    console.log('Session valid, checking admin user...');
     const { data: admin, error: adminErr } = await supabase
       .from('admin_users')
-      .select('id, role, is_active')
+      .select('id, role, is_active, email')
       .eq('id', session.admin_user_id)
       .maybeSingle();
 
-    if (adminErr) return json({ error: adminErr.message }, 401);
+    if (adminErr) {
+      console.error('Admin user query error:', adminErr);
+      return json({ error: adminErr.message }, 401);
+    }
     if (!admin || !admin.is_active || (admin.role !== 'admin' && admin.role !== 'analyst')) {
+      console.error('Unauthorized admin:', { admin });
       return json({ error: 'Unauthorized' }, 401);
     }
 
+    console.log('Admin authorized:', admin.email);
+
     // 2) Load metadata
+    console.log('Loading metadata for recording:', recordingId);
     const { data: meta, error: metaErr } = await supabase
       .from('audio_metadata')
       .select('*')
       .eq('id', recordingId)
       .maybeSingle();
 
-    if (metaErr) return json({ error: metaErr.message }, 404);
-    if (!meta) return json({ error: 'Recording not found' }, 404);
+    if (metaErr) {
+      console.error('Metadata query error:', metaErr);
+      return json({ error: metaErr.message }, 404);
+    }
+    if (!meta) {
+      console.error('Recording not found:', recordingId);
+      return json({ error: 'Recording not found' }, 404);
+    }
+
+    console.log('Metadata loaded:', { 
+      id: meta.id, 
+      format: meta.audio_format, 
+      hasUnencrypted: !!meta.unencrypted_file_path,
+      encryptionVersion: meta.encryption_key_version 
+    });
 
     // 3) Handle unencrypted download
     if (downloadType === 'unencrypted') {
+      console.log('Processing unencrypted download request');
       if (!meta.unencrypted_file_path) {
+        console.error('No unencrypted file path available');
         return json({ error: 'Unencrypted file not available for this recording' }, 404);
       }
       
       try {
+        console.log('Downloading from storage:', { 
+          bucket: meta.unencrypted_storage_bucket || 'audio_raw',
+          path: meta.unencrypted_file_path 
+        });
+        
         const { data: fileData, error: downloadError } = await supabase.storage
           .from(meta.unencrypted_storage_bucket || 'audio_raw')
           .download(meta.unencrypted_file_path);
         
-        if (downloadError) throw downloadError;
+        if (downloadError) {
+          console.error('Storage download error:', downloadError);
+          throw downloadError;
+        }
         
         const arrayBuffer = await fileData.arrayBuffer();
         const base64 = b64encode(new Uint8Array(arrayBuffer));
         const filename = `unencrypted_${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
         
+        console.log('Unencrypted download successful:', filename);
         return json({ base64, filename, mimeType: 'audio/wav' }, 200);
       } catch (error) {
         console.error('Error downloading unencrypted file:', error);
-        return json({ error: 'Failed to download unencrypted file' }, 500);
+        return json({ error: 'Failed to download unencrypted file', details: error.message }, 500);
       }
     }
 
     // 4) Handle encrypted download (default behavior)
+    console.log('Processing encrypted download request');
     const { data: enc, error: encErr } = await supabase
       .from('encrypted_audio_files')
       .select('*')
       .eq('metadata_id', recordingId)
       .maybeSingle();
 
-    if (encErr) return json({ error: encErr.message }, 404);
-    if (!enc) return json({ error: 'Encrypted file not found' }, 404);
+    if (encErr) {
+      console.error('Encrypted file query error:', encErr);
+      return json({ error: encErr.message }, 404);
+    }
+    if (!enc) {
+      console.error('Encrypted file not found for metadata_id:', recordingId);
+      return json({ error: 'Encrypted file not found' }, 404);
+    }
+
+    console.log('Encrypted file found, blob size:', enc.encrypted_blob?.length || 0);
 
     // 5) Load key by version (may be inactive but must match recording version)
     const { data: keyRec, error: keyErr } = await supabase

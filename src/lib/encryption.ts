@@ -28,14 +28,18 @@ export class AudioEncryption {
    * Generate a cryptographically secure random key derivation salt
    */
   private static generateSalt(): Uint8Array {
-    return crypto.getRandomValues(new Uint8Array(this.SALT_LENGTH));
+    const salt = crypto.getRandomValues(new Uint8Array(this.SALT_LENGTH));
+    // Create a new Uint8Array to ensure proper typing
+    return new Uint8Array(salt.buffer.slice(0));
   }
 
   /**
    * Generate a cryptographically secure random initialization vector
    */
   private static generateIV(): Uint8Array {
-    return crypto.getRandomValues(new Uint8Array(this.IV_LENGTH));
+    const iv = crypto.getRandomValues(new Uint8Array(this.IV_LENGTH));
+    // Create a new Uint8Array to ensure proper typing
+    return new Uint8Array(iv.buffer.slice(0));
   }
 
   /**
@@ -58,7 +62,7 @@ export class AudioEncryption {
     return await crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: salt,
+        salt: salt.buffer as ArrayBuffer,
         iterations: iterations,
         hash: 'SHA-256'
       },
@@ -95,7 +99,7 @@ export class AudioEncryption {
       const encryptedData = await crypto.subtle.encrypt(
         {
           name: this.ALGORITHM,
-          iv: iv,
+          iv: iv.buffer as ArrayBuffer,
           tagLength: this.TAG_LENGTH * 8 // bits
         },
         derivedKey,
@@ -135,7 +139,7 @@ export class AudioEncryption {
       const decryptedData = await crypto.subtle.decrypt(
         {
           name: this.ALGORITHM,
-          iv: params.iv,
+          iv: params.iv.buffer as ArrayBuffer,
           tagLength: this.TAG_LENGTH * 8
         },
         derivedKey,

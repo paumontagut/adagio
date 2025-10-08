@@ -19,7 +19,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.decrypt-download]
-verify_jwt = true
+verify_jwt = false
 
 [functions.stt-openai]
 verify_jwt = false
