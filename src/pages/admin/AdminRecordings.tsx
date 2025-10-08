@@ -873,46 +873,58 @@ export const AdminRecordings = () => {
                     selectedIds.includes(r.id) && r.unencrypted_file_path
                   );
                   
+                  if (availableRecordings.length === 0) {
+                    toast({
+                      title: "Sin archivos disponibles",
+                      description: "Ninguna de las grabaciones seleccionadas tiene versión sin cifrar",
+                      variant: "destructive"
+                    });
+                    return;
+                  }
+                  
                   for (const recording of availableRecordings) {
                     await handleDownloadUnencrypted(recording);
                     await new Promise(resolve => setTimeout(resolve, 500));
                   }
+                  
+                  toast({
+                    title: "Descarga completada",
+                    description: `${availableRecordings.length} archivo(s) descargado(s)`
+                  });
                 }}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Descargar sin cifrar
               </Button>
               <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  const selectedIds = Array.from(selectedRecordings);
-                  await handleBackfillUnencryptedSelected(selectedIds);
-                }}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Generar sin cifrar
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  const selectedIds = Array.from(selectedRecordings);
-                  for (const recordingId of selectedIds) {
-                    await handleForceDownloadUnencrypted(recordingId);
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                  }
-                }}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Forzar sin cifrar
-              </Button>
-              <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => setSelectedRecordings(new Set())}
+                onClick={async () => {
+                  const selectedIds = Array.from(selectedRecordings);
+                  
+                  if (!confirm(`¿Estás seguro de eliminar ${selectedIds.length} grabación(es)?`)) {
+                    return;
+                  }
+                  
+                  let deletedCount = 0;
+                  for (const recordingId of selectedIds) {
+                    await handleSingleDelete(recordingId);
+                    deletedCount++;
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                  }
+                  
+                  setSelectedRecordings(new Set());
+                  
+                  toast({
+                    title: "Eliminación completada",
+                    description: `${deletedCount} grabación(es) eliminada(s)`
+                  });
+                  
+                  await fetchRecordings();
+                }}
               >
-                Limpiar selección
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar seleccionados
               </Button>
             </div>
           </div>
