@@ -947,10 +947,10 @@ export const AdminRecordings = () => {
 
       {/* Recordings Table */}
       <Card>
-        <ScrollArea className="w-full">
+        <ScrollArea className="w-full h-[600px]">
           <div className="min-w-[1200px]">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox
