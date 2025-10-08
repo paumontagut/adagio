@@ -1016,13 +1016,13 @@ export const AdminRecordings = () => {
                 <TableHead>Consentimientos</TableHead>
                 <TableHead>Cifrado</TableHead>
                 <TableHead>Tamaño</TableHead>
+                <TableHead>Acciones</TableHead>
                 <TableHead className="cursor-pointer" onClick={() => handleSort('created_at')}>
                   <div className="flex items-center gap-1">
                     Fecha
                     <ArrowUpDown className="w-4 h-4" />
                   </div>
                 </TableHead>
-                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1086,9 +1086,6 @@ export const AdminRecordings = () => {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {new Date(recording.created_at).toLocaleString()}
-                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       {recording.unencrypted_file_path ? (
@@ -1144,6 +1141,9 @@ export const AdminRecordings = () => {
                         </>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(recording.created_at).toLocaleString()}
                   </TableCell>
                 </TableRow>
               ))}
