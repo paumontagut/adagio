@@ -17,6 +17,7 @@ import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminRecordings } from "./pages/admin/AdminRecordings";
 import { AdminUsers } from "./pages/admin/AdminUsers";
+import AdminConsents from "./pages/admin/AdminConsents";
 import { AdminLayout } from "./components/admin/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
                 <Route index element={<AdminDashboard />} />
                 <Route path="recordings" element={<AdminRecordings />} />
                 <Route path="users" element={<AdminUsers />} />
+                <Route path="consents" element={<AdminConsents />} />
               </Route>
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

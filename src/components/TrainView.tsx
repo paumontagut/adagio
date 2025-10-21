@@ -307,11 +307,63 @@ const TrainView = () => {
     countryValue: string,
     regionValue: string
   ) => {
+    try {
+      // Guardar evidencia de consentimiento en la base de datos
+      const sessionId = getGuestSessionId();
+      
+      // Preparar los datos de evidencia completa
+      const consentEvidenceData = {
+        form_version: '1.0',
+        consent_train: consentTrainValue,
+        consent_store: true,
+        full_name: fullNameValue,
+        age_range: ageRangeValue,
+        country: countryValue,
+        region: regionValue,
+        adult_declaration: true,
+        timestamp: new Date().toISOString(),
+        user_agent: navigator.userAgent,
+        language: navigator.language
+      };
+
+      const { data, error } = await supabase.functions.invoke('consent-evidence-handler', {
+        body: {
+          session_pseudonym: sessionId,
+          full_name: fullNameValue,
+          email: null, // Email opcional para guest users
+          age_range: ageRangeValue,
+          country: countryValue,
+          region: regionValue,
+          adult_declaration: true,
+          consent_train: consentTrainValue,
+          consent_store: true,
+          consent_evidence_data: consentEvidenceData,
+          ip_address: null, // Se capturará en el servidor
+          user_agent: navigator.userAgent,
+          device_info: `${navigator.platform} - ${navigator.userAgent}`
+        }
+      });
+
+      if (error) {
+        console.error('Error saving consent evidence:', error);
+        toast({
+          title: "Advertencia",
+          description: "Tu consentimiento fue registrado pero hubo un problema al guardar la evidencia completa.",
+          variant: "default"
+        });
+      } else {
+        console.log('Consent evidence saved successfully:', data);
+      }
+    } catch (err) {
+      console.error('Error in handleTrainingConsentGiven:', err);
+    }
+
+    // Continuar con el flujo normal
     setConsentTrain(consentTrainValue);
-    setConsentStore(true); // Set to true by default since storage consent is no longer asked
+    setConsentStore(true);
     setFullName(fullNameValue);
     setAgeRange(ageRangeValue);
-    setRegion(`${countryValue}-${regionValue}`); // Combine country and region
+    setRegion(`${countryValue}-${regionValue}`);
     setShowTrainingConsentModal(false);
   };
 

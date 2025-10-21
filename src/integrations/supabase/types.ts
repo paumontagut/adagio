@@ -224,6 +224,78 @@ export type Database = {
         }
         Relationships: []
       }
+      consent_evidence: {
+        Row: {
+          adult_declaration: boolean
+          adult_declaration_timestamp: string
+          age_range: string
+          consent_evidence_data: Json
+          consent_store: boolean
+          consent_timestamp: string
+          consent_train: boolean
+          country: string
+          created_at: string
+          device_info: string | null
+          digital_signature: string
+          email: string | null
+          full_name: string
+          id: string
+          ip_address: unknown | null
+          region: string
+          session_pseudonym: string
+          updated_at: string
+          user_agent: string | null
+          withdrawal_reason: string | null
+          withdrawn_at: string | null
+        }
+        Insert: {
+          adult_declaration?: boolean
+          adult_declaration_timestamp?: string
+          age_range: string
+          consent_evidence_data: Json
+          consent_store?: boolean
+          consent_timestamp?: string
+          consent_train?: boolean
+          country: string
+          created_at?: string
+          device_info?: string | null
+          digital_signature: string
+          email?: string | null
+          full_name: string
+          id?: string
+          ip_address?: unknown | null
+          region: string
+          session_pseudonym: string
+          updated_at?: string
+          user_agent?: string | null
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
+        }
+        Update: {
+          adult_declaration?: boolean
+          adult_declaration_timestamp?: string
+          age_range?: string
+          consent_evidence_data?: Json
+          consent_store?: boolean
+          consent_timestamp?: string
+          consent_train?: boolean
+          country?: string
+          created_at?: string
+          device_info?: string | null
+          digital_signature?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          ip_address?: unknown | null
+          region?: string
+          session_pseudonym?: string
+          updated_at?: string
+          user_agent?: string | null
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
+        }
+        Relationships: []
+      }
       consent_logs: {
         Row: {
           consent_store: boolean
@@ -944,6 +1016,10 @@ export type Database = {
       is_current_user_dpo: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      log_consent_evidence_access: {
+        Args: { p_consent_evidence_id: string; p_session_pseudonym: string }
+        Returns: undefined
       }
       rotate_encryption_key: {
         Args: Record<PropertyKey, never>

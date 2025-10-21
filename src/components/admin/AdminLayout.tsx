@@ -52,6 +52,12 @@ const adminMenuItems = [
     roles: ['admin', 'viewer', 'analyst']
   },
   {
+    title: "Consentimientos",
+    url: "/admin/consents",
+    icon: Shield,
+    roles: ['admin', 'analyst']
+  },
+  {
     title: "Usuarios",
     url: "/admin/users",
     icon: Users,

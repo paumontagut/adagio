@@ -22,6 +22,7 @@ export const TrainingConsentModal = ({
 }: TrainingConsentModalProps) => {
   const navigate = useNavigate();
   const [consentTrain, setConsentTrain] = useState(false);
+  const [adultDeclaration, setAdultDeclaration] = useState(false);
   const [fullName, setFullName] = useState('');
   const [ageRange, setAgeRange] = useState('');
   const [country, setCountry] = useState('');
@@ -35,13 +36,13 @@ export const TrainingConsentModal = ({
     }
   };
   const handleAccept = () => {
-    if (consentTrain && fullName.trim() && ageRange && country && region) {
+    if (consentTrain && adultDeclaration && fullName.trim() && ageRange && country && region) {
       // Persistir el nombre del participante
       setParticipantName(fullName.trim());
       onConsentGiven(consentTrain, fullName.trim(), ageRange, country, region);
     }
   };
-  const isValid = consentTrain && fullName.trim() && ageRange && country && region;
+  const isValid = consentTrain && adultDeclaration && fullName.trim() && ageRange && country && region;
 
   // Reset region when country changes
   const handleCountryChange = (value: string) => {
@@ -1600,15 +1601,27 @@ export const TrainingConsentModal = ({
 
           {/* Consent Options */}
           <div className="space-y-4">
-            <div className="flex items-start space-x-3 p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5">
-              <Checkbox id="consent-train" checked={consentTrain} onCheckedChange={checked => setConsentTrain(checked as boolean)} className="mt-1" />
+            {/* Declaración de mayoría de edad - OBLIGATORIO */}
+            <div className="flex items-start space-x-3 p-4 border-2 border-destructive/50 rounded-lg hover:bg-muted/30 transition-colors bg-destructive/5">
+              <Checkbox 
+                id="adult-declaration" 
+                checked={adultDeclaration} 
+                onCheckedChange={checked => setAdultDeclaration(checked as boolean)} 
+                className="mt-1" 
+              />
               <div className="flex-1">
-                <label htmlFor="consent-train" className="text-sm font-medium cursor-pointer flex items-center gap-2">
-                  Usar mi audio para entrenar el modelo de IA
-                  <span className="text-xs bg-adagio-primary text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
+                <label htmlFor="adult-declaration" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                  Declaro ser mayor de edad (18 años o más)
+                  <span className="text-xs bg-destructive text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
                 </label>
-                <p className="text-xs text-muted-foreground mt-1">Tu voz será utilizada para mejorar la precisión del reconocimiento de voz mediante técnicas de aprendizaje automático. </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Es obligatorio ser mayor de edad para participar en el entrenamiento del modelo.
+                </p>
               </div>
+            </div>
+
+            <div className="flex items-start space-x-3 p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5">
+...
             </div>
           </div>
 
@@ -1641,7 +1654,6 @@ export const TrainingConsentModal = ({
                   <SelectValue placeholder="Selecciona tu rango de edad" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="14-17">14–17 años (con autorización parental)</SelectItem>
                   <SelectItem value="18-25">18–25 años</SelectItem>
                   <SelectItem value="26-35">26–35 años</SelectItem>
                   <SelectItem value="36-45">36–45 años</SelectItem>
@@ -1723,7 +1735,12 @@ export const TrainingConsentModal = ({
           {/* Validation Error */}
           {!isValid && <Alert variant="destructive">
               <AlertDescription>
-                Debes aceptar el consentimiento y completar todos los campos obligatorios para continuar.
+                {!adultDeclaration && <div>• Debes declarar ser mayor de edad</div>}
+                {!consentTrain && <div>• Debes aceptar el consentimiento de entrenamiento</div>}
+                {!fullName.trim() && <div>• Debes ingresar tu nombre completo</div>}
+                {!ageRange && <div>• Debes seleccionar tu rango de edad</div>}
+                {!country && <div>• Debes seleccionar tu país</div>}
+                {!region && <div>• Debes seleccionar tu región</div>}
               </AlertDescription>
             </Alert>}
 
