@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { setParticipantName } from '@/lib/participant';
 interface TrainingConsentModalProps {
   isOpen: boolean;
-  onConsentGiven: (consentTrain: boolean, consentStore: boolean, fullName: string, ageRange: string, country: string, region: string) => void;
+  onConsentGiven: (consentTrain: boolean, fullName: string, ageRange: string, country: string, region: string) => void;
   onCancel?: () => void;
 }
 export const TrainingConsentModal = ({
@@ -22,7 +22,6 @@ export const TrainingConsentModal = ({
 }: TrainingConsentModalProps) => {
   const navigate = useNavigate();
   const [consentTrain, setConsentTrain] = useState(false);
-  const [consentStore, setConsentStore] = useState(false);
   const [adultDeclaration, setAdultDeclaration] = useState(false);
   const [fullName, setFullName] = useState('');
   const [ageRange, setAgeRange] = useState('');
@@ -37,13 +36,13 @@ export const TrainingConsentModal = ({
     }
   };
   const handleAccept = () => {
-    if (consentTrain && consentStore && adultDeclaration && fullName.trim() && ageRange && country && region) {
+    if (consentTrain && adultDeclaration && fullName.trim() && ageRange && country && region) {
       // Persistir el nombre del participante
       setParticipantName(fullName.trim());
-      onConsentGiven(consentTrain, consentStore, fullName.trim(), ageRange, country, region);
+      onConsentGiven(consentTrain, fullName.trim(), ageRange, country, region);
     }
   };
-  const isValid = consentTrain && consentStore && adultDeclaration && fullName.trim() && ageRange && country && region;
+  const isValid = consentTrain && adultDeclaration && fullName.trim() && ageRange && country && region;
 
   // Reset region when country changes
   const handleCountryChange = (value: string) => {
@@ -1632,16 +1631,6 @@ export const TrainingConsentModal = ({
               </div>
             </div>
 
-            <div className="flex items-start space-x-3 p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5">
-              <Checkbox id="consent-store" checked={consentStore} onCheckedChange={checked => setConsentStore(checked as boolean)} className="mt-1" />
-              <div className="flex-1">
-                <label htmlFor="consent-store" className="text-sm font-medium cursor-pointer flex items-center gap-2">
-                  Autorizo el almacenamiento cifrado de mi audio
-                  <span className="text-xs bg-adagio-primary text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
-                </label>
-                <p className="text-xs text-muted-foreground mt-1">Tus datos se almacenarán de forma segura y conforme a la normativa RGPD.</p>
-              </div>
-            </div>
           </div>
 
           {/* Personal Information Fields */}
@@ -1756,7 +1745,6 @@ export const TrainingConsentModal = ({
               <AlertDescription>
                 {!adultDeclaration && <div>• Debes declarar ser mayor de edad</div>}
                 {!consentTrain && <div>• Debes aceptar el consentimiento de entrenamiento</div>}
-                {!consentStore && <div>• Debes aceptar el almacenamiento cifrado</div>}
                 {!fullName.trim() && <div>• Debes ingresar tu nombre completo</div>}
                 {!ageRange && <div>• Debes seleccionar tu rango de edad</div>}
                 {!country && <div>• Debes seleccionar tu país</div>}

@@ -302,7 +302,6 @@ const TrainView = () => {
   };
   const handleTrainingConsentGiven = async (
     consentTrainValue: boolean,
-    consentStoreValue: boolean,
     fullNameValue: string,
     ageRangeValue: string,
     countryValue: string,
@@ -316,7 +315,7 @@ const TrainView = () => {
       const consentEvidenceData = {
         form_version: '1.0',
         consent_train: consentTrainValue,
-        consent_store: consentStoreValue,
+        consent_store: false,
         full_name: fullNameValue,
         age_range: ageRangeValue,
         country: countryValue,
@@ -337,7 +336,7 @@ const TrainView = () => {
           region: regionValue,
           adult_declaration: true,
           consent_train: consentTrainValue,
-          consent_store: consentStoreValue,
+          consent_store: false,
           consent_evidence_data: consentEvidenceData,
           ip_address: null, // Se capturará en el servidor
           user_agent: navigator.userAgent,
@@ -361,7 +360,7 @@ const TrainView = () => {
 
     // Continuar con el flujo normal
     setConsentTrain(consentTrainValue);
-    setConsentStore(consentStoreValue);
+    setConsentStore(false); // No solicitamos este consentimiento
     setFullName(fullNameValue);
     setAgeRange(ageRangeValue);
     setRegion(`${countryValue}-${regionValue}`);
