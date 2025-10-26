@@ -117,11 +117,8 @@ function AdminHeader() {
   return (
     <header className="h-14 flex items-center justify-between border-b px-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center space-x-2">
-        <SidebarTrigger />
-        <div className="flex items-center space-x-2">
-          <Shield className="h-5 w-5 text-primary" />
-          <span className="font-semibold">Admin Panel</span>
-        </div>
+        <Shield className="h-5 w-5 text-primary" />
+        <span className="font-semibold">Admin Panel</span>
       </div>
       
       <div className="flex items-center space-x-4">
