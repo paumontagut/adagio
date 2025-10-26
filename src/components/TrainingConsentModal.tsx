@@ -1622,10 +1622,13 @@ export const TrainingConsentModal = ({
                   Usar mi audio para entrenar el modelo de IA
                   <span className="text-xs bg-adagio-primary text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
                 </label>
-                <p className="text-xs text-muted-foreground mt-1">Tu voz será utilizada para mejorar la precisión del reconocimiento de voz mediante técnicas de aprendizaje automático.
-
-
-Comprendo que mis datos podrán ser transferidos y almacenados en UE u otros países donde se encuentren los servidores del proyecto, comprometiéndose Adagio a garantizar niveles adecuados de protección de datos.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tu voz será utilizada para mejorar la precisión del reconocimiento de voz mediante técnicas de aprendizaje automático.
+                  <br /><br />
+                  <strong>Cesión de derechos:</strong> Cedo voluntariamente y sin remuneración los derechos de uso de mi grabación de voz para los fines de entrenamiento del modelo de IA. Confirmo que no reclamaré derechos sobre las grabaciones y autorizo expresamente su utilización y explotación en el contexto del desarrollo, mejora y entrenamiento del modelo de IA, tanto presente como futuro.
+                  <br /><br />
+                  Comprendo que mis datos podrán ser transferidos y almacenados en UE u otros países donde se encuentren los servidores del proyecto, comprometiéndose Adagio a garantizar niveles adecuados de protección de datos.
+                </p>
               </div>
             </div>
 
