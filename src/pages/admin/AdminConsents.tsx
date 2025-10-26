@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -67,8 +67,8 @@ const AdminConsents = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('[AdminConsents] Registros cargados:', Array.isArray(data) ? data.length : 0);
       setConsents((data as ConsentEvidence[]) || []);
-    } catch (error) {
       console.error('Error loading consents:', error);
       toast({
         title: "Error",
@@ -112,19 +112,17 @@ const AdminConsents = () => {
 
   if (isLoading) {
     return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando consentimientos...</p>
-          </div>
+      <div className="p-6 flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando consentimientos...</p>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
+    <div className="p-6">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -201,7 +199,7 @@ const AdminConsents = () => {
 
         {/* Table */}
         <Card>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto md:overflow-visible">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -227,7 +225,7 @@ const AdminConsents = () => {
                 ) : (
                   filteredConsents.map((consent) => (
                     <TableRow key={consent.id}>
-                      <TableCell className="font-mono text-xs">
+                      <TableCell className="font-mono text-xs max-w-[160px] truncate md:max-w-none">
                         {consent.session_pseudonym.substring(0, 12)}...
                       </TableCell>
                       <TableCell className="font-medium">{consent.full_name}</TableCell>
@@ -354,7 +352,7 @@ const AdminConsents = () => {
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded">
                       <span>Declaración de Mayoría de Edad:</span>
                       {selectedConsent.adult_declaration ? (
-                        <Badge variant="default" className="bg-green-500">
+                        <Badge variant="default" className="bg-success text-success-foreground">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Confirmado
                         </Badge>
@@ -451,7 +449,7 @@ const AdminConsents = () => {
           )}
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </div>
   );
 };
 
