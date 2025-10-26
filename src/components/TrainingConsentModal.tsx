@@ -1603,12 +1603,7 @@ export const TrainingConsentModal = ({
           <div className="space-y-4">
             {/* Declaración de mayoría de edad - OBLIGATORIO */}
             <div className="flex items-start space-x-3 p-4 border-2 border-destructive/50 rounded-lg hover:bg-muted/30 transition-colors bg-destructive/5">
-              <Checkbox 
-                id="adult-declaration" 
-                checked={adultDeclaration} 
-                onCheckedChange={checked => setAdultDeclaration(checked as boolean)} 
-                className="mt-1" 
-              />
+              <Checkbox id="adult-declaration" checked={adultDeclaration} onCheckedChange={checked => setAdultDeclaration(checked as boolean)} className="mt-1" />
               <div className="flex-1">
                 <label htmlFor="adult-declaration" className="text-sm font-medium cursor-pointer flex items-center gap-2">
                   Declaro ser mayor de edad (18 años o más)
@@ -1627,7 +1622,10 @@ export const TrainingConsentModal = ({
                   Usar mi audio para entrenar el modelo de IA
                   <span className="text-xs bg-adagio-primary text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
                 </label>
-                <p className="text-xs text-muted-foreground mt-1">Tu voz será utilizada para mejorar la precisión del reconocimiento de voz mediante técnicas de aprendizaje automático.</p>
+                <p className="text-xs text-muted-foreground mt-1">Tu voz será utilizada para mejorar la precisión del reconocimiento de voz mediante técnicas de aprendizaje automático.
+
+
+Comprendo que mis datos podrán ser transferidos y almacenados en UE u otros países donde se encuentren los servidores del proyecto, comprometiéndose Adagio a garantizar niveles adecuados de protección de datos.</p>
               </div>
             </div>
 
