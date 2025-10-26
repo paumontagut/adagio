@@ -157,7 +157,7 @@ const AdminConsents = () => {
           
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-success" />
               <span className="text-sm font-medium">Activos</span>
             </div>
             <p className="text-2xl font-bold">
@@ -177,7 +177,7 @@ const AdminConsents = () => {
 
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <User className="h-4 w-4 text-blue-500" />
+              <User className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Mayores de Edad</span>
             </div>
             <p className="text-2xl font-bold">
@@ -240,7 +240,7 @@ const AdminConsents = () => {
                       </TableCell>
                       <TableCell>
                         {consent.adult_declaration ? (
-                          <Badge variant="default" className="bg-green-500">
+                          <Badge variant="default" className="bg-success text-success-foreground">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Sí
                           </Badge>
@@ -265,7 +265,7 @@ const AdminConsents = () => {
                         {consent.withdrawn_at ? (
                           <Badge variant="destructive">Revocado</Badge>
                         ) : (
-                          <Badge variant="default" className="bg-green-500">Activo</Badge>
+                          <Badge variant="default" className="bg-success text-success-foreground">Activo</Badge>
                         )}
                       </TableCell>
                       <TableCell>

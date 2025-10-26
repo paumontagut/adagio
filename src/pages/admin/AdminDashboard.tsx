@@ -94,12 +94,12 @@ export const AdminDashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Panel Administrativo</h1>
-          <p className="text-muted-foreground">
-            Bienvenido, {adminUser?.full_name} 
+          <div className="text-sm text-muted-foreground flex items-center">
+            Bienvenido, {adminUser?.full_name}
             <Badge variant="secondary" className="ml-2 capitalize">
               {adminUser?.role}
             </Badge>
-          </p>
+          </div>
         </div>
         <div className="flex gap-2 mt-4 md:mt-0">
           <Button variant="outline" onClick={loadDashboardStats}>
@@ -119,8 +119,8 @@ export const AdminDashboard: React.FC = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats?.totalRecordings.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">{stats?.unencryptedRecordings}</span> no cifradas, {' '}
-              <span className="text-blue-600">{stats?.encryptedRecordings}</span> cifradas
+              <span className="text-success">{stats?.unencryptedRecordings}</span> no cifradas,{' '}
+              <span className="text-primary">{stats?.encryptedRecordings}</span> cifradas
             </p>
           </CardContent>
         </Card>
@@ -253,7 +253,7 @@ export const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <TrendingUp className="h-4 w-4 text-success" />
                   <span className="text-sm">
                     {stats?.todayRecordings} grabaciones hoy
                   </span>
@@ -275,21 +275,21 @@ export const AdminDashboard: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <div className="h-2 w-2 bg-success rounded-full"></div>
                     <span className="text-sm">Base de Datos</span>
                   </div>
                   <Badge variant="secondary">Operacional</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <div className="h-2 w-2 bg-success rounded-full"></div>
                     <span className="text-sm">Almacenamiento</span>
                   </div>
                   <Badge variant="secondary">Operacional</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <div className="h-2 w-2 bg-success rounded-full"></div>
                     <span className="text-sm">API</span>
                   </div>
                   <Badge variant="secondary">Operacional</Badge>
