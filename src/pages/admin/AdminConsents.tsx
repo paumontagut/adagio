@@ -212,7 +212,6 @@ const AdminConsents = () => {
                   <TableHead>País/Región</TableHead>
                   <TableHead>Mayor de Edad</TableHead>
                   <TableHead>Entrenar</TableHead>
-                  <TableHead>Almacenar</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -221,7 +220,7 @@ const AdminConsents = () => {
               <TableBody>
                 {filteredConsents.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                       No se encontraron consentimientos
                     </TableCell>
                   </TableRow>
@@ -254,13 +253,6 @@ const AdminConsents = () => {
                       </TableCell>
                       <TableCell>
                         {consent.consent_train ? (
-                          <Badge variant="default">Sí</Badge>
-                        ) : (
-                          <Badge variant="secondary">No</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {consent.consent_store ? (
                           <Badge variant="default">Sí</Badge>
                         ) : (
                           <Badge variant="secondary">No</Badge>
@@ -374,12 +366,6 @@ const AdminConsents = () => {
                       <span>Consentimiento de Entrenamiento:</span>
                       <Badge variant={selectedConsent.consent_train ? "default" : "secondary"}>
                         {selectedConsent.consent_train ? "Otorgado" : "No Otorgado"}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded">
-                      <span>Consentimiento de Almacenamiento:</span>
-                      <Badge variant={selectedConsent.consent_store ? "default" : "secondary"}>
-                        {selectedConsent.consent_store ? "Otorgado" : "No Otorgado"}
                       </Badge>
                     </div>
                   </div>
