@@ -84,8 +84,6 @@ function AdminSidebar() {
 
   return (
     <Sidebar className={isCollapsed ? "w-14" : "w-60"} collapsible="icon">
-      <SidebarTrigger className="m-2 self-end" />
-      
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Panel Administrativo</SidebarGroupLabel>
@@ -117,7 +115,8 @@ function AdminHeader() {
   return (
     <header className="h-14 flex items-center justify-between border-b px-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center space-x-2">
-        <Shield className="h-5 w-5 text-primary" />
+        <SidebarTrigger />
+        <Shield className="h-5 w-5 text-primary ml-2" />
         <span className="font-semibold">Admin Panel</span>
       </div>
       
