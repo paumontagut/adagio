@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Scale, FileText, Shield, Clock, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from '@/assets/logo.svg';
 
 export const TermsAndConditions = () => {
   return (
@@ -9,11 +10,8 @@ export const TermsAndConditions = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/">
-            <Button variant="outline" className="mb-6">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver al inicio
-            </Button>
+          <Link to="/" className="inline-block mb-6">
+            <img src={logo} alt="Adagio" className="h-12 w-auto" />
           </Link>
           
           <div className="flex items-center gap-3 mb-4">

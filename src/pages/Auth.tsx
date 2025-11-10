@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Loader2, Mail } from 'lucide-react';
+import logo from '@/assets/logo.svg';
 
 export const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -154,16 +155,15 @@ export const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-4">
-        {/* Back to home */}
-        <Link 
-          to="/" 
-          className="inline-flex items-center text-foreground hover:text-foreground/80 mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver a Adagio
+    <div className="min-h-screen bg-white flex flex-col px-4 py-6">
+      <div className="container mx-auto max-w-4xl">
+        <Link to="/" className="inline-block mb-6">
+          <img src={logo} alt="Adagio" className="h-12 w-auto" />
         </Link>
+      </div>
+      
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-full max-w-md space-y-4">
 
         <Card>
           <CardHeader className="text-center">
@@ -321,6 +321,7 @@ export const Auth = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );

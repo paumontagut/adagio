@@ -10,6 +10,7 @@ import { UserMenu } from '@/components/UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
 import { Shield, HardDrive } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
+import logo from '@/assets/logo.svg';
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('transcribe');
@@ -37,35 +38,31 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl flex-1">
         {/* Header */}
         <header className="mb-8" role="banner">
-          {/* Navigation - Mobile First */}
-          <nav id="navigation" className="flex justify-end items-center mb-6 gap-2 flex-wrap" role="navigation" aria-label="Navegación principal">
-            {user && <>
-                <Link to="/my-recordings" className="hidden sm:block">
-                  
-                </Link>
-                <Link to="/my-data" className="hidden sm:block">
-                  <Button variant="outline" size="sm" className="text-xs">
-                    <HardDrive className="h-3 w-3 mr-1" aria-hidden="true" />
-                    Datos
-                  </Button>
-                </Link>
-              </>}
-            
-            <Link to="/privacy-center">
-              
+          {/* Logo and Navigation */}
+          <div className="flex justify-between items-center mb-6">
+            <Link to="/" className="flex-shrink-0">
+              <img src={logo} alt="Adagio" className="h-12 w-auto" />
             </Link>
+            
+            <nav id="navigation" className="flex items-center gap-2 flex-wrap" role="navigation" aria-label="Navegación principal">
+              {user && <>
+                  <Link to="/my-recordings" className="hidden sm:block">
+                    
+                  </Link>
+                  <Link to="/my-data" className="hidden sm:block">
+                    <Button variant="outline" size="sm" className="text-xs">
+                      <HardDrive className="h-3 w-3 mr-1" aria-hidden="true" />
+                      Datos
+                    </Button>
+                  </Link>
+                </>}
+              
+              <Link to="/privacy-center">
+                
+              </Link>
 
-            {user ? <UserMenu /> : !loading && <AuthButton />}
-          </nav>
-
-          {/* Title and Subtitle - Centered */}
-          <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-3 text-foreground">
-              Adagio
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground px-4" role="doc-subtitle">
-              Facilitando la comunicación para personas con habla atípica
-            </p>
+              {user ? <UserMenu /> : !loading && <AuthButton />}
+            </nav>
           </div>
         </header>
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Shield, FileText, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import logo from '@/assets/logo.svg';
 
 export const PrivacyCenter = () => {
   return (
@@ -9,10 +10,11 @@ export const PrivacyCenter = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <header className="mb-8">
-          <Link to="/" className="inline-flex items-center text-foreground hover:text-foreground/80 mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Adagio
-          </Link>
+          <div className="flex justify-between items-center mb-6">
+            <Link to="/" className="flex-shrink-0">
+              <img src={logo} alt="Adagio" className="h-12 w-auto" />
+            </Link>
+          </div>
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-2 text-foreground flex items-center justify-center gap-3">
               <Shield className="h-8 w-8" />
