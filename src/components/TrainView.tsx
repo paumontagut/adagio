@@ -450,10 +450,10 @@ const TrainView = () => {
 
       {/* Audio Recording - Only show if training consent given */}
       {!showTrainingConsentModal && (
-        <Card className="p-6">
-          <h3 className="text-lg font-medium mb-4 text-foreground">Grabación</h3>
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-foreground">Grabación</h3>
           <AudioRecorder onRecordingComplete={handleRecordingComplete} maxDuration={30} />
-        </Card>
+        </div>
       )}
 
       {/* Empty State when no recording */}

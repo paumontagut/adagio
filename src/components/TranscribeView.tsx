@@ -360,20 +360,18 @@ export const TranscribeView = () => {
 
         <TabsContent value="adagio" className="space-y-6">
       {/* Audio Input Section */}
-      <Card className="p-6" role="region" aria-labelledby="audio-input-heading">
-        <div className="space-y-4">
-          <h3 id="audio-input-heading" className="text-lg font-medium text-foreground">
-            Entrada de Audio
-          </h3>
-          <RecorderUploader
-            key={resetKey}
-            onAudioReady={handleAudioReady}
-            disabled={isProcessing}
-            maxDuration={20}
-            aria-describedby="transcribe-description"
-          />
-        </div>
-      </Card>
+      <div className="space-y-4" role="region" aria-labelledby="audio-input-heading">
+        <h3 id="audio-input-heading" className="text-lg font-medium text-foreground">
+          Entrada de Audio
+        </h3>
+        <RecorderUploader
+          key={resetKey}
+          onAudioReady={handleAudioReady}
+          disabled={isProcessing}
+          maxDuration={20}
+          aria-describedby="transcribe-description"
+        />
+      </div>
 
       {/* Processing State */}
       {stateConfig && (
@@ -423,8 +421,8 @@ export const TranscribeView = () => {
 
       {/* Transcription Results - Only Adagio */}
       {state === 'completed' && adagioResult && (
-        <Card className="p-6" role="region" aria-labelledby="results-heading">
-          <h3 id="results-heading" className="text-lg font-medium text-foreground mb-4">
+        <div className="space-y-4" role="region" aria-labelledby="results-heading">
+          <h3 id="results-heading" className="text-lg font-medium text-foreground">
             Resultado de Transcripción
           </h3>
           
@@ -489,29 +487,27 @@ export const TranscribeView = () => {
               aria-label="Transcripción de Adagio"
             />
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Audio metadata and reset */}
       {state === 'completed' && hasResults && audioMetadata && (
-        <Card className="p-4">
-          <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4">
-            <div className="text-center sm:text-left">
-              Procesado: {audioMetadata.format.toUpperCase()} • 
-              {audioMetadata.sampleRate}Hz • 
-              {audioMetadata.channels} canal{audioMetadata.channels !== 1 ? 'es' : ''} • 
-              Duración: {Math.round(audioMetadata.duration)}s
-            </div>
-            
-            <Button
-              variant="outline"
-              onClick={handleReset}
-              size="sm"
-            >
-              Transcribir otro audio
-            </Button>
+        <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4 py-4">
+          <div className="text-center sm:text-left">
+            Procesado: {audioMetadata.format.toUpperCase()} • 
+            {audioMetadata.sampleRate}Hz • 
+            {audioMetadata.channels} canal{audioMetadata.channels !== 1 ? 'es' : ''} • 
+            Duración: {Math.round(audioMetadata.duration)}s
           </div>
-        </Card>
+          
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            size="sm"
+          >
+            Transcribir otro audio
+          </Button>
+        </div>
       )}
 
       {/* Error State */}
