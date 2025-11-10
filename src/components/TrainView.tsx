@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,7 +18,7 @@ import { getParticipantName, setParticipantName } from '@/lib/participant';
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
 import { sessionManager } from '@/lib/sessionManager';
-import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3 } from 'lucide-react';
+import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Volume2, ArrowLeft, ArrowRight, Hand, RotateCcw, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { phraseService } from '@/services/phraseService';
@@ -50,6 +50,11 @@ const TrainView = () => {
   const [fullName, setFullName] = useState<string>('');
   const [ageRange, setAgeRange] = useState<string>('');
   const [region, setRegion] = useState<string>('');
+  const [phraseCount, setPhraseCount] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [handsFreeModeActive, setHandsFreeModeActive] = useState(false);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -367,8 +372,77 @@ const TrainView = () => {
     setShowTrainingConsentModal(false);
   };
 
+  const handlePlayPhrase = async () => {
+    // TODO: Implement TTS to play the phrase
+    toast({
+      title: "Funcionalidad próximamente",
+      description: "Pronto podrás escuchar la frase antes de grabarla"
+    });
+  };
+
+  const handleRecordToggle = () => {
+    if (isRecording) {
+      // Stop recording logic will be handled by AudioRecorder
+      setIsRecording(false);
+    } else {
+      setIsRecording(true);
+    }
+  };
+
+  const handlePlayRecording = () => {
+    if (audioBlob && audioElementRef.current) {
+      if (isPlaying) {
+        audioElementRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        const url = URL.createObjectURL(audioBlob);
+        audioElementRef.current.src = url;
+        audioElementRef.current.play();
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  const handleReRecord = () => {
+    setAudioBlob(null);
+    setProcessingResult(null);
+    setIsSuccess(false);
+    setError(null);
+    setIsRecording(false);
+    setIsPlaying(false);
+  };
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey && !e.repeat) {
+        handlePlayPhrase();
+      }
+      if (e.key === ' ' && !e.repeat) {
+        e.preventDefault();
+        if (audioBlob) {
+          handleSubmit();
+        } else {
+          handleRecordToggle();
+        }
+      }
+      if (e.altKey && !e.repeat) {
+        if (audioBlob) {
+          handleReRecord();
+        }
+      }
+      if (e.key.toLowerCase() === 'p' && !e.repeat) {
+        if (audioBlob) {
+          handlePlayRecording();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [audioBlob, isRecording, isPlaying]);
+
   return (
-    <div className="space-y-6">
+    <div className="min-h-[600px] relative">
       {/* Training Consent Modal - Must appear first */}
       <TrainingConsentModal 
         isOpen={showTrainingConsentModal} 
@@ -379,108 +453,166 @@ const TrainView = () => {
       {/* Consent Modal */}
       <ConsentModal isOpen={showConsentModal} onConsentGiven={handleConsentGiven} />
 
-      <div className="text-center">
-        <h2 className="text-2xl font-semibold text-foreground mb-2">
-          Entrenamiento del Modelo
-        </h2>
-        <p className="text-muted-foreground">
-          Ayúdanos a mejorar el reconocimiento grabando esta frase
-          {!user && (
-            <span className="block text-sm mt-1 text-muted-foreground/80">
-              💡 Inicia sesión para guardar tu progreso y ver tu historial
-            </span>
-          )}
-          <span className="block text-sm mt-1 text-muted-foreground/60">
-            📚 Dataset: {phraseService.getTotalCount()} frases disponibles
-          </span>
-        </p>
+      {/* Header Navigation */}
+      <div className="flex items-center justify-between mb-8">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/?tab=transcribe')}
+          className="text-primary hover:text-primary/80"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+
+        <div className="text-lg font-semibold text-foreground">
+          {phraseCount} out of 50
+        </div>
+
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={getNewPhrase}
+          className="text-primary hover:text-primary/80"
+        >
+          Change phrases
+        </Button>
       </div>
 
-      {/* Analytics Toggle - Hidden for now */}
-      {/* {hasConsented && <Card className="p-4 bg-muted/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium text-foreground">Estadísticas anónimas</p>
-                <p className="text-xs text-muted-foreground">
-                  Ayuda a mejorar la aplicación compartiendo datos de uso
-                </p>
-              </div>
-            </div>
-            <Switch checked={sessionManager.getSession()?.shareAnalytics || false} onCheckedChange={handleAnalyticsToggle} />
-          </div>
-        </Card>} */}
+      {/* Main Content Area */}
+      <div className="max-w-3xl mx-auto space-y-12">
+        
+        {/* Phrase Display */}
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-foreground mb-8">
+            {currentPhrase}
+          </h1>
 
-      {/* Current Phrase */}
-      <Card className="p-8 text-center bg-[#f5f8de]">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-lg font-medium text-foreground">Frase a grabar:</h3>
+          {/* Success Message */}
+          {isSuccess && (
+            <div className="flex items-center justify-center gap-2 text-success mb-4">
+              <CheckCircle className="h-5 w-5" />
+              <span className="font-semibold">Got It!</span>
+            </div>
+          )}
+
+          {/* Listen Button */}
+          <div className="flex justify-center mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handlePlayPhrase}
+              className="text-primary hover:text-primary/80 flex items-center gap-2"
+            >
+              <Volume2 className="h-5 w-5" />
+              <span>Listen</span>
+              <span className="ml-2 text-xs text-muted-foreground">Ctrl</span>
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={getNewPhrase} className="flex items-center gap-2 bg-[#0d0c1d] text-white">
-            <RefreshCw className="h-4 w-4" />
-            Nueva frase
-          </Button>
+
+          {/* Hands-free Toggle */}
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <Hand className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-primary">Hands-free</span>
+          </div>
         </div>
-        <p className="text-2xl font-medium text-foreground leading-relaxed">
-          "{currentPhrase}"
-        </p>
-      </Card>
 
-      {/* Success State */}
-      {isSuccess && (
-        <Card className="p-6 border-success/20 bg-success/5 text-center">
-          <div className="flex flex-col items-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-success" />
+        {/* Recording Controls */}
+        {!showTrainingConsentModal && (
+          <div className="flex items-center justify-center gap-12">
+            {/* Re-record Button */}
+            {audioBlob && (
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleReRecord}
+                  className="h-12 w-12 rounded-full text-primary hover:text-primary/80"
+                >
+                  <RotateCcw className="h-6 w-6" />
+                </Button>
+                <span className="text-sm text-muted-foreground">Re-record</span>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Alt</span>
+              </div>
+            )}
+
+            {/* Main Record/Submit Button */}
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={audioBlob ? handleSubmit : handleRecordToggle}
+                disabled={isSubmitting}
+                className={`h-40 w-40 rounded-full flex flex-col items-center justify-center text-white font-semibold text-lg transition-all shadow-lg hover:shadow-xl
+                  ${audioBlob 
+                    ? 'bg-[#2B5A8C] hover:bg-[#234774]' 
+                    : isRecording 
+                    ? 'bg-[#2B5A8C] hover:bg-[#234774]' 
+                    : 'bg-[#F17C58] hover:bg-[#E06844]'
+                  }
+                  ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                ) : (
+                  <>
+                    <span>Tap</span>
+                    <span>{audioBlob ? 'to submit' : isRecording ? 'to stop' : 'to record'}</span>
+                  </>
+                )}
+              </button>
+              <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">[Space]</span>
             </div>
-            <div>
-              <h3 className="font-medium text-success">¡Grabación enviada!</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Gracias por ayudar a mejorar el sistema
-              </p>
-            </div>
+
+            {/* Play Button */}
+            {audioBlob && (
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePlayRecording}
+                  className="h-12 w-12 rounded-full text-primary hover:text-primary/80"
+                >
+                  <Play className="h-6 w-6" />
+                </Button>
+                <span className="text-sm text-muted-foreground">Play</span>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">P</span>
+              </div>
+            )}
           </div>
-        </Card>
-      )}
+        )}
 
-      {/* Error State */}
-      {error && <ErrorState {...getErrorDetails(error)} onRetry={() => setError(null)} />}
-
-      {/* Audio Recording - Only show if training consent given */}
-      {!showTrainingConsentModal && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-foreground">Grabación</h3>
+        {/* Hidden Audio Recorder */}
+        <div className="hidden">
           <AudioRecorder onRecordingComplete={handleRecordingComplete} maxDuration={30} />
         </div>
-      )}
 
-      {/* Empty State when no recording */}
-      {!audioBlob && !error && !isSuccess && (
-        <EmptyState 
-          icon={MessageSquare} 
-          title="Graba la frase" 
-          description="Presiona el botón de grabar y lee la frase en voz alta para ayudar a entrenar el modelo" 
-        />
-      )}
-
-
-      {/* Submit Button */}
-      {audioBlob && !isSuccess && (
-        <div className="flex justify-center gap-4">
-          <Button onClick={handleSubmit} disabled={isSubmitting} size="xl" variant="accent">
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              'Enviar Grabación'
-            )}
+        {/* Next Button */}
+        <div className="flex justify-end">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              if (isSuccess) {
+                getNewPhrase();
+                setIsSuccess(false);
+                setPhraseCount(prev => prev + 1);
+              }
+            }}
+            disabled={!isSuccess}
+            className="text-primary hover:text-primary/80"
+          >
+            Next
+            <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
-      )}
+      </div>
+
+      {/* Hidden audio element for playback */}
+      <audio
+        ref={audioElementRef}
+        onEnded={() => setIsPlaying(false)}
+        className="hidden"
+      />
     </div>
   );
 };
