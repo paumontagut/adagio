@@ -76,7 +76,7 @@ const AdminConsents = () => {
 
       // Use RPC function with session token validation
       const { data, error } = await supabase.rpc('get_participant_consents_with_token', {
-        session_token: sessionToken
+        p_session_token: sessionToken
       });
 
       if (error) throw error;

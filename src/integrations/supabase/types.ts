@@ -1046,7 +1046,7 @@ export type Database = {
         Returns: string
       }
       get_participant_consents_with_token: {
-        Args: { session_token: string }
+        Args: { p_session_token: string }
         Returns: {
           adult_declaration: boolean
           adult_declaration_timestamp: string
