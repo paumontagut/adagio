@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Shield, Search, FileText, Calendar, MapPin, User, CheckCircle, XCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { secureStorage } from '@/lib/secureStorage';
 
 interface ConsentEvidence {
   id: string;
@@ -61,10 +62,22 @@ const AdminConsents = () => {
   const loadConsents = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('participant_consents')
-        .select('*')
-        .order('created_at', { ascending: false });
+      
+      // Get admin session token from secure storage
+      const sessionToken = await secureStorage.getAdminSession();
+      if (!sessionToken) {
+        toast({
+          title: "Error de autenticación",
+          description: "No hay sesión de administrador activa",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Use RPC function with session token validation
+      const { data, error } = await supabase.rpc('get_participant_consents_with_token', {
+        session_token: sessionToken
+      });
 
       if (error) throw error;
       console.log('[AdminConsents] Registros cargados desde participant_consents:', Array.isArray(data) ? data.length : 0);

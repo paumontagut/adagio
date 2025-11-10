@@ -1045,6 +1045,33 @@ export type Database = {
         Args: { original_session_id: string }
         Returns: string
       }
+      get_participant_consents_with_token: {
+        Args: { session_token: string }
+        Returns: {
+          adult_declaration: boolean
+          adult_declaration_timestamp: string
+          age_range: string
+          consent_evidence_data: Json
+          consent_store: boolean
+          consent_timestamp: string
+          consent_train: boolean
+          country: string
+          created_at: string
+          device_info: string
+          digital_signature: string
+          email: string
+          full_name: string
+          id: string
+          ip_address: unknown
+          migrated_from: string
+          region: string
+          session_pseudonym: string
+          updated_at: string
+          user_agent: string
+          withdrawal_reason: string
+          withdrawn_at: string
+        }[]
+      }
       get_risk_level: { Args: { risk_score: number }; Returns: string }
       is_current_user_dpo: { Args: never; Returns: boolean }
       log_consent_evidence_access: {
