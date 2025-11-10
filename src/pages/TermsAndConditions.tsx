@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Scale, FileText, Shield, Clock, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -32,14 +32,12 @@ export const TermsAndConditions = () => {
 
         <div className="space-y-8">
           {/* Aceptación de Términos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                1. Aceptación de Términos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              1. Aceptación de Términos
+            </h2>
+            <div className="space-y-4">
               <p>
                 Al utilizar el servicio de transcripción de Adagio ("el Servicio"), usted acepta 
                 estar sujeto a estos Términos y Condiciones. Si no está de acuerdo con estos 
@@ -49,18 +47,16 @@ export const TermsAndConditions = () => {
                 Estos términos constituyen un acuerdo legal vinculante entre usted y Adagio 
                 respecto al uso del Servicio de transcripción de audio a texto.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Descripción del Servicio */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-primary" />
-                2. Descripción del Servicio
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Globe className="h-5 w-5 text-primary" />
+              2. Descripción del Servicio
+            </h2>
+            <div className="space-y-4">
               <p>
                 Adagio proporciona un servicio de transcripción que convierte grabaciones de 
                 audio en texto utilizando tecnología de inteligencia artificial y aprendizaje 
@@ -73,18 +69,16 @@ export const TermsAndConditions = () => {
                 <li>Procesamiento local y seguro de datos de audio</li>
                 <li>Funciones de mejora continua del modelo de IA</li>
               </ul>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Uso Aceptable */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                3. Uso Aceptable
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              3. Uso Aceptable
+            </h2>
+            <div className="space-y-4">
               <p>Usted se compromete a utilizar el Servicio únicamente para:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Transcribir contenido de audio legítimo y legal</li>
@@ -99,18 +93,16 @@ export const TermsAndConditions = () => {
                 <li>Generar contenido que viole normativas de privacidad o protección de datos</li>
                 <li>Sobrecargar o intentar comprometer la seguridad del sistema</li>
               </ul>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Privacidad y Datos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                4. Privacidad y Protección de Datos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              4. Privacidad y Protección de Datos
+            </h2>
+            <div className="space-y-4">
               <p>
                 El tratamiento de sus datos personales y grabaciones de audio se rige por 
                 nuestra <Link to="/privacy-policy" className="text-primary hover:underline">
@@ -121,18 +113,16 @@ export const TermsAndConditions = () => {
                 especial bajo el RGPD. Requerimos su consentimiento explícito para procesar 
                 estos datos según se describe en la Política de Privacidad.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Limitaciones de Responsabilidad */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Scale className="h-5 w-5 text-primary" />
-                5. Limitaciones de Responsabilidad
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Scale className="h-5 w-5 text-primary" />
+              5. Limitaciones de Responsabilidad
+            </h2>
+            <div className="space-y-4">
               <p>
                 El Servicio se proporciona "tal como está". No garantizamos la exactitud 
                 absoluta de las transcripciones, ya que dependen de la calidad del audio 
@@ -148,18 +138,16 @@ export const TermsAndConditions = () => {
                 <li>Interrupciones del servicio</li>
                 <li>Decisiones tomadas basándose en las transcripciones</li>
               </ul>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Modificaciones */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                6. Modificaciones de los Términos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              6. Modificaciones de los Términos
+            </h2>
+            <div className="space-y-4">
               <p>
                 Nos reservamos el derecho de modificar estos Términos y Condiciones en 
                 cualquier momento. Las modificaciones entrarán en vigor inmediatamente 
@@ -170,18 +158,16 @@ export const TermsAndConditions = () => {
                 continuado del Servicio después de las modificaciones constituye 
                 aceptación de los nuevos términos.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Jurisdicción */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Scale className="h-5 w-5 text-primary" />
-                7. Jurisdicción y Ley Aplicable
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Scale className="h-5 w-5 text-primary" />
+              7. Jurisdicción y Ley Aplicable
+            </h2>
+            <div className="space-y-4">
               <p>
                 Estos Términos y Condiciones se rigen por las leyes españolas y europeas, 
                 incluyendo el Reglamento General de Protección de Datos (RGPD).
@@ -190,25 +176,23 @@ export const TermsAndConditions = () => {
                 Cualquier disputa relacionada con estos términos será sometida a la 
                 jurisdicción exclusiva de los tribunales españoles competentes.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Contacto */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                8. Contacto
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              8. Contacto
+            </h2>
+            <div className="space-y-4">
               <p>
                 Para preguntas sobre estos Términos y Condiciones o sobre el Servicio, 
                 puede contactarnos a través de nuestro <Link to="/privacy-center" 
                 className="text-primary hover:underline">Centro de Privacidad</Link>.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Footer Actions */}

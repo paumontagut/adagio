@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Shield, FileText, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -26,8 +25,8 @@ export const PrivacyCenter = () => {
         </header>
 
         <div className="space-y-6">
-          {/* Overview Card */}
-          <Card className="p-6">
+          {/* Overview Section */}
+          <div className="p-6">
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Información General
@@ -53,10 +52,10 @@ export const PrivacyCenter = () => {
                 </ul>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Contact Information for Data Management */}
-          <Card className="p-6">
+          <div className="p-6">
             <div className="text-center space-y-4">
               <h2 className="text-2xl font-semibold flex items-center justify-center gap-2">
                 <Mail className="h-5 w-5 text-primary" />
@@ -102,10 +101,10 @@ export const PrivacyCenter = () => {
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Information for Guests */}
-          <Card className="p-6">
+          <div className="p-6">
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
                 <Shield className="h-5 w-5" />
@@ -136,10 +135,10 @@ export const PrivacyCenter = () => {
                 </p>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Legal Information */}
-          <Card className="p-6">
+          <div className="p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Información Legal
@@ -162,10 +161,10 @@ export const PrivacyCenter = () => {
                 se han vulnerado tus derechos.
               </p>
             </div>
-          </Card>
+          </div>
 
           {/* Link to other privacy pages */}
-          <Card className="p-6">
+          <div className="p-6">
             <h2 className="text-lg font-semibold mb-4">Enlaces de Interés</h2>
             <div className="flex flex-wrap gap-4">
               <Link to="/privacy-policy" className="text-primary hover:text-primary/80 underline">
@@ -175,7 +174,7 @@ export const PrivacyCenter = () => {
                 Términos y Condiciones
               </Link>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     </div>
