@@ -75,31 +75,29 @@ const Index = () => {
 
         {/* Main Tabs */}
         <main id="main-content" role="main">
-          <Card className="p-6 shadow-lg border-border bg-card">
-            <Tabs value={activeTab} onValueChange={value => {
+          <Tabs value={activeTab} onValueChange={value => {
             setActiveTab(value);
             setSearchParams({
               tab: value
             });
           }} className="w-full" aria-label="Funciones principales de Adagio">
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted p-1 h-12" role="tablist" aria-label="Seleccionar función">
-                <TabsTrigger value="transcribe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md" role="tab" aria-selected={activeTab === 'transcribe'} aria-controls="transcribe-panel" id="transcribe-tab">
-                  Transcribir
-                </TabsTrigger>
-                <TabsTrigger value="train" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md" role="tab" aria-selected={activeTab === 'train'} aria-controls="train-panel" id="train-tab">
-                  Entrenar
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="transcribe" className="mt-0" role="tabpanel" aria-labelledby="transcribe-tab" id="transcribe-panel" tabIndex={0}>
-                <TranscribeView />
-              </TabsContent>
-              
-              <TabsContent value="train" className="mt-0" role="tabpanel" aria-labelledby="train-tab" id="train-panel" tabIndex={0}>
-                <TrainView />
-              </TabsContent>
-            </Tabs>
-          </Card>
+            <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted p-1 h-12" role="tablist" aria-label="Seleccionar función">
+              <TabsTrigger value="transcribe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md" role="tab" aria-selected={activeTab === 'transcribe'} aria-controls="transcribe-panel" id="transcribe-tab">
+                Transcribir
+              </TabsTrigger>
+              <TabsTrigger value="train" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md" role="tab" aria-selected={activeTab === 'train'} aria-controls="train-panel" id="train-tab">
+                Entrenar
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="transcribe" className="mt-0" role="tabpanel" aria-labelledby="transcribe-tab" id="transcribe-panel" tabIndex={0}>
+              <TranscribeView />
+            </TabsContent>
+            
+            <TabsContent value="train" className="mt-0" role="tabpanel" aria-labelledby="train-tab" id="train-panel" tabIndex={0}>
+              <TrainView />
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
       <Footer />
