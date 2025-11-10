@@ -18,7 +18,7 @@ import { getParticipantName, setParticipantName } from '@/lib/participant';
 import { AudioMetricsDisplay } from '@/components/AudioMetricsDisplay';
 import { ProcessingResult } from '@/lib/audioProcessor';
 import { sessionManager } from '@/lib/sessionManager';
-import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Volume2, ArrowLeft, ArrowRight, Hand, RotateCcw, Play } from 'lucide-react';
+import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Volume2, ArrowLeft, ArrowRight, RotateCcw, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { phraseService } from '@/services/phraseService';
@@ -454,50 +454,46 @@ const TrainView = () => {
       <ConsentModal isOpen={showConsentModal} onConsentGiven={handleConsentGiven} />
 
       {/* Header Navigation */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-12">
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => navigate('/?tab=transcribe')}
-          className="text-primary hover:text-primary/80"
+          className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          Atrás
         </Button>
-
-        <div className="text-lg font-semibold text-foreground">
-          {phraseCount} out of 50
-        </div>
 
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={getNewPhrase}
-          className="text-primary hover:text-primary/80"
+          className="text-muted-foreground hover:text-foreground"
         >
-          Change phrases
+          Cambiar frases
         </Button>
       </div>
 
       {/* Main Content Area */}
       <div className="max-w-3xl mx-auto space-y-12">
         
-        {/* Phrase Display */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-8">
+        {/* Phrase Card - Flashcard Style */}
+        <Card className="p-12 text-center shadow-lg border-2">
+          <h1 className="text-4xl font-bold text-foreground mb-8 leading-relaxed">
             {currentPhrase}
           </h1>
 
           {/* Success Message */}
           {isSuccess && (
-            <div className="flex items-center justify-center gap-2 text-success mb-4">
+            <div className="flex items-center justify-center gap-2 text-success mb-6">
               <CheckCircle className="h-5 w-5" />
-              <span className="font-semibold">Got It!</span>
+              <span className="font-semibold">¡Conseguido!</span>
             </div>
           )}
 
           {/* Listen Button */}
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center">
             <Button
               variant="ghost"
               size="sm"
@@ -505,17 +501,11 @@ const TrainView = () => {
               className="text-primary hover:text-primary/80 flex items-center gap-2"
             >
               <Volume2 className="h-5 w-5" />
-              <span>Listen</span>
-              <span className="ml-2 text-xs text-muted-foreground">Ctrl</span>
+              <span>Escuchar</span>
+              <span className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Ctrl</span>
             </Button>
           </div>
-
-          {/* Hands-free Toggle */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <Hand className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Hands-free</span>
-          </div>
-        </div>
+        </Card>
 
         {/* Recording Controls */}
         {!showTrainingConsentModal && (
@@ -531,13 +521,13 @@ const TrainView = () => {
                 >
                   <RotateCcw className="h-6 w-6" />
                 </Button>
-                <span className="text-sm text-muted-foreground">Re-record</span>
+                <span className="text-sm text-muted-foreground">Re-grabar</span>
                 <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Alt</span>
               </div>
             )}
 
             {/* Main Record/Submit Button */}
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-3">
               <button
                 onClick={audioBlob ? handleSubmit : handleRecordToggle}
                 disabled={isSubmitting}
@@ -555,12 +545,12 @@ const TrainView = () => {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 ) : (
                   <>
-                    <span>Tap</span>
-                    <span>{audioBlob ? 'to submit' : isRecording ? 'to stop' : 'to record'}</span>
+                    <span>Toca</span>
+                    <span>{audioBlob ? 'para enviar' : isRecording ? 'para parar' : 'para grabar'}</span>
                   </>
                 )}
               </button>
-              <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">[Space]</span>
+              <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">[Espacio]</span>
             </div>
 
             {/* Play Button */}
@@ -574,7 +564,7 @@ const TrainView = () => {
                 >
                   <Play className="h-6 w-6" />
                 </Button>
-                <span className="text-sm text-muted-foreground">Play</span>
+                <span className="text-sm text-muted-foreground">Reproducir</span>
                 <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">P</span>
               </div>
             )}
@@ -586,8 +576,21 @@ const TrainView = () => {
           <AudioRecorder onRecordingComplete={handleRecordingComplete} maxDuration={30} />
         </div>
 
-        {/* Next Button */}
-        <div className="flex justify-end">
+        {/* Navigation Buttons */}
+        <div className="flex justify-between items-center pt-8">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              // Go to previous phrase logic
+              getNewPhrase();
+            }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Anterior
+          </Button>
+
           <Button 
             variant="ghost" 
             size="sm" 
@@ -599,9 +602,9 @@ const TrainView = () => {
               }
             }}
             disabled={!isSuccess}
-            className="text-primary hover:text-primary/80"
+            className="text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
-            Next
+            Siguiente
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
