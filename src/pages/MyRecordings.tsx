@@ -164,7 +164,7 @@ export const MyRecordings = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#005c64] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <Card className="p-8 max-w-md w-full mx-4">
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2">Cargando...</h2>
@@ -179,7 +179,7 @@ export const MyRecordings = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#005c64] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <Card className="p-8 max-w-md w-full mx-4">
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-4">Inicia sesión</h2>
@@ -196,21 +196,21 @@ export const MyRecordings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#005c64]">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Mis Grabaciones</h1>
-          <p className="text-white/80">
+          <h1 className="text-4xl font-bold text-foreground mb-2">Mis Grabaciones</h1>
+          <p className="text-muted-foreground">
             Historial de todas tus grabaciones de entrenamiento
           </p>
         </div>
 
         <div className="mb-4 flex justify-between items-center">
-          <p className="text-white/60">
+          <p className="text-muted-foreground">
             {recordings.length} grabación{recordings.length !== 1 ? 'es' : ''} encontrada{recordings.length !== 1 ? 's' : ''}
           </p>
           <Link to="/">
-            <Button variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+            <Button variant="outline">
               Volver al inicio
             </Button>
           </Link>

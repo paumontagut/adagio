@@ -25,7 +25,7 @@ const Index = () => {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
-  return <div className="min-h-screen bg-[#005c64] flex flex-col">
+  return <div className="min-h-screen bg-white flex flex-col">
       {/* Skip links for keyboard navigation */}
       <a href="#main-content" className="skip-link">
         Saltar al contenido principal
@@ -44,7 +44,7 @@ const Index = () => {
                   
                 </Link>
                 <Link to="/my-data" className="hidden sm:block">
-                  <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs">
+                  <Button variant="outline" size="sm" className="text-xs">
                     <HardDrive className="h-3 w-3 mr-1" aria-hidden="true" />
                     Datos
                   </Button>
@@ -52,7 +52,7 @@ const Index = () => {
               </>}
             
             <Link to="/privacy-center">
-              <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs">
+              <Button variant="outline" size="sm" className="text-xs">
                 <Shield className="h-3 w-3 mr-1 sm:mr-2" aria-hidden="true" />
                 <span className="hidden sm:inline">Privacidad</span>
                 <span className="sm:hidden">Priv.</span>
@@ -64,10 +64,10 @@ const Index = () => {
 
           {/* Title and Subtitle - Centered */}
           <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-3 text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-3 text-foreground">
               Adagio
             </h1>
-            <p className="text-base sm:text-lg text-white px-4" role="doc-subtitle">
+            <p className="text-base sm:text-lg text-muted-foreground px-4" role="doc-subtitle">
               Facilitando la comunicación para personas con habla atípica
             </p>
           </div>

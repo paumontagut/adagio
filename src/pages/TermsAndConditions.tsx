@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 export const TermsAndConditions = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="mb-8">

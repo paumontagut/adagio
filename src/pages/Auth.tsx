@@ -142,7 +142,7 @@ export const Auth = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#005c64] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <Card className="p-8 max-w-md w-full mx-4">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
@@ -154,12 +154,12 @@ export const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#005c64] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-4">
         {/* Back to home */}
         <Link 
           to="/" 
-          className="inline-flex items-center text-white hover:text-white/90 mb-4"
+          className="inline-flex items-center text-foreground hover:text-foreground/80 mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver a Adagio

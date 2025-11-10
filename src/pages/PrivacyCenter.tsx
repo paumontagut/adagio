@@ -6,20 +6,20 @@ import { Link } from 'react-router-dom';
 
 export const PrivacyCenter = () => {
   return (
-    <div className="min-h-screen bg-[#005c64]">
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <header className="mb-8">
-          <Link to="/" className="inline-flex items-center text-white hover:text-white/90 mb-4">
+          <Link to="/" className="inline-flex items-center text-foreground hover:text-foreground/80 mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver a Adagio
           </Link>
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-2 text-white flex items-center justify-center gap-3">
+            <h1 className="text-4xl font-bold mb-2 text-foreground flex items-center justify-center gap-3">
               <Shield className="h-8 w-8" />
               Centro de Privacidad
             </h1>
-            <p className="text-lg text-white">
+            <p className="text-lg text-muted-foreground">
               Información sobre privacidad y protección de datos
             </p>
           </div>

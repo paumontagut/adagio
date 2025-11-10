@@ -34,7 +34,7 @@ export const AuthCallback = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-[#005c64] flex items-center justify-center">
+    <div className="min-h-screen bg-white flex items-center justify-center">
       <Card className="p-8 max-w-md w-full mx-4">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Autenticando...</h2>
