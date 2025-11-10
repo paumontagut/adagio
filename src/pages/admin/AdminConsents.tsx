@@ -449,11 +449,85 @@ const AdminConsents = () => {
                   </div>
                 </div>
 
-                {/* Evidence Data */}
+                {/* Form Data from Consent Evidence */}
+                {selectedConsent.consent_evidence_data && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Datos del Formulario de Consentimiento
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedConsent.consent_evidence_data.fullName && (
+                        <div className="p-3 bg-muted/30 rounded">
+                          <span className="text-muted-foreground text-sm">Nombre Completo:</span>
+                          <p className="font-medium">{selectedConsent.consent_evidence_data.fullName}</p>
+                        </div>
+                      )}
+                      {selectedConsent.consent_evidence_data.email && (
+                        <div className="p-3 bg-muted/30 rounded">
+                          <span className="text-muted-foreground text-sm">Email:</span>
+                          <p className="font-medium">{selectedConsent.consent_evidence_data.email}</p>
+                        </div>
+                      )}
+                      {selectedConsent.consent_evidence_data.ageRange && (
+                        <div className="p-3 bg-muted/30 rounded">
+                          <span className="text-muted-foreground text-sm">Rango de Edad:</span>
+                          <p className="font-medium">{selectedConsent.consent_evidence_data.ageRange}</p>
+                        </div>
+                      )}
+                      {selectedConsent.consent_evidence_data.country && (
+                        <div className="p-3 bg-muted/30 rounded">
+                          <span className="text-muted-foreground text-sm">País:</span>
+                          <p className="font-medium">{selectedConsent.consent_evidence_data.country}</p>
+                        </div>
+                      )}
+                      {selectedConsent.consent_evidence_data.region && (
+                        <div className="p-3 bg-muted/30 rounded">
+                          <span className="text-muted-foreground text-sm">Región:</span>
+                          <p className="font-medium">{selectedConsent.consent_evidence_data.region}</p>
+                        </div>
+                      )}
+                      {selectedConsent.consent_evidence_data.adultDeclaration !== undefined && (
+                        <div className="p-3 bg-muted/30 rounded">
+                          <span className="text-muted-foreground text-sm">Declaración de Mayoría de Edad:</span>
+                          <p className="font-medium">
+                            {selectedConsent.consent_evidence_data.adultDeclaration ? 'Confirmado' : 'No confirmado'}
+                          </p>
+                        </div>
+                      )}
+                      {selectedConsent.consent_evidence_data.consentTrain !== undefined && (
+                        <div className="p-3 bg-muted/30 rounded">
+                          <span className="text-muted-foreground text-sm">Consentimiento Entrenamiento:</span>
+                          <p className="font-medium">
+                            {selectedConsent.consent_evidence_data.consentTrain ? 'Otorgado' : 'No otorgado'}
+                          </p>
+                        </div>
+                      )}
+                      {selectedConsent.consent_evidence_data.consentStore !== undefined && (
+                        <div className="p-3 bg-muted/30 rounded">
+                          <span className="text-muted-foreground text-sm">Consentimiento Almacenamiento:</span>
+                          <p className="font-medium">
+                            {selectedConsent.consent_evidence_data.consentStore ? 'Otorgado' : 'No otorgado'}
+                          </p>
+                        </div>
+                      )}
+                      {selectedConsent.consent_evidence_data.timestamp && (
+                        <div className="p-3 bg-muted/30 rounded">
+                          <span className="text-muted-foreground text-sm">Timestamp del Formulario:</span>
+                          <p className="font-medium text-xs">
+                            {new Date(selectedConsent.consent_evidence_data.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Evidence Data JSON (collapsed) */}
                 <div className="space-y-3">
-                  <h3 className="font-semibold">Datos de Evidencia Completos</h3>
+                  <h3 className="font-semibold">Datos de Evidencia Completos (JSON)</h3>
                   <div className="p-3 bg-muted/30 rounded">
-                    <pre className="text-xs overflow-auto">
+                    <pre className="text-xs overflow-auto max-h-40">
                       {JSON.stringify(selectedConsent.consent_evidence_data, null, 2)}
                     </pre>
                   </div>
