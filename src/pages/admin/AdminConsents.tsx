@@ -40,6 +40,7 @@ interface ConsentEvidence {
   created_at: string;
   withdrawn_at: string | null;
   withdrawal_reason: string | null;
+  migrated_from: string | null;
 }
 
 const AdminConsents = () => {
@@ -317,6 +318,11 @@ const AdminConsents = () => {
                   <h3 className="font-semibold flex items-center gap-2">
                     <User className="h-4 w-4" />
                     Información Personal
+                    {selectedConsent.migrated_from && (
+                      <Badge variant="outline" className="ml-2 text-xs">
+                        Migrado de {selectedConsent.migrated_from}
+                      </Badge>
+                    )}
                   </h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
@@ -329,7 +335,13 @@ const AdminConsents = () => {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Rango de Edad:</span>
-                      <p className="font-medium">{selectedConsent.age_range}</p>
+                      <p className="font-medium">
+                        {selectedConsent.age_range === 'legacy_data' ? (
+                          <span className="text-muted-foreground italic">Datos no disponibles (migrado)</span>
+                        ) : (
+                          selectedConsent.age_range
+                        )}
+                      </p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Pseudónimo de Sesión:</span>
@@ -347,13 +359,32 @@ const AdminConsents = () => {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="text-muted-foreground">País:</span>
-                      <p className="font-medium">{selectedConsent.country}</p>
+                      <p className="font-medium">
+                        {selectedConsent.country === 'Unknown' ? (
+                          <span className="text-muted-foreground italic">No disponible (migrado)</span>
+                        ) : (
+                          selectedConsent.country
+                        )}
+                      </p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Región:</span>
-                      <p className="font-medium">{selectedConsent.region}</p>
+                      <p className="font-medium">
+                        {selectedConsent.region === 'Unknown' ? (
+                          <span className="text-muted-foreground italic">No disponible (migrado)</span>
+                        ) : (
+                          selectedConsent.region
+                        )}
+                      </p>
                     </div>
                   </div>
+                  {(selectedConsent.country === 'Unknown' || selectedConsent.region === 'Unknown') && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        ℹ️ Este registro fue migrado de un sistema antiguo que no capturaba información geográfica detallada.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Consents */}
@@ -449,8 +480,12 @@ const AdminConsents = () => {
                   </div>
                 </div>
 
-                {/* Form Data from Consent Evidence */}
-                {selectedConsent.consent_evidence_data && (
+                {/* Form Data from Consent Evidence - Only show if not migrated data */}
+                {selectedConsent.consent_evidence_data && 
+                 !selectedConsent.consent_evidence_data.migrated &&
+                 (selectedConsent.consent_evidence_data.fullName || 
+                  selectedConsent.consent_evidence_data.ageRange ||
+                  selectedConsent.consent_evidence_data.country) && (
                   <div className="space-y-3">
                     <h3 className="font-semibold flex items-center gap-2">
                       <FileText className="h-4 w-4" />
