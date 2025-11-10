@@ -47,10 +47,7 @@ export const Footer = () => {
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} Adagio. Todos los derechos reservados.
             </p>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <FileText className="h-3 w-3" />
-              Cumplimiento RGPD
-            </div>
+            
           </div>
         </div>
       </div>
