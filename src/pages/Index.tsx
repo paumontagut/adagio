@@ -81,20 +81,34 @@ const Index = () => {
               tab: value
             });
           }} className="w-full" aria-label="Funciones principales de Adagio">
-            <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted p-1 h-12" role="tablist" aria-label="Seleccionar función">
-              <TabsTrigger value="transcribe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md" role="tab" aria-selected={activeTab === 'transcribe'} aria-controls="transcribe-panel" id="transcribe-tab">
+            <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted p-1.5 h-14 rounded-2xl" role="tablist" aria-label="Seleccionar función">
+              <TabsTrigger 
+                value="transcribe" 
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-hover transition-all duration-300 ease-in-out text-base font-medium rounded-xl" 
+                role="tab" 
+                aria-selected={activeTab === 'transcribe'} 
+                aria-controls="transcribe-panel" 
+                id="transcribe-tab"
+              >
                 Transcribir
               </TabsTrigger>
-              <TabsTrigger value="train" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-muted-hover transition-colors text-base font-medium rounded-md" role="tab" aria-selected={activeTab === 'train'} aria-controls="train-panel" id="train-tab">
+              <TabsTrigger 
+                value="train" 
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-hover transition-all duration-300 ease-in-out text-base font-medium rounded-xl" 
+                role="tab" 
+                aria-selected={activeTab === 'train'} 
+                aria-controls="train-panel" 
+                id="train-tab"
+              >
                 Entrenar
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="transcribe" className="mt-0" role="tabpanel" aria-labelledby="transcribe-tab" id="transcribe-panel" tabIndex={0}>
+            <TabsContent value="transcribe" className="mt-0 animate-fade-in" role="tabpanel" aria-labelledby="transcribe-tab" id="transcribe-panel" tabIndex={0}>
               <TranscribeView />
             </TabsContent>
             
-            <TabsContent value="train" className="mt-0" role="tabpanel" aria-labelledby="train-tab" id="train-panel" tabIndex={0}>
+            <TabsContent value="train" className="mt-0 animate-fade-in" role="tabpanel" aria-labelledby="train-tab" id="train-panel" tabIndex={0}>
               <TrainView />
             </TabsContent>
           </Tabs>
