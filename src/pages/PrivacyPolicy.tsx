@@ -2,13 +2,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
 import { Link } from "react-router-dom";
-
 export const PrivacyPolicy = () => {
-  return (
-    <div className="min-h-screen bg-white font-space-grotesk">
+  return <div className="min-h-screen bg-white font-space-grotesk">
       {/* Header */}
       <header className="bg-white sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-6 flex items-center justify-between max-w-7xl">
+        <div className="container mx-auto px-6 py-6 flex items-center justify-between max-w-7xl bg-stone-300">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#4169E1] rounded flex items-center justify-center">
               <div className="grid grid-cols-2 gap-0.5">
@@ -21,9 +19,7 @@ export const PrivacyPolicy = () => {
             <span className="text-2xl font-bold text-[#1e3a8a]">Adagio</span>
           </Link>
           <Link to="/privacy-center">
-            <Button 
-              className="bg-[#4169E1] hover:bg-[#3555c7] text-white font-semibold px-6 py-2.5 rounded-lg text-sm tracking-wide"
-            >
+            <Button className="bg-[#4169E1] hover:bg-[#3555c7] text-white font-semibold px-6 py-2.5 rounded-lg text-sm tracking-wide">
               CONTACT US
             </Button>
           </Link>
@@ -257,6 +253,5 @@ export const PrivacyPolicy = () => {
           </p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
