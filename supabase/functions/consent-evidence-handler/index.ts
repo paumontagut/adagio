@@ -68,9 +68,9 @@ serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const digital_signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    // Guardar evidencia de consentimiento
+    // Guardar evidencia de consentimiento en la tabla unificada
     const { data: consentEvidence, error: insertError } = await supabase
-      .from('consent_evidence')
+      .from('participant_consents')
       .insert({
         session_pseudonym,
         full_name,

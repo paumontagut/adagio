@@ -62,13 +62,14 @@ const AdminConsents = () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from('consent_evidence')
+        .from('participant_consents')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      console.log('[AdminConsents] Registros cargados:', Array.isArray(data) ? data.length : 0);
+      console.log('[AdminConsents] Registros cargados desde participant_consents:', Array.isArray(data) ? data.length : 0);
       setConsents((data as ConsentEvidence[]) || []);
+    } catch (error) {
       console.error('Error loading consents:', error);
       toast({
         title: "Error",

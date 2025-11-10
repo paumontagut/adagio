@@ -232,15 +232,35 @@ async function handleStoreAudio(req: Request, supabase: any) {
     return jsonError('Failed to store encrypted audio file', 500)
   }
 
-  // Consent log
-  const { error: consentErr } = await supabase.from('consent_logs').insert({
-    session_id: data.sessionId,
-    consent_train: data.consentTrain,
-    consent_store: data.consentStore,
-    full_name: data.fullName,
-    user_agent: req.headers.get('user-agent') || 'unknown'
-  })
-  if (consentErr) console.warn('Consent log warning', consentErr)
+  // Check if consent already exists for this session
+  const { data: existingConsent } = await supabase
+    .from('participant_consents')
+    .select('id')
+    .eq('session_pseudonym', sessionPseudonym)
+    .maybeSingle();
+
+  // Only create new consent record if one doesn't exist
+  if (!existingConsent) {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+    
+    const { error: consentErr } = await supabase.from('participant_consents').insert({
+      session_pseudonym: sessionPseudonym,
+      full_name: data.fullName || 'Anonymous',
+      consent_train: data.consentTrain,
+      consent_store: data.consentStore,
+      age_range: 'not_specified',
+      country: 'Unknown',
+      region: 'Unknown',
+      adult_declaration: true,
+      digital_signature: await generateSignature(sessionPseudonym, data),
+      ip_address: clientIp,
+      user_agent: req.headers.get('user-agent') || 'unknown',
+      device_info: `Audio upload via encrypted-audio-api`
+    });
+    if (consentErr) console.warn('Consent creation warning', consentErr);
+  }
 
   return new Response(
     JSON.stringify({ success: true, metadataId: meta.id, sessionPseudonym, keyVersion: currentKeyVersion }),
@@ -356,15 +376,35 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
 
   console.log(`Both encrypted and unencrypted versions stored successfully. Unencrypted: ${unencryptedFileName}`);
 
-  // Consent log
-  const { error: consentErr } = await supabase.from('consent_logs').insert({
-    session_id: data.sessionId,
-    consent_train: data.consentTrain,
-    consent_store: data.consentStore,
-    full_name: data.fullName,
-    user_agent: req.headers.get('user-agent') || 'unknown'
-  })
-  if (consentErr) console.warn('Consent log warning', consentErr)
+  // Check if consent already exists for this session
+  const { data: existingConsent } = await supabase
+    .from('participant_consents')
+    .select('id')
+    .eq('session_pseudonym', sessionPseudonym)
+    .maybeSingle();
+
+  // Only create new consent record if one doesn't exist
+  if (!existingConsent) {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+    
+    const { error: consentErr } = await supabase.from('participant_consents').insert({
+      session_pseudonym: sessionPseudonym,
+      full_name: data.fullName || 'Anonymous',
+      consent_train: data.consentTrain,
+      consent_store: data.consentStore,
+      age_range: 'not_specified',
+      country: 'Unknown',
+      region: 'Unknown',
+      adult_declaration: true,
+      digital_signature: await generateSignature(sessionPseudonym, data),
+      ip_address: clientIp,
+      user_agent: req.headers.get('user-agent') || 'unknown',
+      device_info: `Audio upload via encrypted-audio-api`
+    });
+    if (consentErr) console.warn('Consent creation warning', consentErr);
+  }
 
   return new Response(
     JSON.stringify({ success: true, metadataId: meta.id, sessionPseudonym, keyVersion: keyRow.version }),
@@ -385,6 +425,21 @@ function base64ToUint8(b64: string): Uint8Array {
     if (b64?.byteLength !== undefined && b64.constructor?.name === 'Uint8Array') return b64 as Uint8Array;
     return new Uint8Array();
   }
+}
+
+async function generateSignature(pseudonym: string, data: any): Promise<string> {
+  const consentString = JSON.stringify({
+    session_pseudonym: pseudonym,
+    consent_train: data.consentTrain,
+    consent_store: data.consentStore,
+    timestamp: new Date().toISOString()
+  });
+  
+  const encoder = new TextEncoder();
+  const dataBytes = encoder.encode(consentString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBytes);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 function uint8ToBase64(bytes: Uint8Array): string {

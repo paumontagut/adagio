@@ -163,15 +163,18 @@ async function handleCompleteDataDeletion(req: Request, supabase: any) {
       deletionLog.itemsDeleted.audioMetadata = metadataRecords?.length || 0;
     }
 
-    // Step 4: Mark consent logs as withdrawn (logical deletion)
+    // Step 4: Mark participant consents as withdrawn (logical deletion)
     const { data: consentRecords, error: consentUpdateError } = await supabase
-      .from('consent_logs')
-      .update({ withdrawn_at: new Date().toISOString() })
-      .eq('session_id', deletionRequest.sessionId)
+      .from('participant_consents')
+      .update({ 
+        withdrawn_at: new Date().toISOString(),
+        withdrawal_reason: deletionRequest.confirmationType || 'User requested deletion'
+      })
+      .eq('session_pseudonym', sessionPseudonym)
       .select('id');
 
     if (consentUpdateError) {
-      console.error('Error updating consent logs:', consentUpdateError);
+      console.error('Error updating participant consents:', consentUpdateError);
     } else {
       deletionLog.itemsDeleted.consentLogs = consentRecords?.length || 0;
     }

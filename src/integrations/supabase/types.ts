@@ -21,7 +21,7 @@ export type Database = {
           created_at: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resource_id: string | null
           resource_type: string | null
           user_agent: string | null
@@ -32,7 +32,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string | null
           user_agent?: string | null
@@ -43,7 +43,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string | null
           user_agent?: string | null
@@ -64,7 +64,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           session_token: string
           user_agent: string | null
         }
@@ -73,7 +73,7 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_token: string
           user_agent?: string | null
         }
@@ -82,7 +82,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_token?: string
           user_agent?: string | null
         }
@@ -240,7 +240,7 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           region: string
           session_pseudonym: string
           updated_at: string
@@ -263,7 +263,7 @@ export type Database = {
           email?: string | null
           full_name: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           region: string
           session_pseudonym: string
           updated_at?: string
@@ -286,7 +286,7 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           region?: string
           session_pseudonym?: string
           updated_at?: string
@@ -305,7 +305,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           session_id: string
           updated_at: string
           user_agent: string | null
@@ -320,7 +320,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_id: string
           updated_at?: string
           user_agent?: string | null
@@ -335,7 +335,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_id?: string
           updated_at?: string
           user_agent?: string | null
@@ -469,7 +469,7 @@ export type Database = {
           expires_at: string
           full_name: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           session_pseudonym: string
           used_for_deletion: boolean | null
           user_agent: string | null
@@ -484,7 +484,7 @@ export type Database = {
           expires_at?: string
           full_name?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_pseudonym: string
           used_for_deletion?: boolean | null
           user_agent?: string | null
@@ -499,7 +499,7 @@ export type Database = {
           expires_at?: string
           full_name?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_pseudonym?: string
           used_for_deletion?: boolean | null
           user_agent?: string | null
@@ -557,6 +557,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      participant_consents: {
+        Row: {
+          adult_declaration: boolean
+          adult_declaration_timestamp: string
+          age_range: string
+          consent_evidence_data: Json | null
+          consent_store: boolean
+          consent_timestamp: string
+          consent_train: boolean
+          country: string
+          created_at: string
+          device_info: string | null
+          digital_signature: string
+          email: string | null
+          full_name: string
+          id: string
+          ip_address: unknown
+          migrated_from: string | null
+          region: string
+          session_pseudonym: string
+          updated_at: string
+          user_agent: string | null
+          withdrawal_reason: string | null
+          withdrawn_at: string | null
+        }
+        Insert: {
+          adult_declaration?: boolean
+          adult_declaration_timestamp?: string
+          age_range: string
+          consent_evidence_data?: Json | null
+          consent_store?: boolean
+          consent_timestamp?: string
+          consent_train?: boolean
+          country: string
+          created_at?: string
+          device_info?: string | null
+          digital_signature: string
+          email?: string | null
+          full_name: string
+          id?: string
+          ip_address?: unknown
+          migrated_from?: string | null
+          region: string
+          session_pseudonym: string
+          updated_at?: string
+          user_agent?: string | null
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
+        }
+        Update: {
+          adult_declaration?: boolean
+          adult_declaration_timestamp?: string
+          age_range?: string
+          consent_evidence_data?: Json | null
+          consent_store?: boolean
+          consent_timestamp?: string
+          consent_train?: boolean
+          country?: string
+          created_at?: string
+          device_info?: string | null
+          digital_signature?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          ip_address?: unknown
+          migrated_from?: string | null
+          region?: string
+          session_pseudonym?: string
+          updated_at?: string
+          user_agent?: string | null
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -705,39 +780,6 @@ export type Database = {
           key_hash?: string
           key_version?: number
           rotation_reason?: string | null
-        }
-        Relationships: []
-      }
-      train_consents: {
-        Row: {
-          consent_at: string | null
-          consent_store: boolean
-          consent_train: boolean
-          created_at: string | null
-          full_name: string
-          id: string
-          session_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          consent_at?: string | null
-          consent_store?: boolean
-          consent_train?: boolean
-          created_at?: string | null
-          full_name: string
-          id?: string
-          session_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          consent_at?: string | null
-          consent_store?: boolean
-          consent_train?: boolean
-          created_at?: string | null
-          full_name?: string
-          id?: string
-          session_id?: string | null
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -902,10 +944,7 @@ export type Database = {
         Args: { audit_id_param: string }
         Returns: number
       }
-      cleanup_expired_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      cleanup_expired_sessions: { Args: never; Returns: number }
       create_admin_session: {
         Args: { admin_email: string; session_duration_hours?: number }
         Returns: {
@@ -939,7 +978,7 @@ export type Database = {
         Returns: string
       }
       get_audio_metadata_with_identity: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           audio_format: string
           consent_store: boolean
@@ -984,12 +1023,9 @@ export type Database = {
           unencrypted_storage_bucket: string
         }[]
       }
-      get_current_admin_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_admin_role: { Args: never; Returns: string }
       get_deletion_request_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           completed_requests: number
           failed_requests: number
@@ -1009,22 +1045,13 @@ export type Database = {
         Args: { original_session_id: string }
         Returns: string
       }
-      get_risk_level: {
-        Args: { risk_score: number }
-        Returns: string
-      }
-      is_current_user_dpo: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      get_risk_level: { Args: { risk_score: number }; Returns: string }
+      is_current_user_dpo: { Args: never; Returns: boolean }
       log_consent_evidence_access: {
         Args: { p_consent_evidence_id: string; p_session_pseudonym: string }
         Returns: undefined
       }
-      rotate_encryption_key: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      rotate_encryption_key: { Args: never; Returns: number }
       rotate_storage_key: {
         Args: { target_bucket_id: string }
         Returns: number
@@ -1042,6 +1069,12 @@ export type Database = {
         Returns: {
           admin_user: Database["public"]["Tables"]["admin_users"]["Row"]
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "admin_users"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       verify_guest_token: {
         Args: { token_to_verify: string }

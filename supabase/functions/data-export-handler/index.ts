@@ -122,11 +122,11 @@ async function handleDataExport(req: Request, supabase: any) {
       }
     }
 
-    // Get consent logs
+    // Get participant consents
     const { data: consentRecords, error: consentError } = await supabase
-      .from('consent_logs')
+      .from('participant_consents')
       .select('*')
-      .eq('session_id', sessionId);
+      .eq('session_pseudonym', sessionPseudonym);
 
     if (consentError) {
       console.error('Error fetching consent logs:', consentError);
