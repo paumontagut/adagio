@@ -1,532 +1,279 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield, Database, Eye, Lock, UserCheck, FileText } from "lucide-react";
+import { ArrowLeft, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const PrivacyPolicy = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="mb-8">
-          <Link to="/">
-            <Button variant="outline" className="mb-6">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver al inicio
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between max-w-7xl">
+          <Link to="/" className="flex items-center gap-2">
+            <Shield className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold text-foreground">Adagio</span>
+          </Link>
+          <Link to="/privacy-center">
+            <Button variant="default" size="lg">
+              CENTRO DE PRIVACIDAD
             </Button>
           </Link>
-          
-          <div className="flex items-center gap-3 mb-4">
-            <Shield className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold text-foreground">
-              Política de Privacidad
-            </h1>
-          </div>
-          <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 mb-4">
-            <h2 className="text-xl font-semibold mb-3">⚠️ Resumen sobre Datos Biométricos</h2>
-            <p className="text-sm mb-3">
-              Esta Política describe el tratamiento de <strong>datos biométricos de voz</strong> y <strong>datos de salud implícitos</strong>. 
-              Su voz contiene características únicas que pueden identificarle permanentemente y revelar información sobre su estado de salud.
-            </p>
-            <div className="grid gap-3 md:grid-cols-2 text-sm">
-              <div>
-                <strong>Su voz es un dato biométrico único:</strong>
-                <ul className="list-disc pl-4 text-xs text-muted-foreground mt-1">
-                  <li>Patrones acústicos únicos e inmutables</li>
-                  <li>Frecuencias fundamentales específicas</li>
-                  <li>Características de identificación permanente</li>
-                </ul>
-              </div>
-              <div>
-                <strong>Posible información sanitaria implícita:</strong>
-                <ul className="list-disc pl-4 text-xs text-muted-foreground mt-1">
-                  <li>Indicadores neurológicos (Parkinson, Alzheimer)</li>
-                  <li>Condiciones respiratorias (asma, EPOC)</li>
-                  <li>Estados emocionales y fatiga vocal</li>
-                </ul>
-              </div>
-            </div>
-            <p className="text-sm mt-3 font-medium">
-              Por esta razón, requerimos <strong>consentimiento explícito específico</strong> y hemos completado una <strong>Evaluación de Impacto (EIPD)</strong>.
-            </p>
-          </div>
-          <p className="text-lg text-muted-foreground">
-            Servicio de Transcripción Adagio
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Última actualización: {new Date().toLocaleDateString('es-ES')}
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-12 max-w-5xl">
+        {/* Title Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            Política de Privacidad de Adagio
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Última actualización: 10/11/2025
           </p>
         </div>
 
-        <div className="space-y-8">
-          {/* Información del Responsable */}
+        {/* Content */}
+        <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
+          {/* Introduction */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-primary" />
-                1. Responsable del Tratamiento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <p><strong>Responsable:</strong> Adagio</p>
-                <p><strong>Finalidad:</strong> Transcripción de audio y entrenamiento de modelos de IA</p>
-                <p><strong>Base legal:</strong> Consentimiento explícito (Art. 6.1.a y 9.2.a RGPD)</p>
-              </div>
-              <p>
-                Esta Política de Privacidad describe cómo recopilamos, utilizamos y protegemos 
-                su información personal cuando utiliza nuestro servicio de transcripción de audio.
+            <CardContent className="pt-6">
+              <h2 className="text-2xl font-semibold mb-4 text-foreground">Introducción y alcance</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                Esta Política de Privacidad explica qué información tratamos cuando usted utiliza nuestros sitios y aplicaciones (conjuntamente, los "Servicios"), cómo la tratamos y qué opciones tiene para gestionarla. Se aplica a su uso de nuestra web y aplicación móvil o de escritorio, a nuestras extensiones e integraciones, y a las comunicaciones que mantengamos con usted por cualquier canal. Al acceder o utilizar los Servicios, usted reconoce que ha leído y comprende esta Política y, cuando corresponda, presta su consentimiento en los términos que se detallan a continuación. Si no acepta esta Política, no podremos prestarle determinados Servicios que requieren tratamiento de datos personales sensibles.
               </p>
             </CardContent>
           </Card>
 
-          {/* Naturaleza Biométrica de la Voz */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-primary" />
-                2. Naturaleza Biométrica de sus Datos de Voz
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
-                <h4 className="font-semibold mb-2 text-warning-foreground">
-                  ⚠️ Su voz contiene datos biométricos únicos
-                </h4>
-                <p className="text-sm">
-                  Las grabaciones de voz son consideradas <strong>datos biométricos</strong> 
-                  bajo el Artículo 4(14) del RGPD porque permiten su identificación única 
-                  mediante características físicas y fisiológicas específicas.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Características Biométricas Presentes</h4>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <h5 className="font-medium text-sm">Parámetros Acústicos</h5>
-                      <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
-                        <li>Frecuencia fundamental (F0)</li>
-                        <li>Formantes vocales (F1-F4)</li>
-                        <li>Espectrograma único</li>
-                      </ul>
-                    </div>
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <h5 className="font-medium text-sm">Patrones Temporales</h5>
-                      <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
-                        <li>Ritmo del habla</li>
-                        <li>Pausas características</li>
-                        <li>Entonación personal</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2 text-destructive">
-                    🚨 Información Sanitaria Implícita Potencial
-                  </h4>
-                  <p className="text-sm mb-3">
-                    Su voz puede revelar involuntariamente información sobre su estado de salud:
-                  </p>
-                  <div className="grid gap-2 md:grid-cols-2 text-xs">
-                    <div>
-                      <strong>Trastornos Neurológicos:</strong>
-                      <ul className="list-disc pl-4 text-muted-foreground">
-                        <li>Parkinson (monotonía, temblor vocal)</li>
-                        <li>Alzheimer (pérdida de fluidez)</li>
-                        <li>Esclerosis múltiple (disartria)</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <strong>Condiciones Físicas:</strong>
-                      <ul className="list-disc pl-4 text-muted-foreground">
-                        <li>Problemas respiratorios</li>
-                        <li>Fatiga vocal</li>
-                        <li>Estados emocionales</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Finalidades del Tratamiento */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5 text-primary" />
-                3. Finalidades del Tratamiento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>Utilizamos sus datos para las siguientes finalidades:</p>
-              
-              <div className="space-y-4">
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Transcripción de Audio</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Procesamos sus grabaciones para convertirlas en texto utilizando 
-                    tecnología de inteligencia artificial.
-                  </p>
-                </div>
-
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Entrenamiento de Modelos (Opcional)</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Con su consentimiento explícito, utilizamos sus grabaciones para 
-                    mejorar la precisión de nuestros modelos de reconocimiento de voz.
-                  </p>
-                </div>
-
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">Almacenamiento Personal (Opcional)</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Si lo autoriza, guardamos sus grabaciones en su perfil personal 
-                    para futuras consultas y mejoras personalizadas.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Base Legal y Consentimiento */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-primary" />
-                3. Base Legal y Consentimiento Explícito Requerido
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">Doble Consentimiento Explícito Requerido</h4>
-                <p className="text-sm mb-3">
-                  Debido a la naturaleza biométrica de su voz y la posible información sanitaria 
-                  implícita, requerimos su consentimiento explícito bajo dos bases legales:
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">
-                    📋 Art. 9.2.a RGPD - Consentimiento para Datos Biométricos
-                  </h4>
-                  <div className="bg-card border rounded p-3 text-sm italic">
-                    "Consiento expresamente el tratamiento de mis datos biométricos de voz, 
-                    incluyendo características físicas y fisiológicas únicas contenidas en 
-                    mi patrón vocal, para los fines específicos de transcripción automática 
-                    y entrenamiento de modelos de IA."
-                  </div>
-                </div>
-
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">
-                    🏥 Art. 9.2.a RGPD - Consentimiento para Datos de Salud Implícitos
-                  </h4>
-                  <div className="bg-card border rounded p-3 text-sm italic">
-                    "Comprendo y consiento que mi grabación de voz puede contener información 
-                    implícita sobre mi estado de salud. Autorizo el tratamiento de esta 
-                    información potencial exclusivamente para los fines declarados del 
-                    servicio de transcripción."
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">⚖️ Requisitos Legales del Consentimiento</h4>
-                <p className="text-sm mb-2">Según el Artículo 7 RGPD, su consentimiento debe ser:</p>
-                <div className="grid gap-2 md:grid-cols-2 text-sm">
-                  <div>✅ <strong>Libre:</strong> Sin coacción, con alternativas</div>
-                  <div>✅ <strong>Específico:</strong> Para fines claramente definidos</div>
-                  <div>✅ <strong>Informado:</strong> Con comprensión completa</div>
-                  <div>✅ <strong>Inequívoco:</strong> Mediante acto afirmativo claro</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Evaluación de Impacto (EIPD) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                4. Evaluación de Impacto en la Protección de Datos (EIPD)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">📊 EIPD Obligatoria Completada</h4>
-                <p className="text-sm">
-                  Hemos realizado una Evaluación de Impacto completa según el Art. 35 RGPD 
-                  debido al alto riesgo que representa el tratamiento de datos biométricos 
-                  y la posible información sanitaria implícita.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="font-semibold">Factores de Alto Riesgo Evaluados:</h4>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="bg-destructive/5 border border-destructive/20 rounded p-3">
-                    <h5 className="font-medium text-sm text-destructive">🔴 Riesgo Biométrico</h5>
-                    <ul className="list-disc pl-4 text-xs text-muted-foreground">
-                      <li>Identificación permanente</li>
-                      <li>Datos inmutables</li>
-                      <li>Compromiso irreversible</li>
-                    </ul>
-                  </div>
-                  <div className="bg-warning/5 border border-warning/20 rounded p-3">
-                    <h5 className="font-medium text-sm text-warning-foreground">🟡 Riesgo Sanitario</h5>
-                    <ul className="list-disc pl-4 text-xs text-muted-foreground">
-                      <li>Inferencia de patologías</li>
-                      <li>Estigmatización médica</li>
-                      <li>Discriminación sanitaria</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-success/5 border border-success/20 rounded-lg p-4">
-                <h4 className="font-semibold mb-2 text-success">✅ Conclusión de la EIPD</h4>
-                <p className="text-sm">
-                  <strong>Riesgo Residual: MEDIO-BAJO</strong> - El tratamiento puede proceder 
-                  con las medidas de protección implementadas y supervisión continua.
-                </p>
-                <div className="mt-2">
-                  <a 
-                    href="/docs/DPIA_SUMMARY.md" 
-                    target="_blank"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    📄 Consultar resumen completo de la EIPD
-                  </a>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Conservación y Seguridad Reforzada */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-primary" />
-                5. Conservación y Medidas de Seguridad Reforzadas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
-                <h4 className="font-semibold mb-2">🛡️ Seguridad Especializada para Datos Biométricos</h4>
-                <p className="text-sm">
-                  Implementamos medidas de seguridad especializadas debido a la naturaleza 
-                  irreversible e inmutable de los datos biométricos de voz.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Períodos de Conservación Específicos</h4>
-                  <div className="space-y-2">
-                    <div className="bg-muted/50 p-3 rounded border-l-4 border-primary">
-                      <div className="font-medium text-sm">Datos Biométricos de Voz</div>
-                      <div className="text-xs text-muted-foreground">
-                        Conservación hasta retirada explícita del consentimiento + 30 días para verificación de eliminación
-                      </div>
-                    </div>
-                    <div className="bg-muted/50 p-3 rounded border-l-4 border-warning">
-                      <div className="font-medium text-sm">Información Sanitaria Inferida</div>
-                      <div className="text-xs text-muted-foreground">
-                        Eliminación inmediata tras transcripción - No almacenamiento persistente
-                      </div>
-                    </div>
-                    <div className="bg-muted/50 p-3 rounded border-l-4 border-success">
-                      <div className="font-medium text-sm">Transcripciones Resultantes</div>
-                      <div className="text-xs text-muted-foreground">
-                        Mientras mantenga activa su cuenta o hasta solicitud de eliminación
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Medidas de Seguridad Técnicas</h4>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <h5 className="font-medium text-sm mb-2">🔐 Cifrado y Protección</h5>
-                      <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
-                        <li>AES-256-GCM extremo a extremo</li>
-                        <li>Claves rotativas cada 24h</li>
-                        <li>HSM para gestión de claves</li>
-                        <li>Zero-knowledge architecture</li>
-                      </ul>
-                    </div>
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <h5 className="font-medium text-sm mb-2">🎭 Anonimización</h5>
-                      <ul className="list-disc pl-4 space-y-1 text-xs text-muted-foreground">
-                        <li>Perturbación de características F0</li>
-                        <li>Normalización de formantes</li>
-                        <li>Eliminación de metadatos</li>
-                        <li>Agregación temporal mínima</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Medidas de Seguridad Organizativas</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-start gap-2">
-                      <span className="text-primary">🔑</span>
-                      <div>
-                        <strong>Control de Acceso Estricto:</strong> Autenticación multifactor, 
-                        principio de menor privilegio, segregación de funciones
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-primary">👥</span>
-                      <div>
-                        <strong>Formación Especializada:</strong> 40h anuales en protección 
-                        de datos biométricos, certificación obligatoria
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-primary">📊</span>
-                      <div>
-                        <strong>Auditoría Continua:</strong> Monitorización 24/7, logs 
-                        inmutables, alertas de anomalías
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Derechos Reforzados para Datos Biométricos */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-primary" />
-                6. Derechos Reforzados para Datos Biométricos y Sanitarios
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">⚖️ Derechos Especiales para Categorías Especiales</h4>
-                <p className="text-sm">
-                  Como titular de datos biométricos y potencialmente sanitarios, 
-                  disfruta de derechos reforzados bajo el RGPD.
-                </p>
-              </div>
-              
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">🔍 Derechos de Información</h4>
-                  <ul className="list-disc pl-4 space-y-1 text-sm">
-                    <li><strong>Transparencia Biométrica:</strong> Qué características se extraen</li>
-                    <li><strong>Explicación de IA:</strong> Cómo funcionan los algoritmos</li>
-                    <li><strong>Inferencias de Salud:</strong> Qué se puede detectar automáticamente</li>
-                    <li><strong>Medidas de Protección:</strong> Salvaguardias implementadas</li>
-                  </ul>
-                </div>
-
-                <div className="bg-success/5 border border-success/20 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">📥 Derechos de Acceso</h4>
-                  <ul className="list-disc pl-4 space-y-1 text-sm">
-                    <li><strong>Grabaciones Originales:</strong> Descarga en formato original</li>
-                    <li><strong>Características Extraídas:</strong> Datos biométricos procesados</li>
-                    <li><strong>Historial de Uso:</strong> Cuándo y para qué se procesaron</li>
-                    <li><strong>Consentimientos:</strong> Registro completo de autorizaciones</li>
-                  </ul>
-                </div>
-
-                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">🗑️ Derecho de Supresión Inmediata</h4>
-                  <ul className="list-disc pl-4 space-y-1 text-sm">
-                    <li><strong>Eliminación en 24h:</strong> Datos biométricos y derivados</li>
-                    <li><strong>Verificación Técnica:</strong> Confirmación criptográfica</li>
-                    <li><strong>Purga de Backups:</strong> Eliminación de copias de seguridad</li>
-                    <li><strong>Desvinculación de Modelos:</strong> Retiro del entrenamiento</li>
-                  </ul>
-                </div>
-
-                <div className="bg-warning/5 border border-warning/20 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">🚫 Derechos de Oposición</h4>
-                  <ul className="list-disc pl-4 space-y-1 text-sm">
-                    <li><strong>Retirada de Consentimiento:</strong> Efecto inmediato</li>
-                    <li><strong>Oposición a Inferencias:</strong> No análisis de salud</li>
-                    <li><strong>Limitación de Uso:</strong> Solo transcripción básica</li>
-                    <li><strong>Opt-out Granular:</strong> Por tipo de procesamiento</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mt-4">
-                <h4 className="font-semibold mb-2">🛠️ Herramientas de Ejercicio de Derechos</h4>
-                <div className="grid gap-2 md:grid-cols-3 text-sm">
-                  <Link to="/privacy-center" className="flex items-center gap-2 p-2 bg-card rounded hover:bg-muted/50 transition-colors">
-                    <Shield className="h-4 w-4 text-primary" />
-                    <span>Centro de Privacidad</span>
-                  </Link>
-                  <Link to="/my-data" className="flex items-center gap-2 p-2 bg-card rounded hover:bg-muted/50 transition-colors">
-                    <Database className="h-4 w-4 text-primary" />
-                    <span>Mis Datos</span>
-                  </Link>
-                  <a href="mailto:hola@adagioweb.com" className="flex items-center gap-2 p-2 bg-card rounded hover:bg-muted/50 transition-colors">
-                    <FileText className="h-4 w-4 text-primary" />
-                    <span>Contactar DPO</span>
-                  </a>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Modificaciones */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                8. Modificaciones de la Política
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>
-                Podemos actualizar esta Política de Privacidad ocasionalmente. Le notificaremos 
-                cualquier cambio significativo y, cuando sea legalmente requerido, solicitaremos 
-                su consentimiento renovado.
-              </p>
-              <p>
-                La fecha de la última actualización se muestra al inicio de esta política.
+          {/* Biometric Data Summary */}
+          <Card className="border-warning/50 bg-warning/5">
+            <CardContent className="pt-6">
+              <h2 className="text-2xl font-semibold mb-4 text-foreground flex items-center gap-2">
+                <Shield className="h-6 w-6 text-warning" />
+                Resumen sobre datos biométricos y de salud
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">
+                La voz contiene características físicas y fisiológicas únicas que pueden identificar de forma permanente a una persona. Asimismo, los patrones de la voz pueden revelar, de forma indirecta, indicios sobre su estado de salud o factores neurológicos o respiratorios. Por esa razón, tratamos sus grabaciones de voz como <strong>datos biométricos</strong> y consideramos que pueden incluir <strong>datos de salud</strong> implícitos. Para procesarlos requerimos <strong>consentimiento explícito</strong>, y hemos completado una <strong>Evaluación de Impacto en Protección de Datos (EIPD)</strong> de conformidad con el art. 35 del RGPD. Más abajo encontrará un resumen de las conclusiones y controles aplicados.
               </p>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Footer Actions */}
-        <div className="mt-12 pt-8 border-t border-border">
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+          {/* Responsible Party */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Responsable del tratamiento y contacto</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              El responsable del tratamiento es Adagio ("Adagio", "nosotros"). Puede comunicarse con nuestro Delegado de Protección de Datos a través del Centro de Privacidad disponible en la aplicación, donde encontrará los formularios para ejercer sus derechos y un canal de contacto específico ("Contactar DPO"). Atenderemos sus solicitudes en los plazos legalmente establecidos y podremos solicitarle información adicional para verificar su identidad.
+            </p>
+          </section>
+
+          {/* Data We Collect */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Qué datos tratamos</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Tratamos tres categorías principales de información. Primero, <strong>datos que usted nos facilita</strong>: nombre, datos de contacto, credenciales de cuenta, país o región, preferencias, y, cuando usted decide aportarlas, <strong>grabaciones de su voz</strong> y sus <strong>transcripciones</strong> o anotaciones asociadas. Si un menor utiliza los Servicios, recogemos los datos del progenitor o representante legal necesarios para verificar el consentimiento. Cuando usted lo autoriza, también podemos registrar la información de una persona de apoyo (p. ej., cuidador o asistente) para comunicaciones operativas.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Segundo, <strong>datos que se generan automáticamente</strong> cuando usa los Servicios: identificadores técnicos de dispositivo y navegador, dirección IP, sistema operativo, idioma, configuración del micrófono, métricas de sesión y registros de actividad.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Tercero, <strong>datos procedentes de terceros</strong> cuando usted conecta integraciones voluntarias (por ejemplo, plataformas de videoconferencia o extensiones), en cuyo caso recibimos la información estrictamente necesaria para activar la funcionalidad que usted solicita. No utilizamos rastreadores de publicidad entre sitios ni huellas digitales de dispositivos; nuestro uso de cookies y almacenamiento local se limita a fines operativos esenciales, como mantener su sesión y la seguridad.
+            </p>
+          </section>
+
+          {/* Voice Biometric Nature */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Naturaleza biométrica de su voz y posibles inferencias de salud</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Sus grabaciones de voz se tratan como datos biométricos porque incluyen características acústicas y temporales que permiten su identificación única, como la frecuencia fundamental, los formantes vocales y un espectrograma característico, así como ritmo, pausas y entonación. Estas mismas señales pueden revelar de forma no intencionada información de salud, por ejemplo, indicios neurológicos, fatiga vocal o condiciones respiratorias. Somos transparentes respecto a este riesgo y por eso exigimos un consentimiento reforzado, aplicamos minimización de datos y restringimos cualquier uso no esencial.
+            </p>
+          </section>
+
+          {/* Processing Purposes */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Finalidades del tratamiento</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              Utilizamos sus datos para tres finalidades claramente diferenciadas. En primer lugar, <strong>prestación del servicio de transcripción</strong>: procesamos sus grabaciones para convertirlas en texto y, cuando usted lo solicita, para sintetizar una voz clara que reproduzca su mensaje. Este tratamiento se ejecuta para cumplir con el servicio que usted pide y, dada la naturaleza sensible de la voz, lo amparamos también en su consentimiento explícito.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              En segundo lugar, <strong>entrenamiento y mejora de modelos</strong>: únicamente si usted lo autoriza de forma separada y revocable, utilizamos fragmentos breves de audio, con sus transcripciones y metadatos, para entrenar, validar y mejorar nuestros algoritmos de reconocimiento de voz y accesibilidad. Esta finalidad es <strong>opcional</strong> y no es necesaria para que la transcripción funcione.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              En tercer lugar, <strong>almacenamiento personal y experiencia</strong>: cuando usted lo aprueba, conservamos sus grabaciones y transcripciones en su perfil para facilitar consultas posteriores, personalizar su experiencia y acelerar la precisión para su propio caso de uso.
+            </p>
+          </section>
+
+          {/* Legal Basis */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Bases jurídicas</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Para la prestación de la transcripción sustentamos el tratamiento en la <strong>ejecución del contrato</strong> y, por el carácter biométrico y la posible presencia de datos de salud, recabamos además su <strong>consentimiento explícito</strong> conforme a los artículos 6.1.a/6.1.b y 9.2.a del RGPD. El <strong>entrenamiento de modelos</strong> se basa exclusivamente en su <strong>consentimiento explícito independiente</strong> y revocable sin perjuicio de su cuenta. El uso de datos técnicos y de seguridad se basa en intereses legítimos, como mantener la integridad del servicio y prevenir fraude, siempre respetando sus derechos y expectativas.
+            </p>
+          </section>
+
+          {/* AI Processing */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Cómo tratamos sus grabaciones con IA</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Sus grabaciones solo se obtienen por su acción intencional dentro de los Servicios. No realizamos grabaciones en segundo plano ni "siempre encendido". Para el procesamiento automático y, cuando usted lo ha permitido, para la mejora de modelos, segmentamos el audio en unidades cortas de 1 a 3 segundos, asociamos transcripciones y anotaciones, y aplicamos técnicas de anonimización o seudonimización cuando es viable. No utilizamos su voz para <strong>identificación</strong> o <strong>autenticación biométrica</strong> ni para elaborar perfiles comerciales. Los modelos, mejoras o derivados que generamos a partir de datos <strong>anonimizados</strong> o <strong>agregados</strong> no le identificarán y son propiedad de Adagio, sin perjuicio de sus derechos sobre los datos personales originales y su capacidad para revocar consentimientos.
+            </p>
+          </section>
+
+          {/* DPIA */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Evaluación de Impacto en Protección de Datos (EIPD)</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Hemos realizado una EIPD debido al alto riesgo inherente al tratamiento de datos biométricos y a las posibles inferencias de salud. El análisis consideró riesgos como la identificación permanente, la inmutabilidad de la voz, la posibilidad de inferir patologías y la discriminación sanitaria. Tras implantar medidas técnicas y organizativas reforzadas, la EIPD concluyó que el <strong>riesgo residual es medio‑bajo</strong> y que el tratamiento puede continuar bajo supervisión continua. Puede consultar un resumen de la EIPD desde el Centro de Privacidad.
+            </p>
+          </section>
+
+          {/* Data Retention */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Conservación de datos</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Aplicamos plazos diferenciados y limitados. Las <strong>grabaciones biométricas de voz</strong> se conservan mientras exista un consentimiento válido y, si usted lo retira, se inicia un proceso de eliminación con una ventana técnica de hasta 30 días para garantizar el borrado en sistemas activos y copias de seguridad verificadas. La <strong>información sanitaria inferida</strong> que resulte del procesamiento no se conserva de forma persistente y se elimina tras completarse la transcripción, salvo obligaciones legales. Las <strong>transcripciones</strong> se conservan mientras su cuenta permanezca activa o hasta que usted solicite su supresión. Cuando el uso sea para mejora de modelos con consentimiento, aplicamos políticas de <strong>minimización</strong>, anonimización progresiva y, en su caso, retención por tiempo limitado antes de la anonimización irreversible.
+            </p>
+          </section>
+
+          {/* Security Measures */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Medidas de seguridad</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Protegemos los datos con cifrado de extremo a extremo, incluyendo cifrado fuerte en tránsito y en reposo (por ejemplo, AES‑256‑GCM), gestión segura de claves con rotación programada y hardware de seguridad cuando procede, controles de acceso de mínimo privilegio, autenticación multifactor para personal autorizado, segregación de funciones, monitorización continua y auditorías internas y externas. Nuestras copias de seguridad se cifran, se prueban periódicamente y están sujetas a políticas de borrado coherentes con este documento. Además, aplicamos técnicas de <strong>anonimización y reducción de riesgo</strong> específicas para datos de voz, como la alteración de características acústicas no esenciales, normalización de formantes, supresión de metadatos y agregación temporal mínima. Aunque trabajamos para mitigar riesgos, ninguna transmisión por Internet es completamente segura; si detectáramos una brecha que le afecte, le notificaremos sin dilación indebida conforme a la normativa aplicable.
+            </p>
+          </section>
+
+          {/* Enhanced Rights */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Derechos reforzados y controles del usuario</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Usted puede acceder a sus grabaciones originales, a las características derivadas que hayamos generado, al historial de uso y a un registro trazable de consentimientos. Puede obtener copia, rectificar datos inexactos, <strong>retirar en cualquier momento</strong> los consentimientos (incluido el de entrenamiento de modelos, con efecto inmediato), oponerse a que realicemos <strong>inferencias de salud</strong>, solicitar <strong>limitación del tratamiento</strong> y pedir la <strong>portabilidad</strong> de sus datos. Hemos habilitado un procedimiento de <strong>supresión acelerada</strong> para datos biométricos y derivados: cuando solicita el borrado, eliminamos los datos activos y programamos la purga de copias de seguridad en el siguiente ciclo de mantenimiento verificable; si sus datos hubieran contribuido a entrenar un modelo con su consentimiento, ejecutamos un proceso de <strong>desvinculación</strong> razonable para que futuras versiones del modelo no continúen personalizadas con su información. La retirada del consentimiento de entrenamiento o el ejercicio de oposición <strong>no afectará</strong> a su acceso a la transcripción básica. Todos estos derechos pueden ejercerse desde el Centro de Privacidad o contactando con el DPO; daremos respuesta dentro de los plazos legales.
+            </p>
+          </section>
+
+          {/* Minors */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Menores de edad</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              No prestamos los Servicios a menores sin el consentimiento verificable del progenitor o representante legal. En España, el consentimiento autónomo requiere, como mínimo, 14 años; en otros países del Espacio Económico Europeo puede exigirse una edad superior. Si detectamos una cuenta de un menor sin los consentimientos apropiados, procederemos a bloquearla y a eliminar los datos, salvo conservación exigida por ley.
+            </p>
+          </section>
+
+          {/* Communications */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Comunicaciones y marketing</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Solo le enviaremos comunicaciones comerciales si usted ha dado su consentimiento o si existe otra base legal aplicable. Puede darse de baja en cualquier momento mediante el enlace incluido en los mensajes o desde el Centro de Privacidad. Continuaremos enviando comunicaciones estrictamente operativas o de seguridad cuando sean imprescindibles.
+            </p>
+          </section>
+
+          {/* Recipients */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Destinatarios y categorías de terceros</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              No vendemos sus datos personales. Compartimos información con <strong>encargados del tratamiento</strong> que nos prestan servicios bajo contrato y siguiendo instrucciones documentadas: alojamiento y nube, herramientas de anotación y calidad, ingeniería y soporte, ciberseguridad, atención al cliente, análisis operativos y gestión de pagos. Limitamos la información a la estrictamente necesaria, exigimos confidencialidad y medidas de seguridad equivalentes, y auditamos su cumplimiento. Si en el futuro colaborásemos con instituciones académicas o socios de investigación en proyectos para mejorar la accesibilidad del habla, lo haríamos sobre datos <strong>anonimizados</strong> o con <strong>consentimiento específico</strong> adicional. En caso de reestructuración societaria, fusión o adquisición, podríamos transferir los datos a la entidad sucesora, que quedaría obligada a respetar esta Política o a solicitar su consentimiento si pretendiera cambios materiales.
+            </p>
+          </section>
+
+          {/* International Transfers */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Transferencias internacionales</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Podemos tratar y almacenar datos fuera de su país de residencia. Cuando se transfieren datos desde el EEE o el Reino Unido a países que no ofrecen un nivel de protección esencialmente equivalente, implementamos salvaguardas adecuadas como <strong>Cláusulas Contractuales Tipo</strong> y evaluaciones de transferencia, además de medidas técnicas y organizativas complementarias.
+            </p>
+          </section>
+
+          {/* Cookies */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Cookies y tecnologías similares</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Utilizamos únicamente tecnologías <strong>estrictamente necesarias</strong> para operar, mantener la seguridad de la sesión y recordar preferencias básicas. No empleamos cookies de publicidad comportamental ni plug‑ins de terceros con fines de seguimiento entre sitios. Puede gestionar estas tecnologías desde la configuración del navegador; desactivarlas puede degradar ciertas funciones esenciales.
+            </p>
+          </section>
+
+          {/* Analytics */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Información adicional sobre analítica y uso interno</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Analizamos de forma agregada el rendimiento del sistema, la estabilidad y la usabilidad para detectar problemas técnicos, comprender tendencias de uso y mejorar la experiencia. Cuando es posible, empleamos <strong>datos agregados o seudonimizados</strong>, y evitamos rastreos innecesarios a nivel individual.
+            </p>
+          </section>
+
+          {/* California Users */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Usuarios de California y otros estados de EE. UU.</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Si usted reside en California u otros estados con legislación específica, puede disponer de derechos adicionales como conocer, acceder, corregir o eliminar información, así como optar por que no se <strong>vendan ni compartan</strong> sus datos para publicidad entre contextos. Adagio <strong>no vende</strong> datos personales según la definición aplicable y no comparte información con fines de publicidad dirigida. Puede ejercer estos derechos a través del Centro de Privacidad.
+            </p>
+          </section>
+
+          {/* Policy Updates */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Actualizaciones de esta Política</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Podemos modificar esta Política para reflejar cambios en la ley, en los Servicios o en nuestras prácticas. Publicaremos la nueva versión indicando la <strong>fecha de última revisión</strong> que figura al inicio y, cuando el cambio sea material, le informaremos a través de la aplicación o por medios razonables y, si la ley lo requiere, solicitaremos nuevamente su consentimiento.
+            </p>
+          </section>
+
+          {/* Summary of Key Commitments */}
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="pt-6">
+              <h2 className="text-2xl font-semibold mb-4 text-foreground">Resumen operativo de compromisos clave</h2>
+              <p className="text-muted-foreground leading-relaxed">
+                Tratamos su voz como dato biométrico y pedimos un <strong>doble consentimiento explícito</strong> cuando pueda existir información sanitaria implícita; la <strong>transcripción</strong> se ofrece incluso si no consiente el <strong>entrenamiento</strong> de modelos; aplicamos <strong>plazos de conservación limitados</strong> y eliminación tras retiro del consentimiento; empleamos <strong>cifrado fuerte</strong>, controles de acceso estrictos y <strong>anonimización</strong>; garantizamos <strong>derechos reforzados</strong> (acceso, supresión, oposición a inferencias de salud, retirada de consentimientos inmediata, portabilidad y limitación); y mantenemos una <strong>EIPD</strong> activa y revisada, con supervisión continua del riesgo residual.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* How to Exercise Rights */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Cómo ejercer sus derechos o plantear dudas</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Puede gestionar consentimientos, descargar o borrar datos, y contactar con nuestro DPO desde el <strong>Centro de Privacidad</strong> de la aplicación. Si considera que no hemos atendido adecuadamente su solicitud, puede presentar una reclamación ante su autoridad de control de protección de datos. Nuestro objetivo es responder a todas las solicitudes con claridad y dentro de los plazos legales, manteniendo la trazabilidad de cada actuación.
+            </p>
+          </section>
+
+          {/* Technical Controls Appendix */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Anexo de aclaraciones sobre controles técnicos y de eliminación</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              En la eliminación de datos biométricos y derivados, ejecutamos borrados en sistemas activos y programamos la purga en copias de seguridad dentro del ciclo operativo, emitiendo confirmación una vez completada. Para conjuntos de datos utilizados en entrenamiento con su consentimiento, aplicamos procesos de <strong>despersonalización</strong> y evitamos el reaprovechamiento futuro de sus fragmentos; en modelos ya entrenados, adoptamos medidas de <strong>desvinculación razonable</strong> que impiden seguir personalizando salidas con su voz. Estos procesos se documentan y están sujetos a verificación. En seguridad, además del cifrado, empleamos rotación de claves, segmentación de redes, endurecimiento de servidores, registros inmutables y alertado automático de anomalías, junto con formación anual obligatoria de nuestro personal en protección de datos biométricos. Si en algún momento adoptamos nuevas integraciones o subencargados, lo reflejaremos en esta Política y en nuestro registro de actividades, y, de ser necesario, solicitaremos su consentimiento adicional.
+            </p>
+          </section>
+
+          {/* Navigation Links */}
+          <div className="flex flex-wrap gap-4 mt-12 pt-8 border-t">
             <Link to="/">
-              <Button variant="outline">
+              <Button variant="outline" size="lg">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Volver al inicio
               </Button>
             </Link>
-            <div className="flex gap-4">
-              <Link to="/terms-and-conditions">
-                <Button variant="link">
-                  Términos y Condiciones
-                </Button>
-              </Link>
-              <Link to="/privacy-center">
-                <Button variant="link">
-                  Centro de Privacidad
-                </Button>
-              </Link>
-            </div>
+            <Link to="/terms-and-conditions">
+              <Button variant="outline" size="lg">
+                Términos y Condiciones
+              </Button>
+            </Link>
+            <Link to="/privacy-center">
+              <Button variant="default" size="lg">
+                Centro de Privacidad
+              </Button>
+            </Link>
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t mt-16 py-8 bg-muted/20">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>© 2025 Adagio. Todos los derechos reservados.</p>
+          <p className="mt-2">
+            Con esta redacción, preservamos sus garantías reforzadas para datos biométricos y de salud, 
+            explicamos con detalle el uso de IA, distinguimos finalidades obligatorias y opcionales, 
+            y alineamos nuestros compromisos con las mejores prácticas internacionales en privacidad y seguridad.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
