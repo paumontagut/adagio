@@ -52,11 +52,7 @@ const Index = () => {
               </>}
             
             <Link to="/privacy-center">
-              <Button variant="outline" size="sm" className="text-xs">
-                <Shield className="h-3 w-3 mr-1 sm:mr-2" aria-hidden="true" />
-                <span className="hidden sm:inline">Privacidad</span>
-                <span className="sm:hidden">Priv.</span>
-              </Button>
+              
             </Link>
 
             {user ? <UserMenu /> : !loading && <AuthButton />}
@@ -76,30 +72,16 @@ const Index = () => {
         {/* Main Tabs */}
         <main id="main-content" role="main">
           <Tabs value={activeTab} onValueChange={value => {
-            setActiveTab(value);
-            setSearchParams({
-              tab: value
-            });
-          }} className="w-full" aria-label="Funciones principales de Adagio">
+          setActiveTab(value);
+          setSearchParams({
+            tab: value
+          });
+        }} className="w-full" aria-label="Funciones principales de Adagio">
             <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted p-1.5 h-14 rounded-3xl" role="tablist" aria-label="Seleccionar función">
-              <TabsTrigger 
-                value="transcribe" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-hover transition-all duration-200 ease-out text-base font-medium rounded-2xl"
-                role="tab" 
-                aria-selected={activeTab === 'transcribe'} 
-                aria-controls="transcribe-panel" 
-                id="transcribe-tab"
-              >
+              <TabsTrigger value="transcribe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-hover transition-all duration-200 ease-out text-base font-medium rounded-2xl" role="tab" aria-selected={activeTab === 'transcribe'} aria-controls="transcribe-panel" id="transcribe-tab">
                 Transcribir
               </TabsTrigger>
-              <TabsTrigger 
-                value="train" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-hover transition-all duration-200 ease-out text-base font-medium rounded-2xl"
-                role="tab" 
-                aria-selected={activeTab === 'train'} 
-                aria-controls="train-panel" 
-                id="train-tab"
-              >
+              <TabsTrigger value="train" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-hover transition-all duration-200 ease-out text-base font-medium rounded-2xl" role="tab" aria-selected={activeTab === 'train'} aria-controls="train-panel" id="train-tab">
                 Entrenar
               </TabsTrigger>
             </TabsList>
