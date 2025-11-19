@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react"; // Eliminado 'Lock' y 'Shield'
+import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Footer } from "@/components/Footer";
 import logo from "@/assets/logo.svg";
@@ -7,41 +7,37 @@ import logo from "@/assets/logo.svg";
 export const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen w-full font-sans selection:bg-[#005C64] selection:text-white bg-[#F5F8DE] text-[#0D0C1D] flex flex-col">
-      {/* --- NAVBAR FLOTANTE SIMPLIFICADA Y CENTRADA --- */}
-      <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
-        <nav className="flex items-center justify-between gap-4 px-4 py-2 bg-white/70 backdrop-blur-xl border border-white/50 rounded-full shadow-sm w-full max-w-5xl">
-          {/* Logo Centralizado y más grande */}
-          <div className="flex-1 flex justify-center">
-            {" "}
-            {/* flex-1 y justify-center para centrar */}
-            <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-              {/* Ajustado el tamaño: h-12 md:h-16 (antes h-8) */}
-              {/* Margen negativo a la izquierda para el logo cuadrado, si lo necesita tu SVG */}
-              <img src={logo} alt="Adagio Logo" className="h-12 md:h-16 w-auto -ml-3" />
-              {/* Eliminado el texto "Adagio" aquí */}
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link to="/">
-              <Button variant="ghost" className="rounded-full hover:bg-black/5 text-[#0D0C1D]">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver
-              </Button>
-            </Link>
-          </div>
-        </nav>
+      {/* --- BOTÓN "VOLVER" FLOTANTE --- */}
+      <div className="fixed top-6 right-6 z-50">
+        <Link to="/">
+          <Button
+            variant="ghost"
+            className="rounded-full bg-white/70 backdrop-blur-md border border-white/50 hover:bg-black/5 text-[#0D0C1D] shadow-sm px-4 py-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver
+          </Button>
+        </Link>
       </div>
 
       {/* --- CONTENIDO PRINCIPAL --- */}
-      <main className="flex-1 container mx-auto px-4 pt-32 pb-20 max-w-4xl">
-        {/* Cabecera de Página */}
+      <main className="flex-1 container mx-auto px-4 pt-20 pb-20 max-w-4xl">
+        {" "}
+        {/* Reducido pt-32 a pt-20 */}
+        {/* Cabecera de Página (Logo y Título) */}
         <div className="text-center mb-12 space-y-4">
-          {/* Eliminado el div con el candado */}
+          {/* Logo Centralizado y más grande */}
+          <Link to="/" className="inline-block hover:opacity-80 transition-opacity mb-6">
+            {" "}
+            {/* inline-block para centrar el Link */}
+            {/* Ajustado el tamaño: h-20 md:h-24 (antes h-12 md:h-16) */}
+            {/* Margen negativo a la izquierda para el logo cuadrado, si lo necesita tu SVG */}
+            <img src={logo} alt="Adagio Logo" className="h-20 md:h-24 w-auto -ml-3" />
+          </Link>
+
           <h1 className="text-4xl md:text-5xl font-bold text-[#0D0C1D] tracking-tight">Política de Privacidad</h1>
           <p className="text-[#0D0C1D]/60 font-medium">Última actualización: 10/11/2025</p>
         </div>
-
         {/* --- PANEL DE CRISTAL (Contenedor del Texto) --- */}
         <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-8 md:p-12 shadow-sm relative overflow-hidden">
           {/* Decoración de fondo sutil */}
@@ -65,7 +61,6 @@ export const PrivacyPolicy = () => {
             {/* Biometric Data Summary (Tarjeta Destacada) */}
             <section className="bg-[#005C64]/5 border border-[#005C64]/10 rounded-3xl p-8">
               <h2 className="text-xl font-bold mb-4 text-[#005C64] flex items-center gap-3">
-                {/* Eliminado el icono de Shield */}
                 Resumen sobre datos biométricos y de salud
               </h2>
               <p className="text-[#0D0C1D]/80 leading-relaxed">
