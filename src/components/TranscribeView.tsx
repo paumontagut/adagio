@@ -13,7 +13,7 @@ import ComparisonView from "@/components/ComparisonView";
 import { sessionManager } from "@/lib/sessionManager";
 import { transcribeService, type TranscribeError } from "@/services/transcribe";
 import { speakWithElevenLabs } from "@/services/tts";
-import { Loader2, Copy, Download, FileAudio, CheckCircle, Volume2, Pause, Square, Mic } from "lucide-react";
+import { Loader2, Copy, Download, FileAudio, CheckCircle, Volume2, Square, Mic } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 type TranscribeState = "idle" | "uploading" | "transcribing" | "completed" | "error";
@@ -161,7 +161,7 @@ export const TranscribeView = () => {
       </a>
 
       <Tabs defaultValue="adagio" className="w-full">
-        {/* PESTAÑAS ESTILIZADAS: Sin iconos, solo texto limpio */}
+        {/* PESTAÑAS ESTILIZADAS */}
         <div className="flex justify-center mb-8">
           <TabsList className="bg-black/5 p-1 rounded-full border border-white/10">
             <TabsTrigger
@@ -179,7 +179,12 @@ export const TranscribeView = () => {
           </TabsList>
         </div>
 
-        <TabsContent value="adagio" className="space-y-8 focus-visible:outline-none">
+        {/* CONTENIDO PESTAÑA 1: ADAGIO */}
+        {/* AÑADIDO: Animación 'animate-in fade-in-50 slide-in-from-bottom-2' */}
+        <TabsContent
+          value="adagio"
+          className="space-y-8 focus-visible:outline-none mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500"
+        >
           {/* Área de Grabación */}
           <div className="relative">
             <RecorderUploader onAudioReady={handleAudioReady} isProcessing={isProcessing} />
@@ -310,7 +315,12 @@ export const TranscribeView = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="comparison" className="space-y-6">
+        {/* CONTENIDO PESTAÑA 2: COMPARACIÓN */}
+        {/* AÑADIDO: Animación idéntica para consistencia */}
+        <TabsContent
+          value="comparison"
+          className="space-y-6 mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500"
+        >
           <ComparisonView />
         </TabsContent>
       </Tabs>
