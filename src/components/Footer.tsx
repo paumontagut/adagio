@@ -76,10 +76,13 @@ export const Footer = () => {
           <p>© {currentYear} Adagio. Todos los derechos reservados.</p>
           <div className="flex items-center gap-6">
             {/* Cambio aquí: Instagram en lugar de Twitter */}
-            <a href="#" className="hover:text-white cursor-pointer transition-colors">
+            <a href="https://www.instagram.com/adagio.ia" className="hover:text-white cursor-pointer transition-colors">
               Instagram
             </a>
-            <a href="#" className="hover:text-white cursor-pointer transition-colors">
+            <a
+              href="https://www.linkedin.com/showcase/adagioweb"
+              className="hover:text-white cursor-pointer transition-colors"
+            >
               LinkedIn
             </a>
           </div>
