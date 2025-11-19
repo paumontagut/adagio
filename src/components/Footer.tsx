@@ -11,19 +11,26 @@ export const Footer = () => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#90C2E7] opacity-10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
-          <div className="md:col-span-5 space-y-6">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-start">
+          {/* --- COLUMNA 1: MARCA --- */}
+          {/* CAMBIO: 'space-y-2' reduce el hueco. 'justify-start' lo sube todo arriba. */}
+          <div className="md:col-span-5 flex flex-col justify-start space-y-2">
+            {/* Contenedor del logo */}
             <div className="flex items-center gap-2">
-              {/* --- CAMBIO: AUMENTO DE TAMAÑO A h-24 (móvil) y h-32 (desktop) --- */}
               <img src={logo} alt="Adagio Logo" className="h-24 md:h-32 w-auto brightness-0 invert" />
             </div>
-            <p className="text-white/80 leading-relaxed max-w-md">
+
+            {/* Descripción pegada al logo */}
+            <p className="text-white/80 leading-relaxed max-w-md text-sm pt-2">
               Servicio de transcripción de audio inteligente y seguro, diseñado para la accesibilidad y con pleno
               cumplimiento del RGPD.
             </p>
           </div>
 
-          <div className="md:col-span-3 space-y-6">
+          {/* --- COLUMNA 2: LEGAL --- */}
+          <div className="md:col-span-3 space-y-6 pt-2">
+            {" "}
+            {/* pt-2 para micro-ajuste visual con el logo */}
             <h4 className="font-semibold text-white/60 tracking-wide text-sm uppercase">Legal</h4>
             <ul className="space-y-4">
               <li>
@@ -47,7 +54,10 @@ export const Footer = () => {
             </ul>
           </div>
 
-          <div className="md:col-span-4 space-y-6">
+          {/* --- COLUMNA 3: PRIVACIDAD --- */}
+          <div className="md:col-span-4 space-y-6 pt-2">
+            {" "}
+            {/* pt-2 para alinear cabeceras */}
             <h4 className="font-semibold text-white/60 tracking-wide text-sm uppercase">Privacidad</h4>
             <ul className="space-y-4">
               <li>
