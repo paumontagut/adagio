@@ -75,12 +75,20 @@ export const Footer = () => {
         <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/50">
           <p>© {currentYear} Adagio. Todos los derechos reservados.</p>
           <div className="flex items-center gap-6">
-            {/* Cambio aquí: Instagram en lugar de Twitter */}
-            <a href="https://www.instagram.com/adagio.ia" className="hover:text-white cursor-pointer transition-colors">
+            {/* INSTAGRAM: Abre en nueva pestaña */}
+            <a
+              href="https://www.instagram.com/adagio.ia"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white cursor-pointer transition-colors"
+            >
               Instagram
             </a>
+            {/* LINKEDIN: Abre en nueva pestaña */}
             <a
               href="https://www.linkedin.com/showcase/adagioweb"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hover:text-white cursor-pointer transition-colors"
             >
               LinkedIn
