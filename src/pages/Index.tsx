@@ -5,7 +5,7 @@ import { TrainView } from "@/components/TrainView";
 import { Footer } from "@/components/Footer";
 import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
-import { ShieldCheck, ArrowRight, LogIn } from "lucide-react";
+import { ShieldCheck, LogIn } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.svg";
 
@@ -53,13 +53,12 @@ const Index = () => {
           Saltar al contenido principal
         </a>
 
-        {/* --- LOGO AJUSTADO (1.5x y más arriba) --- */}
+        {/* --- LOGO GRANDE (h-20/h-24) --- */}
         <Link
           to="/"
           className="fixed top-4 left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
         >
-          {/* h-14 (56px) en móvil, h-16 (64px) en desktop. Equilibrio perfecto. */}
-          <img src={logo} alt="Adagio Logo" className="h-14 md:h-16 w-auto" />
+          <img src={logo} alt="Adagio Logo" className="h-20 md:h-24 w-auto" />
         </Link>
 
         {/* --- BARRA DE HERRAMIENTAS FLOTANTE --- */}
@@ -86,7 +85,7 @@ const Index = () => {
             {/* Separador sutil */}
             <div className="w-px h-6 bg-black/10 mx-2"></div>
 
-            {/* DERECHA: Iniciar Sesión (Verde Adagio) */}
+            {/* DERECHA: Iniciar Sesión */}
             <div className="flex-shrink-0">
               {user ? (
                 <UserMenu />
@@ -105,8 +104,8 @@ const Index = () => {
           </nav>
         </div>
 
-        {/* --- CONTENIDO PRINCIPAL (Padding ajustado) --- */}
-        <main id="main-content" className="flex-1 pt-36 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-8">
+        {/* --- CONTENIDO PRINCIPAL --- */}
+        <main id="main-content" className="flex-1 pt-40 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-8">
           {/* Textos de Cabecera */}
           <div className="text-center space-y-4 animate-fade-in-up [animation-delay:200ms] opacity-0 fill-mode-forwards">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/40 border border-[#005C64]/10 text-[#005C64] text-xs font-bold tracking-wide uppercase">
@@ -119,7 +118,7 @@ const Index = () => {
             <p className="text-lg opacity-60 max-w-xl mx-auto">IA avanzada para el reconocimiento de habla atípica.</p>
           </div>
 
-          {/* --- PANELES DE CRISTAL --- */}
+          {/* --- PANELES DE CRISTAL (Herramienta) --- */}
           <div className="w-full max-w-4xl mx-auto animate-fade-in-up [animation-delay:300ms] opacity-0 fill-mode-forwards">
             <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-6 md:p-10 shadow-sm min-h-[400px] relative overflow-hidden">
               {/* Decoración de fondo */}
@@ -141,25 +140,7 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Footer Bento Grid */}
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 opacity-80 hover:opacity-100 transition-opacity max-w-4xl mx-auto">
-            <div className="md:col-span-2 bg-white/40 rounded-[2rem] p-6 border border-white/30 hover:bg-white/60 transition-colors">
-              <h3 className="text-lg font-bold mb-1">Encriptación Local</h3>
-              <p className="opacity-70 text-sm">Tus datos se protegen antes de salir de tu dispositivo.</p>
-            </div>
-            <Link
-              to="/privacy-center"
-              className="bg-[#0D0C1D] rounded-[2rem] p-6 text-[#F5F8DE] flex flex-col justify-between group hover:scale-[1.02] transition-transform cursor-pointer"
-            >
-              <div className="flex justify-between items-start">
-                <ShieldCheck className="w-6 h-6" />
-                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-              </div>
-              <div>
-                <h3 className="font-bold mt-2 text-sm">Centro de Privacidad</h3>
-              </div>
-            </Link>
-          </section>
+          {/* SECCIÓN INFERIOR ELIMINADA: Ya no hay tarjetas de Encriptación/Privacidad aquí */}
         </main>
 
         <div className="mt-auto relative z-10">
