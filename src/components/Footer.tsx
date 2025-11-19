@@ -8,27 +8,26 @@ export const Footer = () => {
   return (
     <footer className="w-full max-w-7xl mx-auto px-4 md:px-8 pb-8">
       <div className="bg-[#005C64] text-white rounded-[2.5rem] px-8 py-12 md:p-16 shadow-xl overflow-hidden relative">
+        {/* Decoración de fondo */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#90C2E7] opacity-10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-start">
           {/* --- COLUMNA 1: MARCA --- */}
-          {/* AJUSTE: -mt-6 md:-mt-10 sube todo el bloque más arriba para alinearse con LEGAL */}
-          <div className="md:col-span-5 flex flex-col justify-start -mt-6 md:-mt-10">
+          {/* AJUSTE 1: Cambiado de -mt-10 a -mt-2. Esto BAJA todo el bloque visualmente. */}
+          <div className="md:col-span-5 flex flex-col justify-start -mt-2">
             <div className="flex items-center gap-2">
               <img
                 src={logo}
                 alt="Adagio Logo"
-                // AJUSTES DE TAMAÑO Y ESPACIO:
-                // 1. h-20 md:h-24: Un poco más pequeño para que no ocupe tanto
-                // 2. -mb-6: Margen negativo más suave (deja un poco más de aire abajo)
-                // 3. -ml-3: Mantiene la alineación izquierda
+                // Mantenemos el ajuste interno de la imagen para quitar su propio espacio en blanco
                 className="h-20 md:h-24 w-auto brightness-0 invert object-contain object-left -mb-6 -ml-3"
               />
             </div>
 
-            {/* Texto con un poco de padding top (pt-2) para separarlo del logo */}
-            <p className="text-white/80 leading-relaxed max-w-md text-sm relative z-10 pt-2">
+            {/* AJUSTE 2: Añadido 'md:pr-16' y 'max-w-sm'. 
+                Esto obliga al texto a ser más estrecho, saltar de línea y dejar un hueco grande a la derecha. */}
+            <p className="text-white/80 leading-relaxed text-sm relative z-10 pt-2 md:pr-16 max-w-sm">
               Servicio de transcripción de audio inteligente y seguro, diseñado para la accesibilidad y con pleno
               cumplimiento del RGPD.
             </p>
