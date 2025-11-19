@@ -56,7 +56,7 @@ const Index = () => {
         {/* --- LOGO GRANDE (h-20/h-24) --- */}
         <Link
           to="/"
-          className="fixed top-4 left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
+          className="absolute top-4 left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
         >
           <img src={logo} alt="Adagio Logo" className="h-20 md:h-24 w-auto" />
         </Link>
