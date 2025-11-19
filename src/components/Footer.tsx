@@ -12,24 +12,25 @@ export const Footer = () => {
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#90C2E7] opacity-10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-start">
+          
           {/* --- COLUMNA 1: MARCA --- */}
-          {/* Mantenemos el -mt-8 para subir todo el bloque hacia arriba */}
-          <div className="md:col-span-5 flex flex-col justify-start -mt-4 md:-mt-8">
+          {/* AJUSTE: -mt-6 md:-mt-10 sube todo el bloque más arriba para alinearse con LEGAL */}
+          <div className="md:col-span-5 flex flex-col justify-start -mt-6 md:-mt-10">
+            
             <div className="flex items-center gap-2">
-              <img
-                src={logo}
-                alt="Adagio Logo"
-                // CAMBIOS AQUÍ:
-                // 1. scale-150: Aumenta el logo visualmente sin ocupar más espacio en el DOM
-                // 2. origin-left: Crece hacia la derecha
-                // 3. -mb-10 md:-mb-14: Margen negativo MUY fuerte para comerse el espacio vacío inferior
-                // 4. -ml-2: Ajuste óptico a la izquierda si el cuadrado tiene margen interno
-                className="h-32 md:h-40 w-auto brightness-0 invert object-contain object-left -mb-10 md:-mb-16 -ml-3"
+              <img 
+                src={logo} 
+                alt="Adagio Logo" 
+                // AJUSTES DE TAMAÑO Y ESPACIO:
+                // 1. h-20 md:h-24: Un poco más pequeño para que no ocupe tanto
+                // 2. -mb-6: Margen negativo más suave (deja un poco más de aire abajo)
+                // 3. -ml-3: Mantiene la alineación izquierda
+                className="h-20 md:h-24 w-auto brightness-0 invert object-contain object-left -mb-6 -ml-3" 
               />
             </div>
 
-            {/* Texto descriptivo */}
-            <p className="text-white/80 leading-relaxed max-w-md text-sm relative z-10">
+            {/* Texto con un poco de padding top (pt-2) para separarlo del logo */}
+            <p className="text-white/80 leading-relaxed max-w-md text-sm relative z-10 pt-2">
               Servicio de transcripción de audio inteligente y seguro, diseñado para la accesibilidad y con pleno
               cumplimiento del RGPD.
             </p>
@@ -66,44 +67,3 @@ export const Footer = () => {
             <ul className="space-y-4">
               <li>
                 <Link
-                  to="/privacy-center"
-                  className="inline-flex items-center gap-3 bg-black/20 border border-white/10 rounded-2xl px-5 py-3 hover:bg-black/30 transition-all w-full sm:w-auto group"
-                >
-                  <div className="bg-white/10 p-2 rounded-full group-hover:scale-110 transition-transform">
-                    <Lock className="w-4 h-4 text-[#FFBC42]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-medium text-white">Centro de Privacidad</span>
-                    <span className="text-xs text-white/60">Gestiona tus datos</span>
-                  </div>
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/50">
-          <p>© {currentYear} Adagio. Todos los derechos reservados.</p>
-          <div className="flex items-center gap-6">
-            <a
-              href="https://www.instagram.com/adagio.ia"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-white cursor-pointer transition-colors"
-            >
-              Instagram
-            </a>
-            <a
-              href="https://www.linkedin.com/showcase/adagioweb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-white cursor-pointer transition-colors"
-            >
-              LinkedIn
-            </a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-};
