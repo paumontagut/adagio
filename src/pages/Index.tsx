@@ -1,154 +1,85 @@
-import { useState, useEffect } from "react";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { TranscribeView } from "@/components/TranscribeView";
-import { TrainView } from "@/components/TrainView";
-import { Footer } from "@/components/Footer";
-import { UserMenu } from "@/components/UserMenu";
-import { useAuth } from "@/contexts/AuthContext";
-import { ShieldCheck, LogIn } from "lucide-react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import logo from "@/assets/logo.svg";
+import { Shield, FileText, Lock } from "lucide-react";
+import { Link } from "react-router-dom";
 
-const colors = {
-  bg: "#F5F8DE", // Crema
-  primary: "#005C64", // Teal
-  dark: "#0D0C1D", // Negro Suave
-  accent: "#FFBC42", // Amarillo
-};
-
-const Index = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState("transcribe");
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam === "train" || tabParam === "transcribe") {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams]);
-
-  const handleLoginClick = () => {
-    navigate("/auth");
-  };
+export const Footer = () => {
+  const currentYear = new Date().getFullYear();
 
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={(value) => {
-        setActiveTab(value);
-        setSearchParams({ tab: value });
-      }}
-      className="min-h-screen w-full font-sans flex flex-col"
-    >
-      <div
-        className="min-h-screen w-full flex flex-col selection:bg-[#005C64] selection:text-white"
-        style={{ backgroundColor: colors.bg, color: colors.dark }}
-      >
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-black text-white p-4 rounded-lg z-[100]"
-        >
-          Saltar al contenido principal
-        </a>
+    <footer className="w-full max-w-7xl mx-auto px-4 md:px-8 pb-8">
+      {/* Contenedor "Dark Card" con bordes redondeados */}
+      <div className="bg-[#0D0C1D] text-[#F5F8DE] rounded-[2.5rem] px-8 py-12 md:p-16 shadow-xl overflow-hidden relative">
+        {/* Decoración de fondo sutil (Glow) */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#005C64] opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
-        {/* --- LOGO GRANDE (h-20/h-24) --- */}
-        <Link
-          to="/"
-          className="fixed top-4 left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
-        >
-          <img src={logo} alt="Adagio Logo" className="h-20 md:h-24 w-auto" />
-        </Link>
-
-        {/* --- BARRA DE HERRAMIENTAS FLOTANTE --- */}
-        <div className="fixed top-6 left-0 right-0 z-40 flex justify-center px-4 animate-fade-in-up [animation-delay:100ms] opacity-0 fill-mode-forwards">
-          <nav className="flex items-center gap-2 px-3 py-2 bg-white/70 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 w-auto max-w-2xl">
-            {/* IZQUIERDA: Botones de Texto Limpio */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setActiveTab("transcribe")}
-                className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all 
-                              ${activeTab === "transcribe" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/60 hover:bg-black/5 hover:text-black"}`}
-              >
-                Transcribir
-              </button>
-              <button
-                onClick={() => setActiveTab("train")}
-                className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all 
-                              ${activeTab === "train" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/60 hover:bg-black/5 hover:text-black"}`}
-              >
-                Entrenar Modelo
-              </button>
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
+          {/* Columna 1: Marca (Ocupa 5 columnas en desktop) */}
+          <div className="md:col-span-5 space-y-6">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold tracking-tight text-white">Adagio</span>
             </div>
+            <p className="text-[#F5F8DE]/60 leading-relaxed max-w-md">
+              Servicio de transcripción de audio inteligente y seguro, diseñado para la accesibilidad y con pleno
+              cumplimiento del RGPD.
+            </p>
+          </div>
 
-            {/* Separador sutil */}
-            <div className="w-px h-6 bg-black/10 mx-2"></div>
+          {/* Columna 2: Legal (Ocupa 3 columnas) */}
+          <div className="md:col-span-3 space-y-6">
+            <h4 className="font-semibold text-white tracking-wide text-sm uppercase opacity-50">Legal</h4>
+            <ul className="space-y-4">
+              <li>
+                <Link
+                  to="/privacy-policy"
+                  className="flex items-center gap-2 text-[#F5F8DE]/70 hover:text-white hover:translate-x-1 transition-all duration-300 group"
+                >
+                  <FileText className="w-4 h-4 text-[#005C64] group-hover:text-[#FFBC42] transition-colors" />
+                  Política de Privacidad
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/terms"
+                  className="flex items-center gap-2 text-[#F5F8DE]/70 hover:text-white hover:translate-x-1 transition-all duration-300 group"
+                >
+                  <Shield className="w-4 h-4 text-[#005C64] group-hover:text-[#FFBC42] transition-colors" />
+                  Términos y Condiciones
+                </Link>
+              </li>
+            </ul>
+          </div>
 
-            {/* DERECHA: Iniciar Sesión */}
-            <div className="flex-shrink-0">
-              {user ? (
-                <UserMenu />
-              ) : (
-                !loading && (
-                  <button
-                    onClick={handleLoginClick}
-                    className="bg-[#005C64] text-white px-6 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    Iniciar sesión
-                  </button>
-                )
-              )}
-            </div>
-          </nav>
+          {/* Columna 3: Privacidad (Ocupa 4 columnas) */}
+          <div className="md:col-span-4 space-y-6">
+            <h4 className="font-semibold text-white tracking-wide text-sm uppercase opacity-50">Privacidad</h4>
+            <ul className="space-y-4">
+              <li>
+                <Link
+                  to="/privacy-center"
+                  className="inline-flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 hover:bg-white/10 transition-all w-full sm:w-auto group"
+                >
+                  <div className="bg-[#005C64] p-2 rounded-full group-hover:scale-110 transition-transform">
+                    <Lock className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-medium text-white">Centro de Privacidad</span>
+                    <span className="text-xs text-white/50">Gestiona tus datos</span>
+                  </div>
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        {/* --- CONTENIDO PRINCIPAL --- */}
-        <main id="main-content" className="flex-1 pt-40 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-8">
-          {/* Textos de Cabecera */}
-          <div className="text-center space-y-4 animate-fade-in-up [animation-delay:200ms] opacity-0 fill-mode-forwards">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/40 border border-[#005C64]/10 text-[#005C64] text-xs font-bold tracking-wide uppercase">
-              <ShieldCheck className="w-3 h-3" />
-              <span>Privacidad Garantizada</span>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              Tu voz, <span style={{ color: colors.primary }}>sin barreras.</span>
-            </h1>
-            <p className="text-lg opacity-60 max-w-xl mx-auto">IA avanzada para el reconocimiento de habla atípica.</p>
+        {/* Línea divisoria y Copyright */}
+        <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-[#F5F8DE]/40">
+          <p>© {currentYear} Adagio. Todos los derechos reservados.</p>
+          <div className="flex items-center gap-6">
+            {/* Redes sociales o enlaces extra si los tuvieras */}
+            <span className="hover:text-white cursor-pointer transition-colors">Twitter</span>
+            <span className="hover:text-white cursor-pointer transition-colors">LinkedIn</span>
           </div>
-
-          {/* --- PANELES DE CRISTAL (Herramienta) --- */}
-          <div className="w-full max-w-4xl mx-auto animate-fade-in-up [animation-delay:300ms] opacity-0 fill-mode-forwards">
-            <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-6 md:p-10 shadow-sm min-h-[400px] relative overflow-hidden">
-              {/* Decoración de fondo */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[#90C2E7]/20 rounded-full blur-3xl -z-10 pointer-events-none" />
-
-              <TabsContent
-                value="transcribe"
-                className="mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500 focus-visible:outline-none"
-              >
-                <TranscribeView />
-              </TabsContent>
-
-              <TabsContent
-                value="train"
-                className="mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500 focus-visible:outline-none"
-              >
-                <TrainView />
-              </TabsContent>
-            </div>
-          </div>
-
-          {/* SECCIÓN INFERIOR ELIMINADA: Ya no hay tarjetas de Encriptación/Privacidad aquí */}
-        </main>
-
-        <div className="mt-auto relative z-10">
-          <Footer />
         </div>
       </div>
-    </Tabs>
+    </footer>
   );
 };
-
-export default Index;
