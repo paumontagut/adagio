@@ -13,8 +13,20 @@ import ComparisonView from "@/components/ComparisonView";
 import { sessionManager } from "@/lib/sessionManager";
 import { transcribeService, type TranscribeError } from "@/services/transcribe";
 import { speakWithElevenLabs } from "@/services/tts";
-import { Loader2, Copy, Download, FileAudio, CheckCircle, Volume2, Square, Mic } from "lucide-react";
+import {
+  Loader2,
+  Copy,
+  Download,
+  FileAudio,
+  CheckCircle,
+  Volume2,
+  Square,
+  Mic,
+  Sparkles,
+  ArrowRight,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useSearchParams } from "react-router-dom"; // <--- IMPORTANTE: Para la navegación
 
 type TranscribeState = "idle" | "uploading" | "transcribing" | "completed" | "error";
 
@@ -33,6 +45,9 @@ export const TranscribeView = () => {
   const [backendOnline, setBackendOnline] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
+
+  // Hook para cambiar de pestaña
+  const [_, setSearchParams] = useSearchParams();
 
   // Accessibility: Focus management
   useEffect(() => {
@@ -151,7 +166,41 @@ export const TranscribeView = () => {
   const hasResults = state === "completed" && adagioResult;
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-8">
+    // AÑADIDO: 'relative' para que el overlay se posicione sobre este bloque
+    <div className="w-full max-w-3xl mx-auto space-y-8 relative">
+      {/* ------------------------------------------------------------------ */}
+      {/* OVERLAY DE "COMING SOON" / MANTENIMIENTO */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="absolute inset-0 z-50 flex items-center justify-center p-4 -m-4">
+        {/* Fondo de cristal desenfocado que bloquea la interacción */}
+        <div className="absolute inset-0 bg-white/60 backdrop-blur-md rounded-[2.5rem] border border-white/50" />
+
+        {/* Tarjeta del mensaje */}
+        <div className="relative bg-white border border-white shadow-2xl rounded-[2rem] p-8 max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
+          {/* Icono Flotante */}
+          <div className="mx-auto w-16 h-16 bg-[#005C64]/10 rounded-full flex items-center justify-center mb-2">
+            <Sparkles className="w-8 h-8 text-[#005C64]" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-2xl font-bold text-[#0D0C1D] tracking-tight">Estamos trabajando en Adagio</h3>
+            <p className="text-gray-500 leading-relaxed">
+              Esta función saldrá muy pronto para todos. Mientras tanto, puedes ayudarnos a mejorar.
+            </p>
+          </div>
+
+          {/* Botón de Acción: Redirige a la pestaña de entrenar */}
+          <Button
+            onClick={() => setSearchParams({ tab: "train" })}
+            className="w-full bg-[#005C64] hover:bg-[#004a50] text-white rounded-full h-12 text-base font-medium shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group"
+          >
+            Ir a Entrenar Modelo
+            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </div>
+      </div>
+      {/* ------------------------------------------------------------------ */}
+
       {/* ENLACE DE ACCESIBILIDAD OCULTO VISUALMENTE (sr-only) */}
       <a
         href="#transcribe-controls"
@@ -160,170 +209,66 @@ export const TranscribeView = () => {
         Saltar a controles de transcripción
       </a>
 
-      <Tabs defaultValue="adagio" className="w-full">
-        {/* PESTAÑAS ESTILIZADAS */}
-        <div className="flex justify-center mb-8">
-          <TabsList className="bg-black/5 p-1 rounded-full border border-white/10">
-            <TabsTrigger
-              value="adagio"
-              className="rounded-full px-8 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium"
-            >
-              Transcripción Adagio
-            </TabsTrigger>
-            <TabsTrigger
-              value="comparison"
-              className="rounded-full px-8 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium"
-            >
-              ChatGPT vs Adagio
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        {/* CONTENIDO PESTAÑA 1: ADAGIO */}
-        {/* AÑADIDO: Animación 'animate-in fade-in-50 slide-in-from-bottom-2' */}
-        <TabsContent
-          value="adagio"
-          className="space-y-8 focus-visible:outline-none mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500"
-        >
-          {/* Área de Grabación */}
-          <div className="relative">
-            <RecorderUploader onAudioReady={handleAudioReady} isProcessing={isProcessing} />
+      {/* El resto de la interfaz se renderiza debajo (con efecto borroso por el overlay) */}
+      {/* Añadimos 'pointer-events-none' y 'opacity-50' para asegurar que visualmente parezca inactivo debajo del cristal */}
+      <div className="pointer-events-none opacity-50 filter blur-[2px] transition-all">
+        <Tabs defaultValue="adagio" className="w-full">
+          {/* PESTAÑAS ESTILIZADAS */}
+          <div className="flex justify-center mb-8">
+            <TabsList className="bg-black/5 p-1 rounded-full border border-white/10">
+              <TabsTrigger
+                value="adagio"
+                className="rounded-full px-8 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium"
+              >
+                Transcripción Adagio
+              </TabsTrigger>
+              <TabsTrigger
+                value="comparison"
+                className="rounded-full px-8 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium"
+              >
+                ChatGPT vs Adagio
+              </TabsTrigger>
+            </TabsList>
           </div>
 
-          {/* Progreso */}
-          {isProcessing && (
-            <div className="space-y-4 animate-in fade-in-50 duration-500 bg-white/40 p-6 rounded-3xl border border-white/20 backdrop-blur-sm">
-              <div className="flex items-center justify-between text-sm font-medium text-[#005C64]">
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {state === "uploading" ? "Subiendo audio..." : "Transcribiendo con IA..."}
-                </span>
-                <span>{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2 bg-[#005C64]/20" />
+          <TabsContent
+            value="adagio"
+            className="space-y-8 focus-visible:outline-none mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500"
+          >
+            <div className="relative">
+              <RecorderUploader onAudioReady={handleAudioReady} isProcessing={isProcessing} />
             </div>
-          )}
 
-          {/* Error */}
-          {error && (
-            <ErrorState
-              title="Error en la transcripción"
-              description="Verifica tu conexión y los datos del audio e inténtalo de nuevo."
-              onRetry={handleRetry}
-            />
-          )}
-
-          {/* BOTÓN DE TRANSCRIBIR */}
-          {!isProcessing && !hasResults && audioBlob && (
-            <div
-              className="flex flex-col items-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500"
-              id="transcribe-controls"
-            >
-              <Button
-                onClick={handleTranscribe}
-                disabled={!canTranscribe || !backendOnline}
-                size="xl"
-                className="min-w-[280px] h-14 rounded-full bg-[#005C64] hover:bg-[#004a50] text-white text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-                aria-describedby="transcribe-button-description"
+            {!isProcessing && !hasResults && audioBlob && (
+              <div
+                className="flex flex-col items-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                id="transcribe-controls"
               >
-                <Mic className="mr-2 h-5 w-5" aria-hidden="true" />
-                Transcribir con Adagio
-              </Button>
-
-              <div id="transcribe-button-description" className="sr-only">
-                Iniciar transcripción con Adagio
-              </div>
-
-              {!backendOnline && (
-                <p
-                  className="text-sm text-red-500/80 mt-2 text-center font-medium bg-red-50 px-3 py-1 rounded-full"
-                  role="status"
+                <Button
+                  onClick={handleTranscribe}
+                  disabled={!canTranscribe || !backendOnline}
+                  size="xl"
+                  className="min-w-[280px] h-14 rounded-full bg-[#005C64] hover:bg-[#004a50] text-white text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                  aria-describedby="transcribe-button-description"
                 >
-                  ⚠️ Esperando conexión al servidor...
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Estado Vacío */}
-          {!audioBlob && !hasResults && !error && state === "idle" && (
-            <div className="opacity-70 scale-95 transform transition-all">
-              <EmptyState
-                icon={FileAudio}
-                title="Entrada de Audio"
-                description="Graba tu voz o sube un archivo para comenzar"
-              />
-            </div>
-          )}
-
-          {/* Resultados */}
-          {hasResults && (
-            <Card className="border-0 shadow-none bg-white/40 backdrop-blur-sm overflow-hidden rounded-3xl animate-in fade-in-50 slide-in-from-bottom-8 duration-700">
-              <div className="border-b border-black/5 bg-white/20 p-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-[#005C64]/10 text-[#005C64] hover:bg-[#005C64]/20">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Completado
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">Modelo Adagio v1</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleTTS(adagioResult.text)}
-                    disabled={isPlaying}
-                    className="rounded-full hover:bg-white/50"
-                  >
-                    {isPlaying ? (
-                      <Square className="h-4 w-4 text-[#005C64]" />
-                    ) : (
-                      <Volume2 className="h-4 w-4 text-[#005C64]" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleCopy(adagioResult.text)}
-                    className="rounded-full hover:bg-white/50"
-                  >
-                    <Copy className="h-4 w-4 text-[#005C64]" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDownload(adagioResult.text)}
-                    className="rounded-full hover:bg-white/50"
-                  >
-                    <Download className="h-4 w-4 text-[#005C64]" />
-                  </Button>
-                </div>
+                  <Mic className="mr-2 h-5 w-5" aria-hidden="true" />
+                  Transcribir con Adagio
+                </Button>
               </div>
-              <div className="p-6">
-                <Textarea
-                  readOnly
-                  value={adagioResult.text}
-                  className="min-h-[200px] resize-none border-0 bg-transparent focus-visible:ring-0 text-lg leading-relaxed text-[#0D0C1D]"
+            )}
+
+            {!audioBlob && !hasResults && !error && state === "idle" && (
+              <div className="opacity-70 scale-95 transform transition-all">
+                <EmptyState
+                  icon={FileAudio}
+                  title="Entrada de Audio"
+                  description="Graba tu voz o sube un archivo para comenzar"
                 />
               </div>
-            </Card>
-          )}
-
-          {/* Estado del Backend */}
-          <div className="flex justify-center opacity-50 hover:opacity-100 transition-opacity">
-            <BackendStatus onStatusChange={setBackendOnline} autoRefresh={true} />
-          </div>
-        </TabsContent>
-
-        {/* CONTENIDO PESTAÑA 2: COMPARACIÓN */}
-        {/* AÑADIDO: Animación idéntica para consistencia */}
-        <TabsContent
-          value="comparison"
-          className="space-y-6 mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500"
-        >
-          <ComparisonView />
-        </TabsContent>
-      </Tabs>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
