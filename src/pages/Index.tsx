@@ -5,7 +5,7 @@ import { TrainView } from "@/components/TrainView";
 import { Footer } from "@/components/Footer";
 import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
-import { ShieldCheck, ArrowRight, LogIn } from "lucide-react"; // Quitamos Mic y Database de los imports
+import { ShieldCheck, ArrowRight, LogIn } from "lucide-react"; // Eliminados Mic y Database
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.svg";
 
@@ -14,7 +14,6 @@ const colors = {
   primary: "#005C64", // Teal
   dark: "#0D0C1D", // Negro Suave
   accent: "#FFBC42", // Amarillo
-  blue: "#90C2E7", // Azulito
 };
 
 const Index = () => {
@@ -54,46 +53,49 @@ const Index = () => {
           Saltar al contenido principal
         </a>
 
-        {/* --- LOGO GIGANTE (x3) --- */}
+        {/* --- LOGO GIGANTE (x2 y más arriba) --- */}
         <Link
           to="/"
-          className="fixed top-6 left-8 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
+          className="fixed top-6 left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
         >
-          {/* Clases h-32 md:h-40 para tamaño masivo */}
+          {/* h-32 (128px) en móvil, h-40 (160px) en desktop */}
           <img src={logo} alt="Adagio Logo" className="h-32 md:h-40 w-auto" />
         </Link>
 
         {/* --- BARRA DE HERRAMIENTAS FLOTANTE --- */}
-        <div className="fixed top-8 left-0 right-0 z-40 flex justify-center px-4 animate-fade-in-up [animation-delay:100ms] opacity-0 fill-mode-forwards">
-          <nav className="flex items-center gap-2 px-3 py-2 bg-white/80 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 w-full max-w-lg justify-between">
-            {/* Controles de Transcribir/Entrenar (Solo Texto) */}
-            <div className="flex justify-center gap-1">
+        <div className="fixed top-6 left-0 right-0 z-40 flex justify-center px-4 animate-fade-in-up [animation-delay:100ms] opacity-0 fill-mode-forwards">
+          <nav className="flex items-center gap-2 px-3 py-2 bg-white/70 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 w-auto max-w-2xl">
+            {/* IZQUIERDA: Botones de Texto Limpio (Sin Iconos) */}
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setActiveTab("transcribe")}
                 className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all 
-                              ${activeTab === "transcribe" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/60 hover:bg-black/5"}`}
+                              ${activeTab === "transcribe" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/60 hover:bg-black/5 hover:text-black"}`}
               >
                 Transcribir
               </button>
               <button
                 onClick={() => setActiveTab("train")}
                 className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all 
-                              ${activeTab === "train" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/60 hover:bg-black/5"}`}
+                              ${activeTab === "train" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/60 hover:bg-black/5 hover:text-black"}`}
               >
                 Entrenar Modelo
               </button>
             </div>
 
-            {/* Botón Login (Azulito) */}
-            <div className="flex-shrink-0 pl-2">
+            {/* Separador sutil */}
+            <div className="w-px h-6 bg-black/10 mx-2"></div>
+
+            {/* DERECHA: Iniciar Sesión (Color #005C64) */}
+            <div className="flex-shrink-0">
               {user ? (
                 <UserMenu />
               ) : (
                 !loading && (
                   <button
                     onClick={handleLoginClick}
-                    className="px-6 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-sm"
-                    style={{ backgroundColor: colors.blue, color: colors.dark }}
+                    // Color background forzado a #005C64
+                    className="bg-[#005C64] text-white px-6 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md"
                   >
                     <LogIn className="w-4 h-4" />
                     Iniciar sesión
@@ -105,8 +107,8 @@ const Index = () => {
         </div>
 
         {/* --- CONTENIDO PRINCIPAL --- */}
-        {/* Aumentado pt-48 para dar aire respecto al logo y la barra */}
         <main id="main-content" className="flex-1 pt-48 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-8">
+          {/* Textos de Cabecera */}
           <div className="text-center space-y-4 animate-fade-in-up [animation-delay:200ms] opacity-0 fill-mode-forwards">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/40 border border-[#005C64]/10 text-[#005C64] text-xs font-bold tracking-wide uppercase">
               <ShieldCheck className="w-3 h-3" />
@@ -118,9 +120,10 @@ const Index = () => {
             <p className="text-lg opacity-60 max-w-xl mx-auto">IA avanzada para el reconocimiento de habla atípica.</p>
           </div>
 
-          {/* VISTAS (Paneles de Cristal) */}
+          {/* --- PANELES DE CRISTAL --- */}
           <div className="w-full max-w-4xl mx-auto animate-fade-in-up [animation-delay:300ms] opacity-0 fill-mode-forwards">
             <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-6 md:p-10 shadow-sm min-h-[400px] relative overflow-hidden">
+              {/* Decoración de fondo */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-[#90C2E7]/20 rounded-full blur-3xl -z-10 pointer-events-none" />
 
               <TabsContent
