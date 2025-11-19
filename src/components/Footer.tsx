@@ -13,15 +13,15 @@ export const Footer = () => {
 
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-start">
           {/* --- COLUMNA 1: MARCA --- */}
-          {/* CAMBIO: 'space-y-2' reduce el hueco. 'justify-start' lo sube todo arriba. */}
-          <div className="md:col-span-5 flex flex-col justify-start space-y-2">
-            {/* Contenedor del logo */}
+          {/* CAMBIO CRÍTICO: -mt-4 md:-mt-8 fuerza la subida visual del elemento */}
+          <div className="md:col-span-5 flex flex-col justify-start space-y-1 -mt-4 md:-mt-8">
+            {/* Logo */}
             <div className="flex items-center gap-2">
               <img src={logo} alt="Adagio Logo" className="h-24 md:h-32 w-auto brightness-0 invert" />
             </div>
 
             {/* Descripción pegada al logo */}
-            <p className="text-white/80 leading-relaxed max-w-md text-sm pt-2">
+            <p className="text-white/80 leading-relaxed max-w-md text-sm">
               Servicio de transcripción de audio inteligente y seguro, diseñado para la accesibilidad y con pleno
               cumplimiento del RGPD.
             </p>
@@ -29,8 +29,6 @@ export const Footer = () => {
 
           {/* --- COLUMNA 2: LEGAL --- */}
           <div className="md:col-span-3 space-y-6 pt-2">
-            {" "}
-            {/* pt-2 para micro-ajuste visual con el logo */}
             <h4 className="font-semibold text-white/60 tracking-wide text-sm uppercase">Legal</h4>
             <ul className="space-y-4">
               <li>
@@ -56,8 +54,6 @@ export const Footer = () => {
 
           {/* --- COLUMNA 3: PRIVACIDAD --- */}
           <div className="md:col-span-4 space-y-6 pt-2">
-            {" "}
-            {/* pt-2 para alinear cabeceras */}
             <h4 className="font-semibold text-white/60 tracking-wide text-sm uppercase">Privacidad</h4>
             <ul className="space-y-4">
               <li>
