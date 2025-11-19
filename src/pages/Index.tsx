@@ -5,7 +5,7 @@ import { TrainView } from "@/components/TrainView";
 import { Footer } from "@/components/Footer";
 import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
-import { ShieldCheck, ArrowRight, LogIn } from "lucide-react"; // Eliminados Mic y Database
+import { ShieldCheck, ArrowRight, LogIn } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.svg";
 
@@ -53,19 +53,19 @@ const Index = () => {
           Saltar al contenido principal
         </a>
 
-        {/* --- LOGO GIGANTE (x2 y más arriba) --- */}
+        {/* --- LOGO AJUSTADO (1.5x y más arriba) --- */}
         <Link
           to="/"
-          className="fixed top-6 left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
+          className="fixed top-4 left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
         >
-          {/* h-32 (128px) en móvil, h-40 (160px) en desktop */}
-          <img src={logo} alt="Adagio Logo" className="h-32 md:h-40 w-auto" />
+          {/* h-14 (56px) en móvil, h-16 (64px) en desktop. Equilibrio perfecto. */}
+          <img src={logo} alt="Adagio Logo" className="h-14 md:h-16 w-auto" />
         </Link>
 
         {/* --- BARRA DE HERRAMIENTAS FLOTANTE --- */}
         <div className="fixed top-6 left-0 right-0 z-40 flex justify-center px-4 animate-fade-in-up [animation-delay:100ms] opacity-0 fill-mode-forwards">
           <nav className="flex items-center gap-2 px-3 py-2 bg-white/70 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 w-auto max-w-2xl">
-            {/* IZQUIERDA: Botones de Texto Limpio (Sin Iconos) */}
+            {/* IZQUIERDA: Botones de Texto Limpio */}
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setActiveTab("transcribe")}
@@ -86,7 +86,7 @@ const Index = () => {
             {/* Separador sutil */}
             <div className="w-px h-6 bg-black/10 mx-2"></div>
 
-            {/* DERECHA: Iniciar Sesión (Color #005C64) */}
+            {/* DERECHA: Iniciar Sesión (Verde Adagio) */}
             <div className="flex-shrink-0">
               {user ? (
                 <UserMenu />
@@ -94,7 +94,6 @@ const Index = () => {
                 !loading && (
                   <button
                     onClick={handleLoginClick}
-                    // Color background forzado a #005C64
                     className="bg-[#005C64] text-white px-6 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md"
                   >
                     <LogIn className="w-4 h-4" />
@@ -106,8 +105,8 @@ const Index = () => {
           </nav>
         </div>
 
-        {/* --- CONTENIDO PRINCIPAL --- */}
-        <main id="main-content" className="flex-1 pt-48 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-8">
+        {/* --- CONTENIDO PRINCIPAL (Padding ajustado) --- */}
+        <main id="main-content" className="flex-1 pt-36 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-8">
           {/* Textos de Cabecera */}
           <div className="text-center space-y-4 animate-fade-in-up [animation-delay:200ms] opacity-0 fill-mode-forwards">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/40 border border-[#005C64]/10 text-[#005C64] text-xs font-bold tracking-wide uppercase">
