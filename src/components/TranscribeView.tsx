@@ -1,424 +1,343 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { RecorderUploader } from '@/components/RecorderUploader';
-import { BackendStatus } from '@/components/BackendStatus';
-import { EmptyState } from '@/components/EmptyState';
-import { ErrorState } from '@/components/ErrorState';
-import ComparisonView from '@/components/ComparisonView';
-import { sessionManager } from '@/lib/sessionManager';
-import { transcribeService, type TranscribeError, type TranscribeProvider } from '@/services/transcribe';
-import { speakWithElevenLabs } from '@/services/tts';
-import type { ConversionResult } from '@/lib/audioConverter';
-import { Loader2, Copy, Download, FileAudio, Upload, Waves, CheckCircle, Bot, Server, Zap, GitCompare, Volume2, Pause, Square } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-type TranscribeState = 'idle' | 'uploading' | 'transcribing' | 'completed' | 'error';
+import { useState, useCallback, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card"; // Importamos CardContent si se usa
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { RecorderUploader } from "@/components/RecorderUploader";
+import { BackendStatus } from "@/components/BackendStatus";
+import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
+import ComparisonView from "@/components/ComparisonView";
+import { sessionManager } from "@/lib/sessionManager";
+import { transcribeService, type TranscribeError, type TranscribeProvider } from "@/services/transcribe";
+import { speakWithElevenLabs } from "@/services/tts";
+import type { ConversionResult } from "@/lib/audioConverter";
+import {
+  Loader2,
+  Copy,
+  Download,
+  FileAudio,
+  Upload,
+  Waves,
+  CheckCircle,
+  Bot,
+  Server,
+  Zap,
+  GitCompare,
+  Volume2,
+  Pause,
+  Square,
+  Mic,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+type TranscribeState = "idle" | "uploading" | "transcribing" | "completed" | "error";
+
 interface TranscriptionResult {
   text: string;
   provider: string;
 }
+
 export const TranscribeView = () => {
   const [adagioResult, setAdagioResult] = useState<TranscriptionResult | null>(null);
-  const [state, setState] = useState<TranscribeState>('idle');
+  const [state, setState] = useState<TranscribeState>("idle");
+  const [progress, setProgress] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [audioMetadata, setAudioMetadata] = useState<ConversionResult | null>(null);
+  const [canTranscribe, setCanTranscribe] = useState(false);
   const [error, setError] = useState<TranscribeError | null>(null);
   const [backendOnline, setBackendOnline] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isLoadingTTS, setIsLoadingTTS] = useState(false);
-  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
-  const {
-    toast
-  } = useToast();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const { toast } = useToast();
 
-  // Track page view analytics
+  // Accessibility: Focus management
   useEffect(() => {
-    sessionManager.pageView('transcribe');
-  }, []);
-  const handleAudioReady = useCallback((blob: Blob, metadata: ConversionResult) => {
+    if (state === "completed") {
+      const resultContainer = document.getElementById("transcription-result");
+      if (resultContainer) {
+        resultContainer.focus();
+      }
+    }
+  }, [state]);
+
+  const handleAudioReady = useCallback((blob: Blob) => {
     setAudioBlob(blob);
-    setAudioMetadata(metadata);
+    setCanTranscribe(true);
     setError(null);
-    setState('idle');
+    setState("idle");
   }, []);
-  const transcribeWithProvider = async (provider: TranscribeProvider): Promise<TranscriptionResult> => {
-    transcribeService.setProvider(provider);
-    const fileName = audioMetadata?.format === 'wav' ? 'audio.wav' : 'audio.mp3';
-    const fileType = audioMetadata?.format === 'wav' ? 'audio/wav' : 'audio/mp3';
-    const audioFile = new File([audioBlob!], fileName, {
-      type: fileType
-    });
-    const result = await transcribeService.transcribeFile(audioFile);
-    return {
-      text: result.text,
-      provider: result.provider || transcribeService.getProviderInfo().name
-    };
-  };
+
   const handleTranscribe = async () => {
-    if (!audioBlob) {
-      toast({
-        title: "No hay audio",
-        description: "Por favor graba audio o sube un archivo primero",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (!backendOnline) {
-      toast({
-        title: "Servidor desconectado",
-        description: "El servidor de transcripción no está disponible",
-        variant: "destructive"
-      });
-      return;
-    }
-    setState('uploading');
+    if (!audioBlob) return;
+
+    setState("uploading");
+    setProgress(10);
     setError(null);
-    setUploadProgress(0);
-    setAdagioResult(null);
 
-    // Track analytics
-    sessionManager.transcribeRequest();
-
-    // Timers and flags for UI state transitions
-    let progressIntervalId: number | null = null;
-    let toTranscribingTimeoutId: number | null = null;
-    let finished = false;
     try {
-      // Simulate upload progress for mejor UX
-      progressIntervalId = window.setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev < 90) return prev + 5;
-          return prev;
-        });
-      }, 200);
+      // 1. Prepare audio
+      setProgress(30);
 
-      // Pasar a estado "transcribing" tras breve delay salvo que ya haya terminado
-      toTranscribingTimeoutId = window.setTimeout(() => {
-        if (!finished) {
-          setState('transcribing');
-          setUploadProgress(100);
-        }
-        if (progressIntervalId) clearInterval(progressIntervalId);
-      }, 800);
+      // 2. Upload and Transcribe
+      setState("transcribing");
+      setProgress(50);
 
-      // Transcribe only with Adagio
-      const result = await transcribeWithProvider('adagio');
-      setAdagioResult(result);
+      const session = await sessionManager.createSession();
+      const result = await transcribeService.transcribe(audioBlob, session.id, "adagio");
 
-      // Marcar como finalizado y limpiar timers
-      finished = true;
-      if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
-      if (progressIntervalId) clearInterval(progressIntervalId);
-      setUploadProgress(100);
-      setState('completed');
+      setAdagioResult({
+        text: result.text,
+        provider: "adagio",
+      });
 
-      // Track success analytics
-      const duration = audioMetadata?.duration || 0;
-      sessionManager.transcribeSuccess(duration);
+      setProgress(100);
+      setState("completed");
+
       toast({
         title: "Transcripción completada",
-        description: "Adagio ha procesado el audio exitosamente"
+        description: "El audio ha sido procesado exitosamente.",
       });
-    } catch (error) {
-      const transcribeError = error as TranscribeError;
-
-      // Cleanup timers to avoid stale state updates
-      if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
-      if (progressIntervalId) clearInterval(progressIntervalId);
-      setError(transcribeError);
-      setState('error');
-
-      // Track error analytics
-      sessionManager.transcribeError(transcribeError.code);
+    } catch (err) {
+      console.error("Transcription error:", err);
+      setError(err as TranscribeError);
+      setState("error");
       toast({
-        title: "Error de transcripción",
-        description: transcribeError.message,
-        variant: "destructive"
+        variant: "destructive",
+        title: "Error en la transcripción",
+        description: (err as Error).message || "Ha ocurrido un error inesperado.",
       });
-    } finally {
-      // Ensure timers are cleared
-      if (toTranscribingTimeoutId) clearTimeout(toTranscribingTimeoutId);
-      if (progressIntervalId) clearInterval(progressIntervalId);
-      setUploadProgress(0);
     }
   };
-  const handleCopyTranscription = useCallback((text: string, provider: string) => {
-    if (text) {
-      navigator.clipboard.writeText(text);
-      toast({
-        title: "Copiado",
-        description: `Transcripción de ${provider} copiada al portapapeles`
-      });
-    }
-  }, [toast]);
-  const handleDownloadTranscription = useCallback((text: string, provider: string) => {
-    if (text) {
-      const blob = new Blob([text], {
-        type: 'text/plain'
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `transcripcion-${provider.toLowerCase()}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-  }, []);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copiado al portapapeles",
+      description: "El texto ha sido copiado exitosamente.",
+    });
+  };
+
+  const handleDownload = (text: string) => {
+    const element = document.createElement("a");
+    const file = new Blob([text], { type: "text/plain" });
+    element.href = URL.createObjectURL(file);
+    element.download = "transcripcion-adagio.txt";
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
   const handleRetry = () => {
+    setState("idle");
     setError(null);
-    setState('idle');
+    setCanTranscribe(!!audioBlob);
   };
-  const [resetKey, setResetKey] = useState(0);
-  const handleReset = () => {
-    setAudioBlob(null);
-    setAudioMetadata(null);
-    setAdagioResult(null);
-    setError(null);
-    setState('idle');
-    setUploadProgress(0);
-    // Stop any playing audio
-    if (audioPlayer) {
-      audioPlayer.pause();
-      audioPlayer.currentTime = 0;
-      setAudioPlayer(null);
-    }
-    setIsLoadingTTS(false);
-    setResetKey(prev => prev + 1); // Force RecorderUploader to reset
-  };
-  const handleSpeak = async () => {
-    if (!adagioResult?.text?.trim()) return;
-    setIsLoadingTTS(true);
-    try {
-      const audio = await speakWithElevenLabs(adagioResult.text);
-      setAudioPlayer(audio);
 
-      // Set up event listeners
-      audio.onended = () => {
-        setAudioPlayer(null);
-      };
+  const handleTTS = async (text: string) => {
+    if (isPlaying) return;
+
+    try {
+      setIsPlaying(true);
+      const audioData = await speakWithElevenLabs(text);
+      const audio = new Audio(URL.createObjectURL(new Blob([audioData])));
+
+      audio.onended = () => setIsPlaying(false);
       audio.onerror = () => {
-        setAudioPlayer(null);
+        setIsPlaying(false);
         toast({
-          title: "Error de audio",
-          description: "No se pudo reproducir el audio generado",
-          variant: "destructive"
+          variant: "destructive",
+          title: "Error de reproducción",
+          description: "No se pudo reproducir el audio.",
         });
       };
-      await audio.play();
-      toast({
-        title: "Reproduciendo",
-        description: "Audio generado con ElevenLabs"
-      });
-    } catch (error) {
-      console.error('TTS error:', error);
-      toast({
-        title: "Error de síntesis de voz",
-        description: "No se pudo generar el audio",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoadingTTS(false);
-    }
-  };
-  const handleStopAudio = () => {
-    if (audioPlayer) {
-      audioPlayer.pause();
-      audioPlayer.currentTime = 0;
-      setAudioPlayer(null);
-    }
-  };
-  const getStateConfig = () => {
-    switch (state) {
-      case 'uploading':
-        return {
-          icon: Upload,
-          title: 'Subiendo audio...',
-          description: 'Enviando archivo al servidor',
-          showProgress: true
-        };
-      case 'transcribing':
-        return {
-          icon: Waves,
-          title: 'Transcribiendo...',
-          description: 'Procesando audio y generando transcripción',
-          showProgress: false
-        };
-      case 'completed':
-        return {
-          icon: CheckCircle,
-          title: 'Completado',
-          description: 'Transcripción generada exitosamente',
-          showProgress: false
-        };
-      default:
-        return null;
-    }
-  };
-  const stateConfig = getStateConfig();
-  const isProcessing = state === 'uploading' || state === 'transcribing';
-  const canTranscribe = audioBlob && backendOnline && !isProcessing;
-  const hasResults = adagioResult;
 
-  // Debug info - remove in production
-  console.log('TranscribeView state:', {
-    audioBlob: !!audioBlob,
-    backendOnline,
-    isProcessing,
-    canTranscribe,
-    state,
-    hasResults: !!hasResults
-  });
-  return <div className="space-y-6" role="main" aria-labelledby="transcribe-heading">
-      {/* Skip link for screen readers */}
-      <a href="#transcribe-controls" className="skip-link">
+      await audio.play();
+    } catch (error) {
+      console.error("TTS Error:", error);
+      setIsPlaying(false);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Error al generar el audio.",
+      });
+    }
+  };
+
+  const isProcessing = state === "uploading" || state === "transcribing";
+  const hasResults = state === "completed" && adagioResult;
+
+  return (
+    <div className="w-full max-w-3xl mx-auto space-y-8">
+      {/* ENLACE DE ACCESIBILIDAD OCULTO VISUALMENTE (sr-only) */}
+      <a
+        href="#transcribe-controls"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground"
+      >
         Saltar a controles de transcripción
       </a>
 
-      {/* Accessibility status announcements */}
-      <div aria-live="polite" aria-atomic="true" className="sr-only" role="status">
-        {state === 'uploading' && 'Subiendo archivo de audio al servidor'}
-        {state === 'transcribing' && 'Transcribiendo audio, por favor espere'}
-        {state === 'completed' && 'Transcripción completada exitosamente'}
-        {state === 'error' && `Error en la transcripción: ${error?.message}`}
-      </div>
-
-      {/* Header */}
-      <div className="text-center space-y-4">
-        
-      </div>
-
-      {/* Tabs */}
       <Tabs defaultValue="adagio" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="adagio" className="flex items-center gap-2">
-            <Server className="h-4 w-4" />
-            Transcripción Adagio
-          </TabsTrigger>
-          <TabsTrigger value="comparison" className="flex items-center gap-2">
-            <GitCompare className="h-4 w-4" />
-            ChatGPT vs Adagio
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="adagio" className="space-y-6">
-      {/* Audio Input Section */}
-      <div className="space-y-4" role="region" aria-labelledby="audio-input-heading">
-        <h3 id="audio-input-heading" className="text-lg font-medium text-foreground">
-          Entrada de Audio
-        </h3>
-        <RecorderUploader key={resetKey} onAudioReady={handleAudioReady} disabled={isProcessing} maxDuration={20} aria-describedby="transcribe-description" />
-      </div>
-
-      {/* Processing State */}
-      {stateConfig && <Card className="p-6" role="region" aria-labelledby="processing-heading">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center" role="img" aria-label={`Estado: ${stateConfig.title}`}>
-              <stateConfig.icon className={`h-8 w-8 text-primary ${state === 'transcribing' ? 'animate-pulse' : ''}`} aria-hidden="true" />
-            </div>
-            <div className="text-center">
-              <h3 id="processing-heading" className="font-medium text-lg">
-                {stateConfig.title}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1" role="status">
-                {stateConfig.description}
-              </p>
-            </div>
-            {stateConfig.showProgress && <div className="w-full max-w-md space-y-2" role="progressbar" aria-valuenow={uploadProgress} aria-valuemin={0} aria-valuemax={100}>
-                <Progress value={uploadProgress} className="h-2" aria-label={`Progreso de subida: ${uploadProgress}%`} />
-                <p className="text-xs text-muted-foreground text-center" aria-live="polite">
-                  {uploadProgress}% completado
-                </p>
-              </div>}
-            {state === 'transcribing' && <div className="flex items-center space-x-2" role="status" aria-live="polite">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                <span className="text-sm text-muted-foreground">
-                  Esto puede tomar algunos segundos...
-                </span>
-              </div>}
-          </div>
-        </Card>}
-
-      {/* Transcription Results - Only Adagio */}
-      {state === 'completed' && adagioResult && <div className="space-y-4" role="region" aria-labelledby="results-heading">
-          <h3 id="results-heading" className="text-lg font-medium text-foreground">
-            Resultado de Transcripción
-          </h3>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Server className="h-3 w-3" />
-                Adagio
-              </Badge>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={() => handleCopyTranscription(adagioResult.text, 'Adagio')} title="Copiar transcripción">
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDownloadTranscription(adagioResult.text, 'Adagio')} title="Descargar transcripción">
-                  <Download className="h-4 w-4" />
-                </Button>
-                {/* TTS Button */}
-                {audioPlayer ? <Button variant="ghost" size="sm" onClick={handleStopAudio} title="Detener reproducción" aria-live="polite">
-                    <Square className="h-4 w-4" />
-                  </Button> : <Button variant="ghost" size="sm" onClick={handleSpeak} disabled={isLoadingTTS || !adagioResult.text.trim()} title="Reproducir con ElevenLabs" aria-live="polite">
-                    {isLoadingTTS ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
-                  </Button>}
+        {/* PESTAÑAS ESTILIZADAS: Fondo sutil y redondeado */}
+        <div className="flex justify-center mb-8">
+          <TabsList className="bg-black/5 p-1 rounded-full border border-white/10">
+            <TabsTrigger
+              value="adagio"
+              className="rounded-full px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                <span>Transcripción Adagio</span>
               </div>
+            </TabsTrigger>
+            <TabsTrigger
+              value="comparison"
+              className="rounded-full px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <GitCompare className="w-4 h-4" />
+                <span>ChatGPT vs Adagio</span>
+              </div>
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="adagio" className="space-y-8 focus-visible:outline-none">
+          {/* Área de Grabación: Sin Card wrapper para que se integre en el cristal */}
+          <div className="relative">
+            <RecorderUploader onAudioReady={handleAudioReady} isProcessing={isProcessing} />
+          </div>
+
+          {/* Progreso */}
+          {isProcessing && (
+            <div className="space-y-4 animate-in fade-in-50 duration-500 bg-white/40 p-6 rounded-3xl border border-white/20 backdrop-blur-sm">
+              <div className="flex items-center justify-between text-sm font-medium text-[#005C64]">
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {state === "uploading" ? "Subiendo audio..." : "Transcribiendo con IA..."}
+                </span>
+                <span>{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-2 bg-[#005C64]/20" />
             </div>
-            
-            <Textarea value={adagioResult.text} readOnly className="min-h-[120px] resize-none bg-muted/30" placeholder="Transcripción de Adagio aparecerá aquí..." aria-label="Transcripción de Adagio" />
+          )}
+
+          {/* Error */}
+          {error && (
+            <ErrorState
+              title="Error en la transcripción"
+              description="Verifica tu conexión y los datos del audio e inténtalo de nuevo."
+              onRetry={handleRetry}
+            />
+          )}
+
+          {/* BOTÓN DE TRANSCRIBIR (CAMBIADO A VERDE ADAGIO #005C64) */}
+          {!isProcessing && !hasResults && audioBlob && (
+            <div
+              className="flex flex-col items-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500"
+              id="transcribe-controls"
+            >
+              <Button
+                onClick={handleTranscribe}
+                disabled={!canTranscribe || !backendOnline}
+                size="xl"
+                // Estilo personalizado: Verde Adagio, Sombra, Efecto Hover
+                className="min-w-[280px] h-14 rounded-full bg-[#005C64] hover:bg-[#004a50] text-white text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                aria-describedby="transcribe-button-description"
+              >
+                <Mic className="mr-2 h-5 w-5" aria-hidden="true" />
+                Transcribir con Adagio
+              </Button>
+
+              <div id="transcribe-button-description" className="sr-only">
+                Iniciar transcripción con Adagio
+              </div>
+
+              {!backendOnline && (
+                <p
+                  className="text-sm text-red-500/80 mt-2 text-center font-medium bg-red-50 px-3 py-1 rounded-full"
+                  role="status"
+                >
+                  ⚠️ Esperando conexión al servidor...
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Estado Vacío (Placeholder) */}
+          {!audioBlob && !hasResults && !error && state === "idle" && (
+            <div className="opacity-70 scale-95 transform transition-all">
+              <EmptyState
+                icon={FileAudio}
+                title="Entrada de Audio"
+                description="Graba tu voz o sube un archivo para comenzar"
+              />
+            </div>
+          )}
+
+          {/* Resultados de Transcripción */}
+          {hasResults && (
+            <Card className="border-0 shadow-none bg-white/40 backdrop-blur-sm overflow-hidden rounded-3xl animate-in fade-in-50 slide-in-from-bottom-8 duration-700">
+              <div className="border-b border-black/5 bg-white/20 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-[#005C64]/10 text-[#005C64] hover:bg-[#005C64]/20">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Completado
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">Modelo Adagio v1</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleTTS(adagioResult.text)}
+                    disabled={isPlaying}
+                    className="rounded-full hover:bg-white/50"
+                  >
+                    {isPlaying ? (
+                      <Square className="h-4 w-4 text-[#005C64]" />
+                    ) : (
+                      <Volume2 className="h-4 w-4 text-[#005C64]" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleCopy(adagioResult.text)}
+                    className="rounded-full hover:bg-white/50"
+                  >
+                    <Copy className="h-4 w-4 text-[#005C64]" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDownload(adagioResult.text)}
+                    className="rounded-full hover:bg-white/50"
+                  >
+                    <Download className="h-4 w-4 text-[#005C64]" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-6">
+                <Textarea
+                  readOnly
+                  value={adagioResult.text}
+                  className="min-h-[200px] resize-none border-0 bg-transparent focus-visible:ring-0 text-lg leading-relaxed text-[#0D0C1D]"
+                />
+              </div>
+            </Card>
+          )}
+
+          {/* Estado del Backend (Discreto abajo) */}
+          <div className="flex justify-center opacity-50 hover:opacity-100 transition-opacity">
+            <BackendStatus onStatusChange={setBackendOnline} autoRefresh={true} />
           </div>
-        </div>}
-
-      {/* Audio metadata and reset */}
-      {state === 'completed' && hasResults && audioMetadata && <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4 py-4">
-          <div className="text-center sm:text-left">
-            Procesado: {audioMetadata.format.toUpperCase()} • 
-            {audioMetadata.sampleRate}Hz • 
-            {audioMetadata.channels} canal{audioMetadata.channels !== 1 ? 'es' : ''} • 
-            Duración: {Math.round(audioMetadata.duration)}s
-          </div>
-          
-          <Button variant="outline" onClick={handleReset} size="sm">
-            Transcribir otro audio
-          </Button>
-        </div>}
-
-      {/* Error State */}
-      {error && state === 'error' && <ErrorState title={error.message} description={error.details || 'Error durante la transcripción'} solution="Verifica tu conexión y los datos del audio e inténtalo de nuevo." onRetry={handleRetry} />}
-
-      {/* Transcribe Button */}
-      {!isProcessing && !hasResults && audioBlob && <div className="flex flex-col items-center space-y-4" id="transcribe-controls">
-          <Button onClick={handleTranscribe} disabled={!canTranscribe} size="xl" variant="default" className="min-w-[250px]" aria-describedby="transcribe-button-description" tabIndex={0}>
-            <FileAudio className="mr-2 h-4 w-4" aria-hidden="true" />
-            Transcribir con Adagio
-          </Button>
-          <div id="transcribe-button-description" className="sr-only">
-            Iniciar transcripción con Adagio
-          </div>
-          {!backendOnline && <p className="text-sm text-muted-foreground mt-2 text-center" role="status" aria-live="polite">
-              Esperando conexión al servidor...
-            </p>}
-        </div>}
-
-      {/* Empty State */}
-      {!audioBlob && !hasResults && !error && state === 'idle' && <EmptyState icon={FileAudio} title="Listo para transcripción" description="Graba tu voz o sube un archivo para transcribir con Adagio" />}
-
-      {/* Backend Status - Moved to bottom */}
-      <div className="flex justify-center">
-        <BackendStatus onStatusChange={setBackendOnline} autoRefresh={true} />
-      </div>
         </TabsContent>
 
         <TabsContent value="comparison" className="space-y-6">
           <ComparisonView />
         </TabsContent>
       </Tabs>
-    </div>;
+    </div>
+  );
 };
