@@ -13,22 +13,30 @@ export const Footer = () => {
 
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 items-start">
           {/* --- COLUMNA 1: MARCA --- */}
-          {/* CAMBIO CRÍTICO: -mt-4 md:-mt-8 fuerza la subida visual del elemento */}
-          <div className="md:col-span-5 flex flex-col justify-start space-y-1 -mt-4 md:-mt-8">
-            {/* Logo */}
+          {/* Mantenemos el -mt-8 para subir todo el bloque hacia arriba */}
+          <div className="md:col-span-5 flex flex-col justify-start -mt-4 md:-mt-8">
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Adagio Logo" className="h-24 md:h-32 w-auto brightness-0 invert" />
+              <img
+                src={logo}
+                alt="Adagio Logo"
+                // CAMBIOS AQUÍ:
+                // 1. scale-150: Aumenta el logo visualmente sin ocupar más espacio en el DOM
+                // 2. origin-left: Crece hacia la derecha
+                // 3. -mb-10 md:-mb-14: Margen negativo MUY fuerte para comerse el espacio vacío inferior
+                // 4. -ml-2: Ajuste óptico a la izquierda si el cuadrado tiene margen interno
+                className="h-32 md:h-40 w-auto brightness-0 invert object-contain object-left -mb-10 md:-mb-16 -ml-3"
+              />
             </div>
 
-            {/* Descripción pegada al logo */}
-            <p className="text-white/80 leading-relaxed max-w-md text-sm">
+            {/* Texto descriptivo */}
+            <p className="text-white/80 leading-relaxed max-w-md text-sm relative z-10">
               Servicio de transcripción de audio inteligente y seguro, diseñado para la accesibilidad y con pleno
               cumplimiento del RGPD.
             </p>
           </div>
 
           {/* --- COLUMNA 2: LEGAL --- */}
-          <div className="md:col-span-3 space-y-6 pt-2">
+          <div className="md:col-span-3 space-y-6 pt-4">
             <h4 className="font-semibold text-white/60 tracking-wide text-sm uppercase">Legal</h4>
             <ul className="space-y-4">
               <li>
@@ -53,7 +61,7 @@ export const Footer = () => {
           </div>
 
           {/* --- COLUMNA 3: PRIVACIDAD --- */}
-          <div className="md:col-span-4 space-y-6 pt-2">
+          <div className="md:col-span-4 space-y-6 pt-4">
             <h4 className="font-semibold text-white/60 tracking-wide text-sm uppercase">Privacidad</h4>
             <ul className="space-y-4">
               <li>
