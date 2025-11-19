@@ -1,19 +1,26 @@
 import { Button } from "@/components/ui/button";
-import { Shield, ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft } from "lucide-react"; // Eliminado 'Lock' y 'Shield'
 import { Link } from "react-router-dom";
-import { Footer } from "@/components/Footer"; // Importamos tu Footer oficial
+import { Footer } from "@/components/Footer";
 import logo from "@/assets/logo.svg";
 
 export const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen w-full font-sans selection:bg-[#005C64] selection:text-white bg-[#F5F8DE] text-[#0D0C1D] flex flex-col">
-      {/* --- NAVBAR FLOTANTE SIMPLIFICADA --- */}
+      {/* --- NAVBAR FLOTANTE SIMPLIFICADA Y CENTRADA --- */}
       <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
         <nav className="flex items-center justify-between gap-4 px-4 py-2 bg-white/70 backdrop-blur-xl border border-white/50 rounded-full shadow-sm w-full max-w-5xl">
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <img src={logo} alt="Adagio Logo" className="h-8 w-auto" />
-            <span className="font-bold text-lg tracking-tight">Adagio</span>
-          </Link>
+          {/* Logo Centralizado y más grande */}
+          <div className="flex-1 flex justify-center">
+            {" "}
+            {/* flex-1 y justify-center para centrar */}
+            <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+              {/* Ajustado el tamaño: h-12 md:h-16 (antes h-8) */}
+              {/* Margen negativo a la izquierda para el logo cuadrado, si lo necesita tu SVG */}
+              <img src={logo} alt="Adagio Logo" className="h-12 md:h-16 w-auto -ml-3" />
+              {/* Eliminado el texto "Adagio" aquí */}
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2">
             <Link to="/">
@@ -30,9 +37,7 @@ export const PrivacyPolicy = () => {
       <main className="flex-1 container mx-auto px-4 pt-32 pb-20 max-w-4xl">
         {/* Cabecera de Página */}
         <div className="text-center mb-12 space-y-4">
-          <div className="inline-flex items-center justify-center p-3 bg-[#005C64]/10 rounded-full mb-4">
-            <Lock className="w-8 h-8 text-[#005C64]" />
-          </div>
+          {/* Eliminado el div con el candado */}
           <h1 className="text-4xl md:text-5xl font-bold text-[#0D0C1D] tracking-tight">Política de Privacidad</h1>
           <p className="text-[#0D0C1D]/60 font-medium">Última actualización: 10/11/2025</p>
         </div>
@@ -60,7 +65,7 @@ export const PrivacyPolicy = () => {
             {/* Biometric Data Summary (Tarjeta Destacada) */}
             <section className="bg-[#005C64]/5 border border-[#005C64]/10 rounded-3xl p-8">
               <h2 className="text-xl font-bold mb-4 text-[#005C64] flex items-center gap-3">
-                <Shield className="h-6 w-6" />
+                {/* Eliminado el icono de Shield */}
                 Resumen sobre datos biométricos y de salud
               </h2>
               <p className="text-[#0D0C1D]/80 leading-relaxed">
