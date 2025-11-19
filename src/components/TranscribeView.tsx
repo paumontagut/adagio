@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card"; // Importamos CardContent si se usa
+import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
@@ -11,26 +11,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import ComparisonView from "@/components/ComparisonView";
 import { sessionManager } from "@/lib/sessionManager";
-import { transcribeService, type TranscribeError, type TranscribeProvider } from "@/services/transcribe";
+import { transcribeService, type TranscribeError } from "@/services/transcribe";
 import { speakWithElevenLabs } from "@/services/tts";
-import type { ConversionResult } from "@/lib/audioConverter";
-import {
-  Loader2,
-  Copy,
-  Download,
-  FileAudio,
-  Upload,
-  Waves,
-  CheckCircle,
-  Bot,
-  Server,
-  Zap,
-  GitCompare,
-  Volume2,
-  Pause,
-  Square,
-  Mic,
-} from "lucide-react";
+import { Loader2, Copy, Download, FileAudio, CheckCircle, Volume2, Pause, Square, Mic } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 type TranscribeState = "idle" | "uploading" | "transcribing" | "completed" | "error";
@@ -178,32 +161,26 @@ export const TranscribeView = () => {
       </a>
 
       <Tabs defaultValue="adagio" className="w-full">
-        {/* PESTAÑAS ESTILIZADAS: Fondo sutil y redondeado */}
+        {/* PESTAÑAS ESTILIZADAS: Sin iconos, solo texto limpio */}
         <div className="flex justify-center mb-8">
           <TabsList className="bg-black/5 p-1 rounded-full border border-white/10">
             <TabsTrigger
               value="adagio"
-              className="rounded-full px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+              className="rounded-full px-8 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium"
             >
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                <span>Transcripción Adagio</span>
-              </div>
+              Transcripción Adagio
             </TabsTrigger>
             <TabsTrigger
               value="comparison"
-              className="rounded-full px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+              className="rounded-full px-8 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium"
             >
-              <div className="flex items-center gap-2">
-                <GitCompare className="w-4 h-4" />
-                <span>ChatGPT vs Adagio</span>
-              </div>
+              ChatGPT vs Adagio
             </TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="adagio" className="space-y-8 focus-visible:outline-none">
-          {/* Área de Grabación: Sin Card wrapper para que se integre en el cristal */}
+          {/* Área de Grabación */}
           <div className="relative">
             <RecorderUploader onAudioReady={handleAudioReady} isProcessing={isProcessing} />
           </div>
@@ -231,7 +208,7 @@ export const TranscribeView = () => {
             />
           )}
 
-          {/* BOTÓN DE TRANSCRIBIR (CAMBIADO A VERDE ADAGIO #005C64) */}
+          {/* BOTÓN DE TRANSCRIBIR */}
           {!isProcessing && !hasResults && audioBlob && (
             <div
               className="flex flex-col items-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500"
@@ -241,7 +218,6 @@ export const TranscribeView = () => {
                 onClick={handleTranscribe}
                 disabled={!canTranscribe || !backendOnline}
                 size="xl"
-                // Estilo personalizado: Verde Adagio, Sombra, Efecto Hover
                 className="min-w-[280px] h-14 rounded-full bg-[#005C64] hover:bg-[#004a50] text-white text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
                 aria-describedby="transcribe-button-description"
               >
@@ -264,7 +240,7 @@ export const TranscribeView = () => {
             </div>
           )}
 
-          {/* Estado Vacío (Placeholder) */}
+          {/* Estado Vacío */}
           {!audioBlob && !hasResults && !error && state === "idle" && (
             <div className="opacity-70 scale-95 transform transition-all">
               <EmptyState
@@ -275,7 +251,7 @@ export const TranscribeView = () => {
             </div>
           )}
 
-          {/* Resultados de Transcripción */}
+          {/* Resultados */}
           {hasResults && (
             <Card className="border-0 shadow-none bg-white/40 backdrop-blur-sm overflow-hidden rounded-3xl animate-in fade-in-50 slide-in-from-bottom-8 duration-700">
               <div className="border-b border-black/5 bg-white/20 p-4 flex items-center justify-between">
@@ -328,7 +304,7 @@ export const TranscribeView = () => {
             </Card>
           )}
 
-          {/* Estado del Backend (Discreto abajo) */}
+          {/* Estado del Backend */}
           <div className="flex justify-center opacity-50 hover:opacity-100 transition-opacity">
             <BackendStatus onStatusChange={setBackendOnline} autoRefresh={true} />
           </div>
