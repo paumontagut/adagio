@@ -1,28 +1,21 @@
 import { Shield, FileText, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo.svg"; // <--- 1. IMPORTAMOS EL LOGO
+import logo from "@/assets/logo.svg";
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
     <footer className="w-full max-w-7xl mx-auto px-4 md:px-8 pb-8">
-      {/* Fondo Verde Adagio (#005C64) */}
       <div className="bg-[#005C64] text-white rounded-[2.5rem] px-8 py-12 md:p-16 shadow-xl overflow-hidden relative">
-        {/* Decoración */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#90C2E7] opacity-10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">
-          {/* Columna 1: Marca */}
           <div className="md:col-span-5 space-y-6">
             <div className="flex items-center gap-2">
-              {/* --- 2. AQUÍ ESTÁ EL CAMBIO: LOGO EN LUGAR DE TEXTO --- */}
-              <img
-                src={logo}
-                alt="Adagio Logo"
-                className="h-10 w-auto brightness-0 invert" // "brightness-0 invert" lo vuelve BLANCO
-              />
+              {/* --- CAMBIO: AUMENTO DE TAMAÑO A h-24 (móvil) y h-32 (desktop) --- */}
+              <img src={logo} alt="Adagio Logo" className="h-24 md:h-32 w-auto brightness-0 invert" />
             </div>
             <p className="text-white/80 leading-relaxed max-w-md">
               Servicio de transcripción de audio inteligente y seguro, diseñado para la accesibilidad y con pleno
@@ -30,7 +23,6 @@ export const Footer = () => {
             </p>
           </div>
 
-          {/* Columna 2: Legal */}
           <div className="md:col-span-3 space-y-6">
             <h4 className="font-semibold text-white/60 tracking-wide text-sm uppercase">Legal</h4>
             <ul className="space-y-4">
@@ -55,7 +47,6 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Columna 3: Privacidad */}
           <div className="md:col-span-4 space-y-6">
             <h4 className="font-semibold text-white/60 tracking-wide text-sm uppercase">Privacidad</h4>
             <ul className="space-y-4">
@@ -77,7 +68,6 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Footer Bottom */}
         <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/50">
           <p>© {currentYear} Adagio. Todos los derechos reservados.</p>
           <div className="flex items-center gap-6">
