@@ -1,175 +1,176 @@
-import React from "react";
-import { motion } from "framer-motion"; // Asegúrate de tener framer-motion instalado
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TranscribeView } from "@/components/TranscribeView";
+import { TrainView } from "@/components/TrainView";
+import { Footer } from "@/components/Footer";
+import { AuthButton } from "@/components/AuthButton";
+import { UserMenu } from "@/components/UserMenu";
+import { useAuth } from "@/contexts/AuthContext";
+import { HardDrive, ShieldCheck, ArrowRight, Mic, Database } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import logo from "@/assets/logo.svg";
 
-// Adagio Brand Colors (Hardcoded para precisión)
+// Definimos los colores de marca para usarlos en estilos inline si es necesario
 const colors = {
-  bg: "#F5F8DE", // Cream
-  dark: "#0D0C1D", // Text/Black
+  bg: "#F5F8DE", // Crema
   primary: "#005C64", // Teal
-  accent: "#FFBC42", // Yellow
-  blue: "#90C2E7", // Light Blue
+  dark: "#0D0C1D", // Negro Suave
+  accent: "#FFBC42", // Amarillo
 };
 
 const Index = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState("transcribe");
+  const { user, loading } = useAuth();
+
+  // Lógica original: Manejar parámetros de URL para cambiar pestañas
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "train" || tabParam === "transcribe") {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   return (
     <div
-      className="min-h-screen w-full font-sans selection:bg-[#005C64] selection:text-white"
+      className="min-h-screen w-full font-sans selection:bg-[#005C64] selection:text-white flex flex-col"
       style={{ backgroundColor: colors.bg, color: colors.dark }}
     >
-      {/* --- NAVBAR FLOTANTE (Estilo Isla Dinámica) --- */}
-      <nav className="fixed top-6 left-0 right-0 z-50 flex justify-center">
-        <div className="flex items-center gap-8 px-6 py-3 bg-white/40 backdrop-blur-xl border border-white/50 rounded-full shadow-sm">
-          <span className="font-bold tracking-tight text-lg">Adagio</span>
-          <div className="hidden md:flex gap-6 text-sm font-medium opacity-80">
-            <a href="#" className="hover:text-[#005C64] transition-colors">
-              Producto
-            </a>
-            <a href="#" className="hover:text-[#005C64] transition-colors">
-              Manifiesto
-            </a>
-            <a href="#" className="hover:text-[#005C64] transition-colors">
-              Precios
-            </a>
+      {/* Enlaces de accesibilidad (importante mantenerlos) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-black text-white p-4 rounded-lg z-[100]"
+      >
+        Saltar al contenido principal
+      </a>
+
+      {/* --- NAVBAR FLOTANTE (Isla Dinámica) --- */}
+      <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 animate-fade-in-up">
+        <nav className="flex items-center gap-4 sm:gap-8 px-3 py-2 sm:px-6 sm:py-3 bg-white/60 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 max-w-full overflow-x-auto">
+          {/* Logo */}
+          <Link to="/" className="flex-shrink-0 flex items-center gap-2 mr-2">
+            {/* Si tienes el SVG úsalo, si no, un texto elegante */}
+            <img src={logo} alt="Adagio Logo" className="h-8 w-8 sm:h-10 sm:w-auto" />
+            <span className="font-bold tracking-tight text-lg hidden sm:block">Adagio</span>
+          </Link>
+
+          {/* Menú Central - Enlaces rápidos */}
+          <div className="hidden md:flex items-center gap-6 text-sm font-medium opacity-80">
+            <Link to="/privacy-center" className="hover:text-[#005C64] transition-colors">
+              Privacidad
+            </Link>
+            {user && (
+              <Link to="/my-data" className="hover:text-[#005C64] transition-colors flex items-center gap-1">
+                <Database className="w-3 h-3" /> Mis Datos
+              </Link>
+            )}
           </div>
-          <button
-            className="px-5 py-2 rounded-full text-sm font-semibold text-white transition-transform active:scale-95"
-            style={{ backgroundColor: colors.primary }}
-          >
-            Empezar
-          </button>
+
+          <div className="h-4 w-[1px] bg-black/10 hidden sm:block"></div>
+
+          {/* Área de Usuario (Auth) */}
+          <div className="flex items-center gap-2">{user ? <UserMenu /> : !loading && <AuthButton />}</div>
+        </nav>
+      </div>
+
+      {/* --- CONTENIDO PRINCIPAL --- */}
+      <main id="main-content" className="flex-1 pt-32 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-12">
+        {/* CABECERA: Título y descripción */}
+        <div className="text-center space-y-4 animate-fade-in-up [animation-delay:100ms] opacity-0 fill-mode-forwards">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/40 border border-[#005C64]/10 text-[#005C64] text-xs font-bold tracking-wide uppercase">
+            <ShieldCheck className="w-3 h-3" />
+            <span>Privacidad Garantizada</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+            Tu voz, <span style={{ color: colors.primary }}>sin barreras.</span>
+          </h1>
+          <p className="text-lg opacity-60 max-w-xl mx-auto">
+            IA avanzada para el reconocimiento de habla atípica. Seguro, privado y diseñado para ti.
+          </p>
         </div>
-      </nav>
 
-      {/* --- MAIN CONTENT --- */}
-      <main className="pt-32 pb-20 px-4 md:px-8 max-w-7xl mx-auto space-y-8">
-        {/* HERO SECTION */}
-        <section className="text-center space-y-6 py-12 md:py-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-block px-4 py-1.5 rounded-full bg-white/50 border border-[#005C64]/10 text-[#005C64] text-xs font-bold tracking-wide uppercase mb-4"
+        {/* --- HERRAMIENTA PRINCIPAL (Glass Panel) --- */}
+        {/* Aquí envolvemos tu funcionalidad original en el nuevo diseño */}
+        <div className="animate-fade-in-up [animation-delay:200ms] opacity-0 fill-mode-forwards">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => {
+              setActiveTab(value);
+              setSearchParams({ tab: value });
+            }}
+            className="w-full max-w-4xl mx-auto"
           >
-            Nuevo Lanzamiento 2.0
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]"
-          >
-            Minimalismo <br />
-            <span style={{ color: colors.primary }}>con Propósito.</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl opacity-70 max-w-2xl mx-auto leading-relaxed"
-          >
-            Una interfaz diseñada para la calma. Sin ruido, solo tus ideas fluyendo a través de un diseño digital
-            consciente.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex justify-center gap-4 pt-4"
-          >
-            <button
-              className="px-8 py-4 rounded-full text-white font-medium text-lg hover:opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-95"
-              style={{ backgroundColor: colors.primary }}
-            >
-              Prueba Gratis
-            </button>
-            <button className="px-8 py-4 rounded-full bg-white/50 hover:bg-white font-medium text-lg transition-all border border-black/5 active:scale-95">
-              Ver Demo
-            </button>
-          </motion.div>
-        </section>
-
-        {/* BENTO GRID (El sello de identidad "Apple moderno") */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[600px]">
-          {/* Large Card Left */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="md:col-span-2 bg-white rounded-[2.5rem] p-10 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-500 group"
-          >
-            <div className="relative z-10 max-w-md">
-              <h3 className="text-3xl font-bold mb-4">Diseño Fluido</h3>
-              <p className="text-lg opacity-60">
-                Cada interacción responde naturalmente a tu tacto. Botones que respiran y transiciones que guían tu
-                vista.
-              </p>
+            {/* Pestañas estilo iOS Segmented Control */}
+            <div className="flex justify-center mb-8">
+              <TabsList className="bg-black/5 backdrop-blur-sm p-1.5 rounded-full h-auto inline-flex">
+                <TabsTrigger
+                  value="transcribe"
+                  className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <Mic className="w-4 h-4" />
+                    Transcribir
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="train"
+                  className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-sm transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4" />
+                    Entrenar Modelo
+                  </div>
+                </TabsTrigger>
+              </TabsList>
             </div>
-            {/* Abstract Art Circle */}
-            <div
-              className="absolute -right-20 -bottom-40 w-96 h-96 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-700"
-              style={{ backgroundColor: colors.blue }}
-            />
-            <div
-              className="absolute right-20 -bottom-20 w-72 h-72 rounded-full blur-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-700"
-              style={{ backgroundColor: colors.primary }}
-            />
-          </motion.div>
 
-          {/* Tall Card Right */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="bg-[#0D0C1D] rounded-[2.5rem] p-10 text-[#F5F8DE] flex flex-col justify-between relative overflow-hidden"
-          >
-            <div>
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center mb-6"
-                style={{ backgroundColor: colors.accent }}
+            {/* Contenedor de Cristal para la vista activa */}
+            <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-6 md:p-10 shadow-sm min-h-[400px] relative overflow-hidden">
+              {/* Decoración de fondo sutil */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#90C2E7]/20 rounded-full blur-3xl -z-10 pointer-events-none" />
+
+              <TabsContent
+                value="transcribe"
+                className="mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500"
               >
-                <span className="text-black text-xl font-bold">⚡</span>
-              </div>
-              <h3 className="text-2xl font-bold mb-2">Ultra Rápido</h3>
-              <p className="opacity-60">Optimizado para velocidad instantánea.</p>
-            </div>
+                <TranscribeView />
+              </TabsContent>
 
-            <div className="mt-10 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-mono opacity-70">Performance</span>
-                <span className="text-sm font-bold" style={{ color: colors.accent }}>
-                  99.9%
-                </span>
-              </div>
-              <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full w-[99%] bg-[#FFBC42] rounded-full" />
-              </div>
+              <TabsContent value="train" className="mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
+                <TrainView />
+              </TabsContent>
             </div>
-          </motion.div>
+          </Tabs>
+        </div>
 
-          {/* Bottom Wide Card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="md:col-span-3 bg-white/60 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center justify-between gap-8"
+        {/* --- BENTO GRID (Información extra abajo) --- */}
+        {/* Mantenemos esto para dar contexto si el usuario hace scroll */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 opacity-80 hover:opacity-100 transition-opacity">
+          <div className="md:col-span-2 bg-white/40 rounded-[2rem] p-8 border border-white/30 hover:bg-white/60 transition-colors">
+            <h3 className="text-xl font-bold mb-2">Encriptación AES-256</h3>
+            <p className="opacity-70 text-sm">
+              Tus grabaciones se encriptan en tu dispositivo antes de enviarse. Solo tú tienes la llave.
+            </p>
+          </div>
+          <Link
+            to="/privacy-center"
+            className="bg-[#0D0C1D] rounded-[2rem] p-8 text-[#F5F8DE] flex flex-col justify-between group hover:scale-[1.02] transition-transform cursor-pointer"
           >
-            <div>
-              <h3 className="text-3xl font-bold mb-2">Únete a Adagio</h3>
-              <p className="opacity-60 max-w-lg">
-                La plataforma preferida por creadores que valoran la estética y la funcionalidad.
-              </p>
+            <div className="flex justify-between items-start">
+              <ShieldCheck className="w-8 h-8" />
+              <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
             </div>
-            <button className="px-8 py-4 rounded-full bg-black text-white font-bold hover:scale-105 transition-transform">
-              Crear cuenta gratis
-            </button>
-          </motion.div>
+            <div>
+              <h3 className="font-bold mt-4">Centro de Privacidad</h3>
+              <p className="text-xs opacity-60 mt-1">Controla tus datos</p>
+            </div>
+          </Link>
         </section>
       </main>
+
+      <div className="mt-auto relative z-10">
+        <Footer />
+      </div>
     </div>
   );
 };
