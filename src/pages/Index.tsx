@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { Tabs, TabsContent } from "@/components/ui/tabs"; // TabsList ya no se usa aquí
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { TranscribeView } from "@/components/TranscribeView";
 import { TrainView } from "@/components/TrainView";
 import { Footer } from "@/components/Footer";
-import { UserMenu } from "@/components/UserMenu"; // AuthButton ya no se usa directamente aquí
+import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
-import { ShieldCheck, ArrowRight, Mic, Database, LogIn } from "lucide-react"; // Añadimos LogIn para el botón
-import { Link, useSearchParams, useNavigate } from "react-router-dom"; // Añadimos useNavigate
+import { ShieldCheck, ArrowRight, LogIn } from "lucide-react"; // Quitamos Mic y Database de los imports
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.svg";
 
 const colors = {
@@ -14,15 +14,15 @@ const colors = {
   primary: "#005C64", // Teal
   dark: "#0D0C1D", // Negro Suave
   accent: "#FFBC42", // Amarillo
+  blue: "#90C2E7", // Azulito
 };
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("transcribe");
   const { user, loading } = useAuth();
-  const navigate = useNavigate(); // Hook para la navegación programática
+  const navigate = useNavigate();
 
-  // Sincronizar tabs con URL
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam === "train" || tabParam === "transcribe") {
@@ -30,13 +30,11 @@ const Index = () => {
     }
   }, [searchParams]);
 
-  // Función para manejar el clic en "Iniciar Sesión"
   const handleLoginClick = () => {
-    navigate("/auth"); // Asume que la ruta de login es /auth
+    navigate("/auth");
   };
 
   return (
-    // IMPORTANTE: El Tabs Provider ahora envuelve TODO para que la navbar controle el contenido
     <Tabs
       value={activeTab}
       onValueChange={(value) => {
@@ -49,7 +47,6 @@ const Index = () => {
         className="min-h-screen w-full flex flex-col selection:bg-[#005C64] selection:text-white"
         style={{ backgroundColor: colors.bg, color: colors.dark }}
       >
-        {/* Enlaces accesibilidad */}
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-black text-white p-4 rounded-lg z-[100]"
@@ -57,47 +54,46 @@ const Index = () => {
           Saltar al contenido principal
         </a>
 
-        {/* --- LOGO GRANDE Y FUERA DE LA BARRA (Nueva posición) --- */}
+        {/* --- LOGO GIGANTE (x3) --- */}
         <Link
           to="/"
-          className="fixed top-8 left-8 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
+          className="fixed top-6 left-8 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
         >
-          <img src={logo} alt="Adagio Logo" className="h-16 w-auto md:h-20" />{" "}
-          {/* Logo 4 veces más grande (de h-8 a h-16/20) */}
+          {/* Clases h-32 md:h-40 para tamaño masivo */}
+          <img src={logo} alt="Adagio Logo" className="h-32 md:h-40 w-auto" />
         </Link>
 
         {/* --- BARRA DE HERRAMIENTAS FLOTANTE --- */}
-        <div className="fixed top-6 left-0 right-0 z-40 flex justify-center px-4 animate-fade-in-up [animation-delay:100ms] opacity-0 fill-mode-forwards">
-          <nav className="flex items-center gap-4 px-3 py-2 bg-white/70 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 w-full max-w-xl">
-            {/* IZQUIERDA: Controles de Transcribir/Entrenar (Ahora son botones normales) */}
-            <div className="flex-1 flex justify-center gap-2">
+        <div className="fixed top-8 left-0 right-0 z-40 flex justify-center px-4 animate-fade-in-up [animation-delay:100ms] opacity-0 fill-mode-forwards">
+          <nav className="flex items-center gap-2 px-3 py-2 bg-white/80 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 w-full max-w-lg justify-between">
+            {/* Controles de Transcribir/Entrenar (Solo Texto) */}
+            <div className="flex justify-center gap-1">
               <button
                 onClick={() => setActiveTab("transcribe")}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-all flex items-center gap-2 
-                              ${activeTab === "transcribe" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/70 hover:bg-black/5"}`}
+                className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all 
+                              ${activeTab === "transcribe" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/60 hover:bg-black/5"}`}
               >
-                <Mic className="w-4 h-4" />
-                <span>Transcribir</span>
+                Transcribir
               </button>
               <button
                 onClick={() => setActiveTab("train")}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-all flex items-center gap-2 
-                              ${activeTab === "train" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/70 hover:bg-black/5"}`}
+                className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all 
+                              ${activeTab === "train" ? "bg-white text-black shadow-sm" : "bg-transparent text-black/60 hover:bg-black/5"}`}
               >
-                <Database className="w-4 h-4" />
-                <span>Entrenar Modelo</span>
+                Entrenar Modelo
               </button>
             </div>
 
-            {/* DERECHA: UserMenu o Iniciar Sesión (SIEMPRE VISIBLE) */}
-            <div className="flex-shrink-0">
+            {/* Botón Login (Azulito) */}
+            <div className="flex-shrink-0 pl-2">
               {user ? (
                 <UserMenu />
               ) : (
                 !loading && (
                   <button
                     onClick={handleLoginClick}
-                    className="bg-[#0D0C1D] text-white px-5 py-2 rounded-full font-semibold text-sm flex items-center gap-2 hover:bg-black active:scale-95 transition-all shadow-md"
+                    className="px-6 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-sm"
+                    style={{ backgroundColor: colors.blue, color: colors.dark }}
                   >
                     <LogIn className="w-4 h-4" />
                     Iniciar sesión
@@ -109,8 +105,8 @@ const Index = () => {
         </div>
 
         {/* --- CONTENIDO PRINCIPAL --- */}
-        <main id="main-content" className="flex-1 pt-40 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-8">
-          {/* Textos de Cabecera (Ajustamos el padding top para no chocar con el logo) */}
+        {/* Aumentado pt-48 para dar aire respecto al logo y la barra */}
+        <main id="main-content" className="flex-1 pt-48 pb-20 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-8">
           <div className="text-center space-y-4 animate-fade-in-up [animation-delay:200ms] opacity-0 fill-mode-forwards">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/40 border border-[#005C64]/10 text-[#005C64] text-xs font-bold tracking-wide uppercase">
               <ShieldCheck className="w-3 h-3" />
@@ -122,10 +118,9 @@ const Index = () => {
             <p className="text-lg opacity-60 max-w-xl mx-auto">IA avanzada para el reconocimiento de habla atípica.</p>
           </div>
 
-          {/* --- VISTAS (Paneles de Cristal) --- */}
+          {/* VISTAS (Paneles de Cristal) */}
           <div className="w-full max-w-4xl mx-auto animate-fade-in-up [animation-delay:300ms] opacity-0 fill-mode-forwards">
             <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-6 md:p-10 shadow-sm min-h-[400px] relative overflow-hidden">
-              {/* Decoración de fondo */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-[#90C2E7]/20 rounded-full blur-3xl -z-10 pointer-events-none" />
 
               <TabsContent
