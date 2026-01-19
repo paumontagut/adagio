@@ -1572,7 +1572,12 @@ export const TrainingConsentModal = ({
     }
   };
   return <Dialog open={isOpen} modal onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto [&>button]:hidden">
+      <DialogContent 
+        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto [&>button]:hidden"
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-adagio-primary/10 flex items-center justify-center">
