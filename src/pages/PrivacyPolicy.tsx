@@ -66,9 +66,7 @@ export const PrivacyPolicy = () => {
                 estado de salud o factores neurológicos o respiratorios. Por esa razón, tratamos sus grabaciones de voz
                 como <strong>datos biométricos</strong> y consideramos que pueden incluir{" "}
                 <strong>datos de salud</strong> implícitos. Para procesarlos requerimos{" "}
-                <strong>consentimiento explícito</strong>, y hemos completado una{" "}
-                <strong>Evaluación de Impacto en Protección de Datos (EIPD)</strong> de conformidad con el art. 35 del
-                RGPD. Más abajo encontrará un resumen de las conclusiones y controles aplicados.
+                <strong>consentimiento explícito</strong>.
               </p>
             </section>
 
@@ -178,19 +176,6 @@ export const PrivacyPolicy = () => {
                 derivados que generamos a partir de datos <strong>anonimizados</strong> o <strong>agregados</strong> no
                 le identificarán y son propiedad de Adagio, sin perjuicio de sus derechos sobre los datos personales
                 originales y su capacidad para revocar consentimientos.
-              </p>
-            </section>
-
-            {/* DPIA */}
-            <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Evaluación de Impacto (EIPD)</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
-                Hemos realizado una EIPD debido al alto riesgo inherente al tratamiento de datos biométricos y a las
-                posibles inferencias de salud. El análisis consideró riesgos como la identificación permanente, la
-                inmutabilidad de la voz, la posibilidad de inferir patologías y la discriminación sanitaria. Tras
-                implantar medidas técnicas y organizativas reforzadas, la EIPD concluyó que el{" "}
-                <strong>riesgo residual es medio‑bajo</strong> y que el tratamiento puede continuar bajo supervisión
-                continua. Puede consultar un resumen de la EIPD desde el Centro de Privacidad.
               </p>
             </section>
 

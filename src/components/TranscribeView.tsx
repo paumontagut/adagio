@@ -59,7 +59,7 @@ export const TranscribeView = () => {
     }
   }, [state]);
 
-  const handleAudioReady = useCallback((blob: Blob) => {
+  const handleAudioReady = useCallback((blob: Blob, _metadata?: any) => {
     setAudioBlob(blob);
     setCanTranscribe(true);
     setError(null);
@@ -81,12 +81,12 @@ export const TranscribeView = () => {
       setState("transcribing");
       setProgress(50);
 
-      const session = await sessionManager.createSession();
-      const result = await transcribeService.transcribe(audioBlob, session.id, "adagio");
+      const file = new File([audioBlob], "audio.wav", { type: audioBlob.type || "audio/wav" });
+      const result = await transcribeService.transcribeFile(file);
 
       setAdagioResult({
         text: result.text,
-        provider: "adagio",
+        provider: result.provider || "adagio",
       });
 
       setProgress(100);
@@ -137,8 +137,7 @@ export const TranscribeView = () => {
 
     try {
       setIsPlaying(true);
-      const audioData = await speakWithElevenLabs(text);
-      const audio = new Audio(URL.createObjectURL(new Blob([audioData])));
+      const audio = await speakWithElevenLabs(text);
 
       audio.onended = () => setIsPlaying(false);
       audio.onerror = () => {
@@ -236,7 +235,7 @@ export const TranscribeView = () => {
             className="space-y-8 focus-visible:outline-none mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500"
           >
             <div className="relative">
-              <RecorderUploader onAudioReady={handleAudioReady} isProcessing={isProcessing} />
+              <RecorderUploader onAudioReady={handleAudioReady} disabled={isProcessing} />
             </div>
 
             {!isProcessing && !hasResults && audioBlob && (
