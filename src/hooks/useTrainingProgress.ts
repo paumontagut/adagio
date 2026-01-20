@@ -9,6 +9,14 @@ interface TrainingProgress {
   completedPhrases: string[];
 }
 
+interface TrainingProgressRow {
+  user_id: string;
+  phase: string;
+  golden_index: number;
+  completed_phrases: string[];
+  updated_at: string;
+}
+
 export const useTrainingProgress = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -22,23 +30,30 @@ export const useTrainingProgress = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      // Use untyped query since table may not exist in generated types yet
+      const { data, error } = await (supabase as any)
         .from('training_progress')
         .select('phase, golden_index, completed_phrases')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) {
-        console.error('Error loading training progress:', error);
+        // Table might not exist yet - this is expected
+        if (error.code === '42P01') {
+          console.log('Training progress table not yet created');
+        } else {
+          console.error('Error loading training progress:', error);
+        }
         setIsLoading(false);
         return;
       }
 
       if (data) {
+        const row = data as TrainingProgressRow;
         const progress: TrainingProgress = {
-          phase: data.phase as TrainingPhase,
-          goldenIndex: data.golden_index,
-          completedPhrases: data.completed_phrases || []
+          phase: row.phase as TrainingPhase,
+          goldenIndex: row.golden_index,
+          completedPhrases: row.completed_phrases || []
         };
         phraseService.loadProgress(progress);
         console.log('Loaded training progress from database');
@@ -60,7 +75,8 @@ export const useTrainingProgress = () => {
     try {
       const progress = phraseService.getProgress();
       
-      const { error } = await supabase
+      // Use untyped query since table may not exist in generated types yet
+      const { error } = await (supabase as any)
         .from('training_progress')
         .upsert({
           user_id: user.id,
@@ -73,7 +89,11 @@ export const useTrainingProgress = () => {
         });
 
       if (error) {
-        console.error('Error saving training progress:', error);
+        if (error.code === '42P01') {
+          console.log('Training progress table not yet created - skipping save');
+        } else {
+          console.error('Error saving training progress:', error);
+        }
       } else {
         console.log('Training progress saved');
       }
