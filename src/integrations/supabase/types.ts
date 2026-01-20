@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      audio_metadata: {
+        Row: {
+          audio_format: string | null
+          consent_store: boolean | null
+          consent_train: boolean | null
+          created_at: string | null
+          device_info: string | null
+          duration_ms: number | null
+          encryption_key_version: number | null
+          file_size_bytes: number | null
+          id: string
+          phrase_text: string | null
+          quality_score: number | null
+          sample_rate: number | null
+          session_pseudonym: string
+          unencrypted_file_path: string | null
+          unencrypted_file_size_bytes: number | null
+          unencrypted_storage_bucket: string | null
+        }
+        Insert: {
+          audio_format?: string | null
+          consent_store?: boolean | null
+          consent_train?: boolean | null
+          created_at?: string | null
+          device_info?: string | null
+          duration_ms?: number | null
+          encryption_key_version?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          phrase_text?: string | null
+          quality_score?: number | null
+          sample_rate?: number | null
+          session_pseudonym: string
+          unencrypted_file_path?: string | null
+          unencrypted_file_size_bytes?: number | null
+          unencrypted_storage_bucket?: string | null
+        }
+        Update: {
+          audio_format?: string | null
+          consent_store?: boolean | null
+          consent_train?: boolean | null
+          created_at?: string | null
+          device_info?: string | null
+          duration_ms?: number | null
+          encryption_key_version?: number | null
+          file_size_bytes?: number | null
+          id?: string
+          phrase_text?: string | null
+          quality_score?: number | null
+          sample_rate?: number | null
+          session_pseudonym?: string
+          unencrypted_file_path?: string | null
+          unencrypted_file_size_bytes?: number | null
+          unencrypted_storage_bucket?: string | null
+        }
+        Relationships: []
+      }
+      encrypted_audio_files: {
+        Row: {
+          created_at: string | null
+          encrypted_blob: string | null
+          id: string
+          iv: string | null
+          metadata_id: string | null
+          salt: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          encrypted_blob?: string | null
+          id?: string
+          iv?: string | null
+          metadata_id?: string | null
+          salt?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          encrypted_blob?: string | null
+          id?: string
+          iv?: string | null
+          metadata_id?: string | null
+          salt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encrypted_audio_files_metadata_id_fkey"
+            columns: ["metadata_id"]
+            isOneToOne: false
+            referencedRelation: "audio_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      encryption_keys: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          version: number
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          version: number
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          version?: number
+        }
+        Relationships: []
+      }
       participant_consents: {
         Row: {
           adult_declaration: boolean
@@ -65,6 +184,81 @@ export type Database = {
           region?: string
           session_pseudonym?: string
           user_agent?: string | null
+        }
+        Relationships: []
+      }
+      recordings: {
+        Row: {
+          audio_url: string | null
+          consent_store: boolean | null
+          consent_train: boolean | null
+          created_at: string | null
+          device_label: string | null
+          duration_ms: number | null
+          format: string | null
+          full_name: string | null
+          id: string
+          phrase_text: string | null
+          sample_rate: number | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          consent_store?: boolean | null
+          consent_train?: boolean | null
+          created_at?: string | null
+          device_label?: string | null
+          duration_ms?: number | null
+          format?: string | null
+          full_name?: string | null
+          id?: string
+          phrase_text?: string | null
+          sample_rate?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          consent_store?: boolean | null
+          consent_train?: boolean | null
+          created_at?: string | null
+          device_label?: string | null
+          duration_ms?: number | null
+          format?: string | null
+          full_name?: string | null
+          id?: string
+          phrase_text?: string | null
+          sample_rate?: number | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      session_mapping: {
+        Row: {
+          created_at: string | null
+          encrypted_session_id: string | null
+          id: string
+          mapping_iv: string | null
+          mapping_salt: string | null
+          session_pseudonym: string
+        }
+        Insert: {
+          created_at?: string | null
+          encrypted_session_id?: string | null
+          id?: string
+          mapping_iv?: string | null
+          mapping_salt?: string | null
+          session_pseudonym: string
+        }
+        Update: {
+          created_at?: string | null
+          encrypted_session_id?: string | null
+          id?: string
+          mapping_iv?: string | null
+          mapping_salt?: string | null
+          session_pseudonym?: string
         }
         Relationships: []
       }
