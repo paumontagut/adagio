@@ -111,16 +111,8 @@ async function handleStoreAudio(req: Request, supabase: any) {
     consentStore: data.consentStore
   })
 
-  // Generate pseudonym
-  const { data: pseudo, error: pseudoErr } = await supabase
-    .rpc('generate_pseudonym', { original_session_id: data.sessionId })
-
-  if (pseudoErr) {
-    console.error('Pseudonym error', pseudoErr)
-    return jsonError('Failed to generate session pseudonym', 500)
-  }
-
-  const sessionPseudonym = pseudo
+  // Generate pseudonym directly (no DB function needed)
+  const sessionPseudonym = await generatePseudonym(data.sessionId)
 
   // Get active key version
   const { data: keyData, error: keyErr } = await supabase
@@ -286,15 +278,8 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
 
   if (!data?.rawBlob) return jsonError('Missing raw audio data', 400);
 
-  // Generate pseudonym
-  const { data: pseudo, error: pseudoErr } = await supabase
-    .rpc('generate_pseudonym', { original_session_id: data.sessionId })
-
-  if (pseudoErr) {
-    console.error('Pseudonym error', pseudoErr)
-    return jsonError('Failed to generate session pseudonym', 500)
-  }
-  const sessionPseudonym = pseudo
+  // Generate pseudonym directly (no DB function needed)
+  const sessionPseudonym = await generatePseudonym(data.sessionId)
 
   // Get active key (use key_hash bytes directly as AES-256 key)
   const { data: keyRow, error: keyErr } = await supabase
@@ -427,6 +412,16 @@ function base64ToUint8(b64: string): Uint8Array {
   }
 }
 
+async function generatePseudonym(sessionId: string): Promise<string> {
+  // Generate a deterministic pseudonym from session ID using SHA-256
+  const encoder = new TextEncoder();
+  const data = encoder.encode(sessionId + '_pseudonym_salt');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return `ps_${hashHex.substring(0, 16)}`;
+}
+
 async function generateSignature(pseudonym: string, data: any): Promise<string> {
   const consentString = JSON.stringify({
     session_pseudonym: pseudonym,
@@ -522,15 +517,8 @@ async function handleStoreAudioPlaintext(req: Request, supabase: any) {
 
   if (!data?.rawBlob) return jsonError('Missing raw audio data', 400);
 
-  // Generate pseudonym
-  const { data: pseudo, error: pseudoErr } = await supabase
-    .rpc('generate_pseudonym', { original_session_id: data.sessionId })
-
-  if (pseudoErr) {
-    console.error('Pseudonym error', pseudoErr)
-    return jsonError('Failed to generate session pseudonym', 500)
-  }
-  const sessionPseudonym = pseudo;
+  // Generate pseudonym directly (no DB function needed)
+  const sessionPseudonym = await generatePseudonym(data.sessionId);
 
   // Decode raw audio
   const rawBytes = base64ToUint8(data.rawBlob);
