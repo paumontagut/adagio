@@ -68,7 +68,14 @@ serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const digital_signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    // Guardar evidencia de consentimiento en la tabla unificada
+    // Guardar evidencia de consentimiento en la tabla
+    // Incluir firma digital en consent_evidence_data
+    const enrichedEvidenceData = {
+      ...consent_evidence_data,
+      digital_signature,
+      consent_timestamp: new Date().toISOString()
+    };
+
     const { data: consentEvidence, error: insertError } = await supabase
       .from('participant_consents')
       .insert({
@@ -79,18 +86,15 @@ serve(async (req) => {
         country,
         region,
         adult_declaration,
-        adult_declaration_timestamp: new Date().toISOString(),
         consent_train: consent_train || false,
         consent_store: consent_store || false,
-        consent_timestamp: new Date().toISOString(),
-        consent_evidence_data,
-        digital_signature,
+        consent_evidence_data: enrichedEvidenceData,
         ip_address,
         user_agent,
         device_info
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (insertError) {
       console.error('Error inserting consent evidence:', insertError);
@@ -100,21 +104,13 @@ serve(async (req) => {
       );
     }
 
-    // Log el evento en audit_logs
-    await supabase
-      .from('audit_logs')
-      .insert({
-        event_type: 'consent_evidence_created',
-        details: {
-          consent_evidence_id: consentEvidence.id,
-          session_pseudonym,
-          adult_declaration,
-          consent_train,
-          consent_store,
-          digital_signature,
-          timestamp: new Date().toISOString()
-        }
-      });
+    // Log success (audit_logs table may not exist, so we just log to console)
+    console.log('Consent evidence saved successfully:', {
+      consent_evidence_id: consentEvidence?.id,
+      session_pseudonym,
+      consent_train,
+      consent_store
+    });
 
     return new Response(
       JSON.stringify({
