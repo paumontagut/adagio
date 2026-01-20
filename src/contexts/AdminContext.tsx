@@ -60,7 +60,8 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         return;
       }
 
-      const { data, error } = await supabase.rpc('validate_admin_session', {
+      // Use untyped query since function may not exist in generated types
+      const { data, error } = await (supabase as any).rpc('validate_admin_session', {
         token: sessionToken
       });
 
@@ -93,7 +94,8 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase.rpc('validate_admin_login', {
+      // Use untyped query since function may not exist in generated types
+      const { data, error } = await (supabase as any).rpc('validate_admin_login', {
         login_email: email,
         login_password: password
       });
@@ -166,13 +168,14 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
   const logActivity = async (action: string, resourceType: string, resourceId: string | null, details: any) => {
     try {
-      await supabase.from('admin_activity_log').insert({
+      // Use untyped query since table may not exist in generated types
+      await (supabase as any).from('admin_activity_log').insert({
         admin_user_id: adminUser?.id,
         action,
         resource_type: resourceType,
         resource_id: resourceId,
         details,
-        ip_address: null, // Could be populated from a service
+        ip_address: null,
         user_agent: navigator.userAgent
       });
     } catch (error) {

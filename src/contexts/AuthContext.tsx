@@ -40,7 +40,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Use untyped query since table may not exist in generated types
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -54,7 +55,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      setProfile(data);
+      if (data) {
+        setProfile(data as Profile);
+      }
     } catch (error) {
       logger.error('Error fetching profile', error as Error, {
         component: 'AuthContext',

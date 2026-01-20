@@ -170,12 +170,13 @@ export const AdminRecordings = () => {
       const sessionToken = await secureStorage.getAdminSession();
       if (!sessionToken) return null;
 
-      const { data, error } = await supabase.rpc('admin_get_identity_for_pseudonym', {
+      // Use untyped query since function may not exist in generated types
+      const { data, error } = await (supabase as any).rpc('admin_get_identity_for_pseudonym', {
         pseudonym,
         admin_session_token: sessionToken
       });
 
-      if (error || !data || data.length === 0) {
+      if (error || !data || (Array.isArray(data) && data.length === 0)) {
         return null;
       }
 
