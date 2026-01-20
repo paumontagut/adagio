@@ -411,11 +411,10 @@ const TrainView = () => {
       
       try {
         console.log('[TrainView] Starting recording...');
-        await audioRecorderRef.current?.startRecording();
-        // Check if recording actually started
-        const recorderIsRecording = audioRecorderRef.current?.isRecording;
-        console.log('[TrainView] Recorder isRecording:', recorderIsRecording);
-        if (recorderIsRecording) {
+        const success = await audioRecorderRef.current?.startRecording();
+        console.log('[TrainView] startRecording returned:', success);
+        
+        if (success) {
           setIsRecording(true);
           toast({
             title: "Grabando...",

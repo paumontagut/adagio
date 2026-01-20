@@ -22,7 +22,7 @@ interface AudioDevice {
 }
 
 export interface AudioRecorderHandle {
-  startRecording: () => Promise<void>;
+  startRecording: () => Promise<boolean>;
   stopRecording: () => void;
   isRecording: boolean;
 }
@@ -148,7 +148,7 @@ export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>
     }
   }, []);
 
-  const startRecording = async () => {
+  const startRecording = async (): Promise<boolean> => {
     try {
       // Check permissions first - if not granted, request them
       if (permissionGranted !== true) {
@@ -164,7 +164,7 @@ export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>
             description: "Por favor permite el acceso al micrófono para grabar audio",
             variant: "destructive"
           });
-          return;
+          return false;
         }
       }
 
@@ -280,6 +280,8 @@ export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>
         });
       }, 1000);
 
+      return true;
+
     } catch (error) {
       console.error('Error starting recording:', error);
       toast({
@@ -287,6 +289,7 @@ export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>
         description: "No se pudo iniciar la grabación. Verifica los permisos del micrófono.",
         variant: "destructive"
       });
+      return false;
     }
   };
 
