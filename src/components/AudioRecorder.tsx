@@ -169,23 +169,45 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
       const options: MediaRecorderOptions = {};
       if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
         options.mimeType = 'audio/webm;codecs=opus';
-      } else if (MediaRecorder.isTypeSupported('audio/wav')) {
-        options.mimeType = 'audio/wav';
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        options.mimeType = 'audio/webm';
       }
 
       const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
 
       const chunks: Blob[] = [];
-      
+
+      mediaRecorder.onstart = () => {
+        // Some browsers only emit data when a timeslice is used; keep a small slice.
+        console.log('MediaRecorder started', { mimeType: mediaRecorder.mimeType });
+      };
+
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           chunks.push(event.data);
         }
       };
 
       mediaRecorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
+        // If the browser didn't emit chunks, we can't build a recording.
+        if (chunks.length === 0) {
+          console.error('No audio chunks captured (MediaRecorder produced empty data)');
+          toast({
+            title: 'No se capturó audio',
+            description: 'No se detectó entrada del micrófono. Revisa permisos y el dispositivo seleccionado.',
+            variant: 'destructive'
+          });
+
+          // Cleanup
+          stream.getTracks().forEach(track => track.stop());
+          if (audioContextRef.current) {
+            audioContextRef.current.close();
+          }
+          return;
+        }
+
+        const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
         setRecordedBlob(blob);
         
         // Process audio
@@ -219,7 +241,8 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
         }
       };
 
-      mediaRecorder.start();
+      // Use a small timeslice so dataavailable fires reliably across browsers
+      mediaRecorder.start(250);
       setIsRecording(true);
       isRecordingRef.current = true;
       setRecordingTime(0);
