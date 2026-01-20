@@ -666,8 +666,14 @@ const TrainView = () => {
             variant="ghost" 
             size="sm" 
             onClick={() => {
-              getNewPhrase();
+              console.log('[TrainView] Next button clicked');
+              setAudioBlob(null);
+              setProcessingResult(null);
+              setError(null);
               setIsSuccess(false);
+              setIsRecording(false);
+              setIsPlaying(false);
+              getNewPhrase();
               setPhraseCount(prev => prev + 1);
             }}
             className="text-muted-foreground hover:text-foreground"
