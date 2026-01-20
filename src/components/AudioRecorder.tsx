@@ -114,13 +114,15 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
     }
   };
 
-  const monitorAudioLevel = () => {
+  const isRecordingRef = useRef(false);
+
+  const monitorAudioLevel = useCallback(() => {
     if (analyserRef.current) {
       const bufferLength = analyserRef.current.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
       
       const updateLevel = () => {
-        if (analyserRef.current && isRecording) {
+        if (analyserRef.current && isRecordingRef.current) {
           analyserRef.current.getByteFrequencyData(dataArray);
           
           // Calculate RMS level
@@ -138,7 +140,7 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
       
       updateLevel();
     }
-  };
+  }, []);
 
   const startRecording = async () => {
     try {
@@ -219,6 +221,7 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
 
       mediaRecorder.start();
       setIsRecording(true);
+      isRecordingRef.current = true;
       setRecordingTime(0);
       
       // Track analytics
@@ -249,6 +252,7 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      isRecordingRef.current = false;
       setAudioLevel(0);
       
       if (intervalRef.current) {
