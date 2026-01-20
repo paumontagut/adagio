@@ -92,8 +92,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    const adminUser = (sessionData.admin_users as unknown as { id: string; email: string; full_name: string; role: string; is_active: boolean }[] | null)?.[0];
+    // admin_users is returned as an object (not array) due to !inner join
+    const adminUser = sessionData.admin_users as unknown as { id: string; email: string; full_name: string; role: string; is_active: boolean };
+    
+    console.log('Admin user from session:', JSON.stringify(adminUser));
+    
     if (!adminUser?.is_active || !['admin', 'analyst'].includes(adminUser?.role || '')) {
+      console.error('Permission check failed:', { is_active: adminUser?.is_active, role: adminUser?.role });
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { 
