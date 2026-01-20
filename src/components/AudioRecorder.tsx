@@ -150,9 +150,22 @@ export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>
 
   const startRecording = async () => {
     try {
-      if (!permissionGranted) {
-        await checkPermissionsAndDevices();
-        if (!permissionGranted) return;
+      // Check permissions first - if not granted, request them
+      if (permissionGranted !== true) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          setPermissionGranted(true);
+          stream.getTracks().forEach(track => track.stop());
+        } catch (permError) {
+          console.error('Permission denied:', permError);
+          setPermissionGranted(false);
+          toast({
+            title: "Permisos requeridos",
+            description: "Por favor permite el acceso al micrófono para grabar audio",
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
       const constraints: MediaStreamConstraints = {
