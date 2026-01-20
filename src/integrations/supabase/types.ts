@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      participant_consents: {
+        Row: {
+          adult_declaration: boolean
+          age_range: string
+          consent_evidence_data: Json | null
+          consent_store: boolean
+          consent_train: boolean
+          country: string
+          created_at: string
+          device_info: string | null
+          email: string | null
+          full_name: string
+          id: string
+          ip_address: string | null
+          region: string
+          session_pseudonym: string
+          user_agent: string | null
+        }
+        Insert: {
+          adult_declaration?: boolean
+          age_range: string
+          consent_evidence_data?: Json | null
+          consent_store?: boolean
+          consent_train?: boolean
+          country: string
+          created_at?: string
+          device_info?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          ip_address?: string | null
+          region: string
+          session_pseudonym: string
+          user_agent?: string | null
+        }
+        Update: {
+          adult_declaration?: boolean
+          age_range?: string
+          consent_evidence_data?: Json | null
+          consent_store?: boolean
+          consent_train?: boolean
+          country?: string
+          created_at?: string
+          device_info?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          ip_address?: string | null
+          region?: string
+          session_pseudonym?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       training_progress: {
         Row: {
           completed_phrases: string[] | null
