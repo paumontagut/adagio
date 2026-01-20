@@ -278,20 +278,42 @@ export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>
   };
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      isRecordingRef.current = false;
-      setAudioLevel(0);
+    // Stop regardless of React state - use MediaRecorder state directly
+    const recorder = mediaRecorderRef.current;
+    if (recorder && (recorder.state === 'recording' || recorder.state === 'paused')) {
+      console.log('[AudioRecorder] Stopping recording, state:', recorder.state);
       
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
+      
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
+      
+      try {
+        recorder.stop();
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        console.log('[AudioRecorder] MediaRecorder.stop() called');
+      } catch (err) {
+        console.error('[AudioRecorder] Error stopping recorder:', err);
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        toast({
+          title: "Error",
+          description: "Error al detener la grabación",
+          variant: "destructive"
+        });
+      }
+    } else {
+      console.log('[AudioRecorder] No active recording to stop, state:', recorder?.state);
+      setIsRecording(false);
+      isRecordingRef.current = false;
     }
-  }, [isRecording]);
+  }, [toast]);
 
   // Expose methods via ref for parent component control
   useImperativeHandle(ref, () => ({
