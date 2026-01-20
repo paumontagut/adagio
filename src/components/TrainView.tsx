@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { AudioRecorder } from '@/components/AudioRecorder';
+import { AudioRecorder, AudioRecorderHandle } from '@/components/AudioRecorder';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { ConsentModal } from '@/components/ConsentModal';
@@ -55,6 +55,7 @@ const TrainView = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [handsFreeModeActive, setHandsFreeModeActive] = useState(false);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const audioRecorderRef = useRef<AudioRecorderHandle>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -381,12 +382,15 @@ const TrainView = () => {
     });
   };
 
-  const handleRecordToggle = () => {
+  const handleRecordToggle = async () => {
     if (isRecording) {
-      // Stop recording logic will be handled by AudioRecorder
+      // Stop recording via AudioRecorder ref
+      audioRecorderRef.current?.stopRecording();
       setIsRecording(false);
     } else {
+      // Start recording via AudioRecorder ref
       setIsRecording(true);
+      await audioRecorderRef.current?.startRecording();
     }
   };
 
@@ -448,7 +452,7 @@ const TrainView = () => {
       <TrainingConsentModal 
         isOpen={showTrainingConsentModal} 
         onConsentGiven={handleTrainingConsentGiven}
-        onCancel={() => { setShowTrainingConsentModal(false); navigate('/?tab=transcribe'); }}
+        onCancel={() => navigate('/?tab=transcribe')}
       />
       
       {/* Consent Modal */}
@@ -572,9 +576,9 @@ const TrainView = () => {
           </div>
         )}
 
-        {/* Hidden Audio Recorder */}
+        {/* Hidden Audio Recorder - controlled via ref */}
         <div className="hidden">
-          <AudioRecorder onRecordingComplete={handleRecordingComplete} maxDuration={30} />
+          <AudioRecorder ref={audioRecorderRef} onRecordingComplete={handleRecordingComplete} maxDuration={30} />
         </div>
 
         {/* Navigation Buttons */}

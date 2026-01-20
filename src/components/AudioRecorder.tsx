@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,7 +21,13 @@ interface AudioDevice {
   label: string;
 }
 
-export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRecorderProps) => {
+export interface AudioRecorderHandle {
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
+  isRecording: boolean;
+}
+
+export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>(({ onRecordingComplete, maxDuration = 60 }, ref) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -287,6 +293,13 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
     }
   }, [isRecording]);
 
+  // Expose methods via ref for parent component control
+  useImperativeHandle(ref, () => ({
+    startRecording,
+    stopRecording,
+    isRecording
+  }), [isRecording, stopRecording]);
+
   const togglePlayback = () => {
     if (!audioUrl || !audioElementRef.current) return;
 
@@ -501,4 +514,4 @@ export const AudioRecorder = ({ onRecordingComplete, maxDuration = 60 }: AudioRe
       )}
     </div>
   );
-};
+});
