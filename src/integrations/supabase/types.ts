@@ -427,7 +427,37 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_participant_consents_with_token: {
+        Args: { p_session_token: string }
+        Returns: {
+          adult_declaration: boolean
+          adult_declaration_timestamp: string
+          age_range: string
+          consent_evidence_data: Json
+          consent_store: boolean
+          consent_timestamp: string
+          consent_train: boolean
+          country: string
+          created_at: string
+          device_info: string
+          digital_signature: string
+          email: string
+          full_name: string
+          id: string
+          ip_address: string
+          migrated_from: string
+          region: string
+          session_pseudonym: string
+          user_agent: string
+          withdrawal_reason: string
+          withdrawn_at: string
+        }[]
+      }
       invalidate_admin_session: { Args: { token: string }; Returns: undefined }
+      log_consent_evidence_access: {
+        Args: { p_consent_evidence_id: string; p_session_pseudonym: string }
+        Returns: undefined
+      }
       validate_admin_login: {
         Args: { login_email: string; login_password: string }
         Returns: {
