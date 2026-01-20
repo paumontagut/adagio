@@ -109,9 +109,24 @@ const TrainView = () => {
     setIsSuccess(false);
   }, []);
   const handleRecordingComplete = (blob: Blob, result?: ProcessingResult) => {
+    console.log('[TrainView] Recording complete, blob size:', blob.size);
     setAudioBlob(blob);
     setProcessingResult(result || null);
     setError(null);
+    setIsRecording(false);
+    
+    if (blob.size > 0) {
+      toast({
+        title: "Grabación lista",
+        description: "Puedes escucharla o enviarla"
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "No se capturó audio",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSubmit = async () => {
@@ -384,13 +399,45 @@ const TrainView = () => {
 
   const handleRecordToggle = async () => {
     if (isRecording) {
-      // Stop recording via AudioRecorder ref
+      // Stop recording
+      console.log('[TrainView] Stopping recording...');
       audioRecorderRef.current?.stopRecording();
       setIsRecording(false);
     } else {
-      // Start recording via AudioRecorder ref
-      setIsRecording(true);
-      await audioRecorderRef.current?.startRecording();
+      // Clear previous recording before starting new one
+      setAudioBlob(null);
+      setProcessingResult(null);
+      setError(null);
+      
+      try {
+        console.log('[TrainView] Starting recording...');
+        await audioRecorderRef.current?.startRecording();
+        // Check if recording actually started
+        const recorderIsRecording = audioRecorderRef.current?.isRecording;
+        console.log('[TrainView] Recorder isRecording:', recorderIsRecording);
+        if (recorderIsRecording) {
+          setIsRecording(true);
+          toast({
+            title: "Grabando...",
+            description: "Habla claramente cerca del micrófono"
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "No se pudo iniciar la grabación",
+            variant: "destructive"
+          });
+          setIsRecording(false);
+        }
+      } catch (err) {
+        console.error('[TrainView] Error starting recording:', err);
+        toast({
+          title: "Error",
+          description: "Error al iniciar la grabación",
+          variant: "destructive"
+        });
+        setIsRecording(false);
+      }
     }
   };
 
@@ -514,63 +561,81 @@ const TrainView = () => {
 
         {/* Recording Controls */}
         {!showTrainingConsentModal && (
-          <div className="flex items-center justify-center gap-12">
-            {/* Re-record Button */}
-            {audioBlob && (
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleReRecord}
-                  className="h-12 w-12 rounded-full text-primary hover:text-primary/80"
-                >
-                  <RotateCcw className="h-6 w-6" />
-                </Button>
-                <span className="text-sm text-muted-foreground">Re-grabar</span>
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Alt</span>
+          <div className="flex flex-col items-center gap-8">
+            {/* Recording Status Indicator */}
+            {isRecording && (
+              <div className="flex items-center gap-3 text-destructive animate-pulse">
+                <div className="w-4 h-4 rounded-full bg-destructive" />
+                <span className="font-semibold text-lg">Grabando...</span>
               </div>
             )}
 
-            {/* Main Record/Submit Button */}
-            <div className="flex flex-col items-center gap-3">
-              <button
-                onClick={audioBlob ? handleSubmit : handleRecordToggle}
-                disabled={isSubmitting}
-                className={`h-40 w-40 rounded-full flex flex-col items-center justify-center text-white font-semibold text-lg transition-all shadow-lg hover:shadow-xl
-                  ${audioBlob 
-                    ? 'bg-[#2B5A8C] hover:bg-[#234774]' 
-                    : isRecording 
-                    ? 'bg-[#2B5A8C] hover:bg-[#234774]' 
-                    : 'bg-[#F17C58] hover:bg-[#E06844]'
-                  }
-                  ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                ) : (
-                  <>
-                    <span>Toca</span>
-                    <span>{audioBlob ? 'para enviar' : isRecording ? 'para parar' : 'para grabar'}</span>
-                  </>
-                )}
-              </button>
-              <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">[Espacio]</span>
+            <div className="flex items-center justify-center gap-12">
+              {/* Re-record Button */}
+              {audioBlob && !isRecording && (
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleReRecord}
+                    className="h-12 w-12 rounded-full text-primary hover:text-primary/80"
+                  >
+                    <RotateCcw className="h-6 w-6" />
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Re-grabar</span>
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Alt</span>
+                </div>
+              )}
+
+              {/* Main Record/Stop Button */}
+              <div className="flex flex-col items-center gap-3">
+                <button
+                  onClick={audioBlob && !isRecording ? handleSubmit : handleRecordToggle}
+                  disabled={isSubmitting}
+                  className={`h-40 w-40 rounded-full flex flex-col items-center justify-center text-white font-semibold text-lg transition-all shadow-lg hover:shadow-xl
+                    ${audioBlob && !isRecording
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : isRecording 
+                      ? 'bg-destructive hover:bg-destructive/90' 
+                      : 'bg-[#F17C58] hover:bg-[#E06844]'
+                    }
+                    ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Toca</span>
+                      <span>{audioBlob && !isRecording ? 'para enviar' : isRecording ? 'para parar' : 'para grabar'}</span>
+                    </>
+                  )}
+                </button>
+                <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">[Espacio]</span>
+              </div>
+
+              {/* Play Button */}
+              {audioBlob && !isRecording && (
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handlePlayRecording}
+                    className={`h-12 w-12 rounded-full ${isPlaying ? 'text-green-600' : 'text-primary'} hover:text-primary/80`}
+                  >
+                    <Play className="h-6 w-6" />
+                  </Button>
+                  <span className="text-sm text-muted-foreground">{isPlaying ? 'Reproduciendo' : 'Reproducir'}</span>
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">P</span>
+                </div>
+              )}
             </div>
 
-            {/* Play Button */}
-            {audioBlob && (
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handlePlayRecording}
-                  className="h-12 w-12 rounded-full text-primary hover:text-primary/80"
-                >
-                  <Play className="h-6 w-6" />
-                </Button>
-                <span className="text-sm text-muted-foreground">Reproducir</span>
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">P</span>
+            {/* Recording Ready Message */}
+            {audioBlob && !isRecording && (
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckCircle className="h-5 w-5" />
+                <span className="font-medium">Grabación lista - Escúchala o envíala</span>
               </div>
             )}
           </div>
