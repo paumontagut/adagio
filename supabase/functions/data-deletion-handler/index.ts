@@ -137,7 +137,7 @@ async function handleCompleteDataDeletion(req: Request, supabase: any) {
       .eq('session_pseudonym', sessionPseudonym);
 
     if (metadataRecords && metadataRecords.length > 0) {
-      const metadataIds = metadataRecords.map(m => m.id);
+      const metadataIds = metadataRecords.map((m: { id: string }) => m.id);
       
       const { error: filesDeleteError } = await supabase
         .from('encrypted_audio_files')
@@ -168,7 +168,7 @@ async function handleCompleteDataDeletion(req: Request, supabase: any) {
       .from('participant_consents')
       .update({ 
         withdrawn_at: new Date().toISOString(),
-        withdrawal_reason: deletionRequest.confirmationType || 'User requested deletion'
+        withdrawal_reason: deletionRequest.confirmationText || 'User requested deletion'
       })
       .eq('session_pseudonym', sessionPseudonym)
       .select('id');

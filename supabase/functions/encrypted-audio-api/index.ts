@@ -21,7 +21,7 @@ interface EncryptedAudioData {
   fullName: string;
 }
 
-denoServe: Deno.ServeHandler;
+
 
 Deno.serve(async (req) => {
   // Handle CORS
@@ -159,7 +159,7 @@ async function handleStoreAudio(req: Request, supabase: any) {
     const keyBytes = await decodeKeyMaterial(keyData.key_hash)
     
     // Intentar descifrar
-    const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt'])
+    const cryptoKey = await crypto.subtle.importKey('raw', keyBytes.buffer as ArrayBuffer, { name: 'AES-GCM' }, false, ['decrypt'])
     let processedIv = iv
     if (iv.length !== 12 && iv.length !== 16) {
       if (iv.length > 12) processedIv = iv.slice(0, 12)
@@ -169,7 +169,7 @@ async function handleStoreAudio(req: Request, supabase: any) {
         processedIv = paddedIv
       }
     }
-    const decryptedBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: processedIv }, cryptoKey, encryptedBytes)
+    const decryptedBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: processedIv.buffer as ArrayBuffer }, cryptoKey, encryptedBytes.buffer as ArrayBuffer)
     const decryptedBytes = new Uint8Array(decryptedBuf)
     
     // Guardar versión sin cifrar
@@ -316,8 +316,8 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
   const rawBytes = base64ToUint8(data.rawBlob);
 
   // Encrypt server-side
-  const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt']);
-  const encryptedBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, rawBytes);
+  const cryptoKey = await crypto.subtle.importKey('raw', keyBytes.buffer as ArrayBuffer, { name: 'AES-GCM' }, false, ['encrypt']);
+  const encryptedBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv.buffer as ArrayBuffer }, cryptoKey, rawBytes.buffer as ArrayBuffer);
   const encryptedBytes = new Uint8Array(encryptedBuf);
 
   // Guardar versión sin cifrar primero
@@ -462,7 +462,7 @@ async function decodeKeyMaterial(key: string | Uint8Array): Promise<Uint8Array> 
   if (key instanceof Uint8Array) {
     if (key.byteLength === 16 || key.byteLength === 24 || key.byteLength === 32) return key;
     // Normalize to 32 bytes via SHA-256
-    const hash = await crypto.subtle.digest('SHA-256', key);
+    const hash = await crypto.subtle.digest('SHA-256', key.buffer as ArrayBuffer);
     return new Uint8Array(hash);
   }
 

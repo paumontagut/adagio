@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
 
     // Route: Cleanup expired data
     if (req.method === 'POST' && path === '/cleanup') {
-      return await handleStorageCleanup(supabase);
+      return await cleanupExpiredData(supabase);
     }
 
     return new Response(
@@ -314,7 +314,13 @@ async function handleStorageStats(supabase: any) {
   try {
     // Get bucket statistics
     const buckets = ['audio_raw', 'audio_clean', 'labels', 'worm_backup'];
-    const stats = {
+    const stats: {
+      buckets: Record<string, { fileCount: number; sizeBytes: number; lastModified: string }>;
+      totalFiles: number;
+      activeKeys: number;
+      auditLogs: number;
+      lastUpdate: string;
+    } = {
       buckets: {},
       totalFiles: 0,
       activeKeys: 0,

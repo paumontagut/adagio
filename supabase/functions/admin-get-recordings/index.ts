@@ -92,8 +92,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const adminUser = sessionData.admin_users;
-    if (!adminUser.is_active || !['admin', 'analyst'].includes(adminUser.role)) {
+    const adminUser = (sessionData.admin_users as unknown as { id: string; email: string; full_name: string; role: string; is_active: boolean }[] | null)?.[0];
+    if (!adminUser?.is_active || !['admin', 'analyst'].includes(adminUser?.role || '')) {
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { 
@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
     const enrichedData = [...modernRecordings, ...legacyRecordings]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    console.log(`Returning ${enrichedData.length} recordings for admin ${adminUser.email} (pseudonyms only, identity data separated)`);
+    console.log(`Returning ${enrichedData.length} recordings for admin ${adminUser?.email || 'unknown'} (pseudonyms only, identity data separated)`);
 
     return new Response(
       JSON.stringify({ 
