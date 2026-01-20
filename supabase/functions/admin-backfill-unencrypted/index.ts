@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
         const filename = `backfill/${t.id}_${new Date(t.created_at).toISOString().slice(0,10)}.${t.audio_format || 'wav'}`
         const { error: upErr } = await supabase.storage
           .from(bucket)
-          .upload(filename, new Blob([decrypted], { type: 'audio/wav' }), { upsert: true, contentType: 'audio/wav' })
+          .upload(filename, new Uint8Array(decrypted), { upsert: true, contentType: 'audio/wav' })
         if (upErr) {
           failed++
           results.push({ id: t.id, status: 'failed', error: upErr.message })
@@ -201,7 +201,7 @@ function hexToUint8(hex: string): Uint8Array {
 async function decodeKeyMaterial(key: string | Uint8Array): Promise<Uint8Array> {
   if (key instanceof Uint8Array) {
     if (key.byteLength === 16 || key.byteLength === 24 || key.byteLength === 32) return key
-    const hash = await crypto.subtle.digest('SHA-256', key)
+    const hash = await crypto.subtle.digest('SHA-256', key.buffer as ArrayBuffer)
     return new Uint8Array(hash)
   }
   const k = (key || '').trim()
@@ -216,12 +216,12 @@ async function decodeKeyMaterial(key: string | Uint8Array): Promise<Uint8Array> 
     if (b.byteLength === 16 || b.byteLength === 24 || b.byteLength === 32) return b
   }
   const enc = new TextEncoder().encode(k)
-  const hash = await crypto.subtle.digest('SHA-256', enc)
+  const hash = await crypto.subtle.digest('SHA-256', enc.buffer as ArrayBuffer)
   return new Uint8Array(hash)
 }
 
 async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint8Array): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey('raw', keyRaw, { name: 'AES-GCM' }, false, ['decrypt'])
+  const key = await crypto.subtle.importKey('raw', keyRaw.buffer as ArrayBuffer, { name: 'AES-GCM' }, false, ['decrypt'])
   let processedIv = iv
   if (iv.length !== 12 && iv.length !== 16) {
     if (iv.length > 12) processedIv = iv.slice(0, 12)
@@ -231,6 +231,6 @@ async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint
       processedIv = paddedIv
     }
   }
-  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: processedIv }, key, encrypted)
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: processedIv.buffer as ArrayBuffer }, key, encrypted.buffer as ArrayBuffer)
   return new Uint8Array(decrypted)
 }

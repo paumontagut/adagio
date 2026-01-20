@@ -259,9 +259,10 @@ serve(async (req) => {
         
         console.log('Unencrypted download successful:', filename);
         return json({ base64, filename, mimeType: 'audio/wav' }, 200);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error downloading unencrypted file:', error);
-        return json({ error: 'Failed to download unencrypted file', details: error.message }, 500);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return json({ error: 'Failed to download unencrypted file', details: errorMessage }, 500);
       }
     }
 
@@ -346,9 +347,9 @@ serve(async (req) => {
       const filename = `encrypted_${sanitize(meta.phrase_text)}_${new Date(meta.created_at).toISOString().slice(0,10)}.${meta.audio_format || 'wav'}`;
 
       return json({ base64, filename, mimeType: 'audio/wav' }, 200);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Decryption failed:', e);
-      const errorMsg = e?.message || '';
+      const errorMsg = e instanceof Error ? e.message : '';
       
       // For legacy files, try to fallback to unencrypted version if available
       if ((errorMsg.includes('iv length') || errorMsg.includes('OperationError') || meta.encryption_key_version === 1)) {
@@ -385,9 +386,10 @@ serve(async (req) => {
       
       return json({ error: 'DECRYPTION_FAILED', details: errorMsg }, 422);
     }
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('decrypt-download error:', e);
-    return json({ error: e?.message || 'Internal server error' }, 500);
+    const errorMessage = e instanceof Error ? e.message : 'Internal server error';
+    return json({ error: errorMessage }, 500);
   }
 });
 
@@ -423,7 +425,7 @@ function hexToUint8(hex: string): Uint8Array {
 async function decodeKeyMaterial(key: string | Uint8Array): Promise<Uint8Array> {
   if (key instanceof Uint8Array) {
     if (key.byteLength === 16 || key.byteLength === 24 || key.byteLength === 32) return key;
-    const hash = await crypto.subtle.digest('SHA-256', key);
+    const hash = await crypto.subtle.digest('SHA-256', key.buffer as ArrayBuffer);
     return new Uint8Array(hash);
   }
   const k = (key || '').trim();
@@ -439,12 +441,12 @@ async function decodeKeyMaterial(key: string | Uint8Array): Promise<Uint8Array> 
   }
   // fallback sha-256 of utf-8 string
   const enc = new TextEncoder().encode(k);
-  const hash = await crypto.subtle.digest('SHA-256', enc);
+  const hash = await crypto.subtle.digest('SHA-256', enc.buffer as ArrayBuffer);
   return new Uint8Array(hash);
 }
 
 async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint8Array): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey('raw', keyRaw, { name: 'AES-GCM' }, false, ['decrypt']);
+  const key = await crypto.subtle.importKey('raw', keyRaw.buffer as ArrayBuffer, { name: 'AES-GCM' }, false, ['decrypt']);
   
   // Handle different IV lengths - AES-GCM typically uses 12 bytes, but some legacy might use 16
   let processedIv = iv;
@@ -462,11 +464,12 @@ async function decryptAesGcm(encrypted: Uint8Array, iv: Uint8Array, keyRaw: Uint
   }
   
   try {
-    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: processedIv }, key, encrypted);
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: processedIv.buffer as ArrayBuffer }, key, encrypted.buffer as ArrayBuffer);
     return new Uint8Array(decrypted);
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Decryption failed:', e);
-    throw new Error(`DECRYPTION_FAILED: ${e.message}`);
+    const errorMessage = e instanceof Error ? e.message : 'Unknown decryption error';
+    throw new Error(`DECRYPTION_FAILED: ${errorMessage}`);
   }
 }
 

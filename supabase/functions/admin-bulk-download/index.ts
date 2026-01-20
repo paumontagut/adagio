@@ -65,7 +65,7 @@ serve(async (req) => {
 
     // Process unencrypted recordings
     for (const recording of unencryptedRecordings) {
-      csvContent += `${recording.id},${recording.created_at},${(recording.phrase_text || '').replace(/,/g, ';')},${recording.duration_ms || 0},${recording.format || 'unknown'},${recording.consent_store || false},${recording.consent_train || false},no_cifrado,${recording.user_id || 'guest'}\n`
+      csvContent += `${recording.id},${recording.created_at},${(recording.phrase_text || '').replace(/,/g, ';')},${recording.duration_ms || 0},${recording.format || 'unknown'},${recording.consent_store || false},${recording.consent_train || false},no_cifrado,guest\n`
       
       // Download audio file if available
       if (recording.audio_url) {
@@ -138,12 +138,13 @@ serve(async (req) => {
       }
     )
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Bulk download error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        details: error.message 
+        details: errorMessage 
       }),
       { 
         status: 500, 

@@ -67,16 +67,19 @@ async function handleDataExport(req: Request, supabase: any) {
 
     if (mappingError) {
       console.error('Error finding session mapping:', mappingError);
-      // Fallback: try to generate pseudonym for existing data
+    }
+    
+    // Fallback: try to generate pseudonym for existing data
+    let sessionPseudonym = mappingData?.session_pseudonym;
+    if (!sessionPseudonym) {
       const { data: pseudonymResult } = await supabase
         .rpc('generate_pseudonym', { original_session_id: sessionId });
       
       if (!pseudonymResult) {
         throw new Error('Session not found');
       }
+      sessionPseudonym = pseudonymResult;
     }
-
-    const sessionPseudonym = mappingData?.session_pseudonym || pseudonymResult;
 
     // Collect all user data
     const exportData = {
@@ -108,7 +111,7 @@ async function handleDataExport(req: Request, supabase: any) {
 
     // Get encrypted audio files
     if (exportData.audioMetadata.length > 0) {
-      const metadataIds = exportData.audioMetadata.map(m => m.id);
+      const metadataIds = (exportData.audioMetadata as Array<{ id: string }>).map(m => m.id);
       
       const { data: encryptedFiles, error: filesError } = await supabase
         .from('encrypted_audio_files')
@@ -198,8 +201,12 @@ async function handleDataExport(req: Request, supabase: any) {
       }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in data export:', error);
-    throw error;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(
+      JSON.stringify({ error: 'Data export failed', details: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 }
