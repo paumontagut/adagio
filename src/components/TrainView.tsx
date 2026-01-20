@@ -466,6 +466,8 @@ const TrainView = () => {
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      if (!e.key) return; // Guard against undefined key
+      
       if (e.ctrlKey && !e.repeat) {
         handlePlayPhrase();
       }
