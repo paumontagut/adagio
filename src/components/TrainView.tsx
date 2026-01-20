@@ -102,11 +102,22 @@ const TrainView = () => {
 
   // No encryption initialization needed anymore
   const getNewPhrase = useCallback(() => {
-    const newPhrase = phraseService.getRandomPhrase();
+    // Advance phrase according to the 2-phase training flow
+    const goldenCompleted = phraseService.nextPhrase();
+    if (goldenCompleted) {
+      phraseService.transitionToExtendedPhase();
+    }
+
+    const newPhrase = phraseService.getCurrentPhrase();
     setCurrentPhrase(newPhrase);
+
+    // Reset UI state for the next phrase
     setAudioBlob(null);
+    setProcessingResult(null);
     setError(null);
     setIsSuccess(false);
+    setIsRecording(false);
+    setIsPlaying(false);
   }, []);
   const handleRecordingComplete = (blob: Blob, result?: ProcessingResult) => {
     console.log('[TrainView] Recording complete, blob size:', blob.size);
@@ -667,12 +678,6 @@ const TrainView = () => {
             size="sm" 
             onClick={() => {
               console.log('[TrainView] Next button clicked');
-              setAudioBlob(null);
-              setProcessingResult(null);
-              setError(null);
-              setIsSuccess(false);
-              setIsRecording(false);
-              setIsPlaying(false);
               getNewPhrase();
               setPhraseCount(prev => prev + 1);
             }}
