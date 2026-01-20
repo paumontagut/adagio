@@ -75,8 +75,8 @@ const AdminConsents = () => {
         return;
       }
 
-      // Use RPC function with session token validation
-      const { data, error } = await supabase.rpc('get_participant_consents_with_token', {
+      // Use RPC function with session token validation (untyped)
+      const { data, error } = await (supabase as any).rpc('get_participant_consents_with_token', {
         p_session_token: sessionToken
       });
 
@@ -116,11 +116,11 @@ const AdminConsents = () => {
     setSelectedConsent(consent);
     setIsDialogOpen(true);
 
-    // Log access to consent evidence
-    supabase.rpc('log_consent_evidence_access', {
+    // Log access to consent evidence (untyped)
+    (supabase as any).rpc('log_consent_evidence_access', {
       p_consent_evidence_id: consent.id,
       p_session_pseudonym: consent.session_pseudonym
-    }).then(({ error }) => {
+    }).then(({ error }: { error: any }) => {
       if (error) console.error('Error logging consent access:', error);
     });
   };

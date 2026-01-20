@@ -40,13 +40,14 @@ export const MyRecordings = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // Use untyped query since table may not exist in generated types
+      const { data, error } = await (supabase as any)
         .from('recordings')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRecordings(data || []);
+      setRecordings((data as Recording[]) || []);
     } catch (error) {
       console.error('Error fetching recordings:', error);
       toast.error('Error al cargar las grabaciones');
@@ -71,7 +72,8 @@ export const MyRecordings = () => {
     }
 
     try {
-      const { error } = await supabase
+      // Use untyped query since table may not exist in generated types
+      const { error } = await (supabase as any)
         .from('recordings')
         .delete()
         .eq('id', id);

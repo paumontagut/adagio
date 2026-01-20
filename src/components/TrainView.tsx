@@ -213,7 +213,8 @@ const TrainView = () => {
           full_name: participantName
         };
 
-        const { error: dbError } = await supabase
+        // Use untyped query since table may not exist in generated types
+        const { error: dbError } = await (supabase as any)
           .from('recordings')
           .insert([recordingData]);
 
