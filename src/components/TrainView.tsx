@@ -666,14 +666,11 @@ const TrainView = () => {
             variant="ghost" 
             size="sm" 
             onClick={() => {
-              if (isSuccess) {
-                getNewPhrase();
-                setIsSuccess(false);
-                setPhraseCount(prev => prev + 1);
-              }
+              getNewPhrase();
+              setIsSuccess(false);
+              setPhraseCount(prev => prev + 1);
             }}
-            disabled={!isSuccess}
-            className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+            className="text-muted-foreground hover:text-foreground"
           >
             Siguiente
             <ArrowRight className="h-4 w-4 ml-2" />
