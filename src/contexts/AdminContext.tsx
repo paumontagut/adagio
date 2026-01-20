@@ -73,10 +73,22 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
           action: 'checkSession'
         });
       } else {
-        setAdminUser(data[0].admin_user);
+        // Map flat columns to AdminUser object
+        const sessionRow = data[0];
+        const adminUserData: AdminUser = {
+          id: sessionRow.admin_user_id,
+          email: sessionRow.admin_email,
+          full_name: sessionRow.admin_full_name,
+          role: sessionRow.admin_role,
+          is_active: sessionRow.is_active,
+          last_login: null,
+          created_at: '',
+          updated_at: ''
+        };
+        setAdminUser(adminUserData);
         logger.info('Admin session validated', {
           component: 'AdminContext',
-          userId: data[0].admin_user.id
+          userId: adminUserData.id
         });
       }
     } catch (error) {
@@ -105,21 +117,36 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       }
 
       if (data && data.length > 0) {
-        const sessionData = data[0];
-        await secureStorage.setAdminSession(sessionData.session_token, 4);
-        setAdminUser(sessionData.admin_user);
+        const sessionRow = data[0];
         
-        // Log activity
-        await logActivity('admin_login', 'session', null, { email });
+        // Map flat columns to AdminUser object
+        const adminUserData: AdminUser = {
+          id: sessionRow.admin_user_id,
+          email: sessionRow.admin_email,
+          full_name: sessionRow.admin_full_name,
+          role: sessionRow.admin_role,
+          is_active: true,
+          last_login: new Date().toISOString(),
+          created_at: '',
+          updated_at: ''
+        };
+        
+        await secureStorage.setAdminSession(sessionRow.session_token, 4);
+        setAdminUser(adminUserData);
+        
+        // Log activity after setting user
+        setTimeout(() => {
+          logActivity('admin_login', 'session', null, { email });
+        }, 0);
         
         toast({
           title: "Login exitoso",
-          description: `Bienvenido, ${sessionData.admin_user.full_name}`,
+          description: `Bienvenido, ${adminUserData.full_name}`,
         });
         
         logger.info('Admin login successful', {
           component: 'AdminContext',
-          userId: sessionData.admin_user.id,
+          userId: adminUserData.id,
           action: 'login'
         });
         
