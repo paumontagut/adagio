@@ -542,14 +542,14 @@ const TrainView = () => {
   // Show loading while checking consent
   if (isCheckingConsent) {
     return (
-      <div className="min-h-[600px] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-[400px] md:min-h-[600px] flex items-center justify-center">
+        <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-[600px] relative">
+    <div className="min-h-[400px] md:min-h-[600px] relative">
       {/* Training Consent Modal - Must appear first */}
       <TrainingConsentModal 
         isOpen={showTrainingConsentModal} 
@@ -561,14 +561,14 @@ const TrainView = () => {
       <ConsentModal isOpen={showConsentModal} onConsentGiven={handleConsentGiven} />
 
       {/* Header Navigation */}
-      <div className="flex items-center justify-between mb-12">
+      <div className="flex items-center justify-between mb-6 md:mb-12">
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => navigate('/?tab=transcribe')}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground text-xs md:text-sm px-2 md:px-4"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
           Atrás
         </Button>
 
@@ -576,26 +576,26 @@ const TrainView = () => {
           variant="ghost" 
           size="sm" 
           onClick={getNewPhrase}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground text-xs md:text-sm px-2 md:px-4"
         >
           Cambiar frases
         </Button>
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-3xl mx-auto space-y-12">
+      <div className="max-w-3xl mx-auto space-y-6 md:space-y-12">
         
         {/* Phrase Card - Flashcard Style */}
-        <Card className="p-12 text-center shadow-lg border-2">
-          <h1 className="text-4xl font-bold text-foreground mb-8 leading-relaxed">
+        <Card className="p-6 md:p-12 text-center shadow-lg border-2">
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-foreground mb-4 md:mb-8 leading-relaxed">
             {currentPhrase}
           </h1>
 
           {/* Success Message */}
           {isSuccess && (
-            <div className="flex items-center justify-center gap-2 text-success mb-6">
-              <CheckCircle className="h-5 w-5" />
-              <span className="font-semibold">¡Conseguido!</span>
+            <div className="flex items-center justify-center gap-2 text-success mb-4 md:mb-6">
+              <CheckCircle className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="font-semibold text-sm md:text-base">¡Conseguido!</span>
             </div>
           )}
 
@@ -605,49 +605,49 @@ const TrainView = () => {
               variant="ghost"
               size="sm"
               onClick={handlePlayPhrase}
-              className="text-primary hover:text-primary/80 flex items-center gap-2"
+              className="text-primary hover:text-primary/80 flex items-center gap-1 md:gap-2 text-xs md:text-sm"
             >
-              <Volume2 className="h-5 w-5" />
+              <Volume2 className="h-4 w-4 md:h-5 md:w-5" />
               <span>Escuchar</span>
-              <span className="ml-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Ctrl</span>
+              <span className="ml-1 md:ml-2 text-[10px] md:text-xs text-muted-foreground bg-muted px-1.5 md:px-2 py-0.5 md:py-1 rounded hidden sm:inline">Ctrl</span>
             </Button>
           </div>
         </Card>
 
         {/* Recording Controls */}
         {!showTrainingConsentModal && (
-          <div className="flex flex-col items-center gap-8">
+          <div className="flex flex-col items-center gap-4 md:gap-8">
             {/* Recording Status Indicator */}
             {isRecording && (
-              <div className="flex items-center gap-3 text-destructive animate-pulse">
-                <div className="w-4 h-4 rounded-full bg-destructive" />
-                <span className="font-semibold text-lg">Grabando...</span>
+              <div className="flex items-center gap-2 md:gap-3 text-destructive animate-pulse">
+                <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-destructive" />
+                <span className="font-semibold text-base md:text-lg">Grabando...</span>
               </div>
             )}
 
-            <div className="flex items-center justify-center gap-12">
+            <div className="flex items-center justify-center gap-6 md:gap-12">
               {/* Re-record Button */}
               {audioBlob && !isRecording && (
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-1 md:gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={handleReRecord}
-                    className="h-12 w-12 rounded-full text-primary hover:text-primary/80"
+                    className="h-10 w-10 md:h-12 md:w-12 rounded-full text-primary hover:text-primary/80"
                   >
-                    <RotateCcw className="h-6 w-6" />
+                    <RotateCcw className="h-5 w-5 md:h-6 md:w-6" />
                   </Button>
-                  <span className="text-sm text-muted-foreground">Re-grabar</span>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Alt</span>
+                  <span className="text-xs md:text-sm text-muted-foreground">Re-grabar</span>
+                  <span className="text-[10px] md:text-xs text-muted-foreground bg-muted px-1.5 md:px-2 py-0.5 md:py-1 rounded hidden sm:inline">Alt</span>
                 </div>
               )}
 
               {/* Main Record/Stop Button */}
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-2 md:gap-3">
                 <button
                   onClick={audioBlob && !isRecording ? handleSubmit : handleRecordToggle}
                   disabled={isSubmitting}
-                  className={`h-40 w-40 rounded-full flex flex-col items-center justify-center text-white font-semibold text-lg transition-all shadow-lg hover:shadow-xl
+                  className={`h-28 w-28 md:h-40 md:w-40 rounded-full flex flex-col items-center justify-center text-white font-semibold text-sm md:text-lg transition-all shadow-lg hover:shadow-xl
                     ${audioBlob && !isRecording
                       ? 'bg-green-600 hover:bg-green-700' 
                       : isRecording 
@@ -658,39 +658,39 @@ const TrainView = () => {
                   `}
                 >
                   {isSubmitting ? (
-                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin" />
                   ) : (
                     <>
                       <span>Toca</span>
-                      <span>{audioBlob && !isRecording ? 'para enviar' : isRecording ? 'para parar' : 'para grabar'}</span>
+                      <span className="text-xs md:text-base">{audioBlob && !isRecording ? 'para enviar' : isRecording ? 'para parar' : 'para grabar'}</span>
                     </>
                   )}
                 </button>
-                <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">[Espacio]</span>
+                <span className="text-[10px] md:text-xs text-muted-foreground bg-muted px-2 md:px-3 py-0.5 md:py-1 rounded">[Espacio]</span>
               </div>
 
               {/* Play Button */}
               {audioBlob && !isRecording && (
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-1 md:gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={handlePlayRecording}
-                    className={`h-12 w-12 rounded-full ${isPlaying ? 'text-green-600' : 'text-primary'} hover:text-primary/80`}
+                    className={`h-10 w-10 md:h-12 md:w-12 rounded-full ${isPlaying ? 'text-green-600' : 'text-primary'} hover:text-primary/80`}
                   >
-                    <Play className="h-6 w-6" />
+                    <Play className="h-5 w-5 md:h-6 md:w-6" />
                   </Button>
-                  <span className="text-sm text-muted-foreground">{isPlaying ? 'Reproduciendo' : 'Reproducir'}</span>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">P</span>
+                  <span className="text-xs md:text-sm text-muted-foreground">{isPlaying ? 'Reproduciendo' : 'Reproducir'}</span>
+                  <span className="text-[10px] md:text-xs text-muted-foreground bg-muted px-1.5 md:px-2 py-0.5 md:py-1 rounded hidden sm:inline">P</span>
                 </div>
               )}
             </div>
 
             {/* Recording Ready Message */}
             {audioBlob && !isRecording && (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle className="h-5 w-5" />
-                <span className="font-medium">Grabación lista - Escúchala o envíala</span>
+              <div className="flex items-center gap-2 text-green-600 text-sm md:text-base">
+                <CheckCircle className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="font-medium">Grabación lista</span>
               </div>
             )}
           </div>
@@ -702,17 +702,16 @@ const TrainView = () => {
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between items-center pt-8">
+        <div className="flex justify-between items-center pt-4 md:pt-8">
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => {
-              // Go to previous phrase logic
               getNewPhrase();
             }}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground text-xs md:text-sm px-2 md:px-4"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
             Anterior
           </Button>
 
@@ -724,10 +723,10 @@ const TrainView = () => {
               getNewPhrase();
               setPhraseCount(prev => prev + 1);
             }}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground text-xs md:text-sm px-2 md:px-4"
           >
             Siguiente
-            <ArrowRight className="h-4 w-4 ml-2" />
+            <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2" />
           </Button>
         </div>
       </div>
