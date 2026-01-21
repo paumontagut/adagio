@@ -12,6 +12,7 @@ import { PrivacyCenter } from "./pages/PrivacyCenter";
 import { AuthCallback } from "./pages/AuthCallback";
 import { Auth } from "./pages/Auth";
 import { TermsAndConditions } from "./pages/TermsAndConditions";
+import { MyData } from "./pages/MyData";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
               <Route path="/terms" element={<TermsAndConditions />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/my-data" element={<MyData />} />
               
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
