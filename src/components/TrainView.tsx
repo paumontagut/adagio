@@ -41,7 +41,8 @@ const TrainView = () => {
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [hasConsented, setHasConsented] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
-  const [showTrainingConsentModal, setShowTrainingConsentModal] = useState(true);
+  const [showTrainingConsentModal, setShowTrainingConsentModal] = useState(false);
+  const [isCheckingConsent, setIsCheckingConsent] = useState(true);
   const [consentTrain, setConsentTrain] = useState(false);
   const [consentStore, setConsentStore] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,11 +87,22 @@ const TrainView = () => {
             setFullName(data.consent.full_name);
             setAgeRange(data.consent.age_range);
             setRegion(`${data.consent.country}-${data.consent.region}`);
-            setShowTrainingConsentModal(false);
+            setIsCheckingConsent(false);
+            // Don't show modal - user already consented
+          } else {
+            // User doesn't have consent, show modal
+            setIsCheckingConsent(false);
+            setShowTrainingConsentModal(true);
           }
         } catch (err) {
           console.error('Error checking user consent:', err);
+          setIsCheckingConsent(false);
+          setShowTrainingConsentModal(true);
         }
+      } else {
+        // Guest user - show consent modal
+        setIsCheckingConsent(false);
+        setShowTrainingConsentModal(true);
       }
 
       // Precargar nombre desde perfil de usuario si está disponible
@@ -526,6 +538,15 @@ const TrainView = () => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [audioBlob, isRecording, isPlaying]);
+
+  // Show loading while checking consent
+  if (isCheckingConsent) {
+    return (
+      <div className="min-h-[600px] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[600px] relative">
