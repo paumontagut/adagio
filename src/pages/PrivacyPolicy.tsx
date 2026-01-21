@@ -43,8 +43,8 @@ export const PrivacyPolicy = () => {
           <div className="max-w-4xl mx-auto space-y-8 sm:space-y-12 md:space-y-16">
             {/* Introduction */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Introducción y alcance</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-xl">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Introducción y alcance</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-base sm:text-lg md:text-xl">
                 Esta Política de Privacidad explica qué información tratamos cuando usted utiliza nuestros sitios y
                 aplicaciones (conjuntamente, los "Servicios"), cómo la tratamos y qué opciones tiene para gestionarla.
                 Se aplica a su uso de nuestra web y aplicación móvil o de escritorio, a nuestras extensiones e
@@ -56,11 +56,11 @@ export const PrivacyPolicy = () => {
             </section>
 
             {/* Biometric Data Summary */}
-            <section className="bg-[#005C64]/5 border border-[#005C64]/10 rounded-3xl p-10">
-              <h2 className="text-2xl font-bold mb-6 text-[#005C64] flex items-center gap-3">
+            <section className="bg-[#005C64]/5 border border-[#005C64]/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64] flex items-center gap-2 sm:gap-3">
                 Resumen sobre datos biométricos y de salud
               </h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 La voz contiene características físicas y fisiológicas únicas que pueden identificar de forma permanente
                 a una persona. Asimismo, los patrones de la voz pueden revelar, de forma indirecta, indicios sobre su
                 estado de salud o factores neurológicos o respiratorios. Por esa razón, tratamos sus grabaciones de voz
@@ -72,8 +72,8 @@ export const PrivacyPolicy = () => {
 
             {/* Responsible Party */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Responsable del tratamiento y contacto</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Responsable del tratamiento y contacto</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 El responsable del tratamiento es Adagio ("Adagio", "nosotros"). Puede comunicarse con nuestro Delegado
                 de Protección de Datos a través del Centro de Privacidad disponible en la aplicación, donde encontrará
                 los formularios para ejercer sus derechos y un canal de contacto específico ("Contactar DPO").
@@ -84,8 +84,8 @@ export const PrivacyPolicy = () => {
 
             {/* Data We Collect */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Qué datos tratamos</h2>
-              <div className="space-y-4 text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Qué datos tratamos</h2>
+              <div className="space-y-3 sm:space-y-4 text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 <p>
                   Tratamos tres categorías principales de información. Primero,{" "}
                   <strong>datos que usted nos facilita</strong>: nombre, datos de contacto, credenciales de cuenta, país
@@ -112,8 +112,8 @@ export const PrivacyPolicy = () => {
 
             {/* Voice Biometric Nature */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Naturaleza biométrica de su voz</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Naturaleza biométrica de su voz</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Sus grabaciones de voz se tratan como datos biométricos porque incluyen características acústicas y
                 temporales que permiten su identificación única, como la frecuencia fundamental, los formantes vocales y
                 un espectrograma característico, así como ritmo, pausas y entonación. Estas mismas señales pueden
@@ -125,8 +125,8 @@ export const PrivacyPolicy = () => {
 
             {/* Processing Purposes */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Finalidades del tratamiento</h2>
-              <div className="space-y-4 text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Finalidades del tratamiento</h2>
+              <div className="space-y-3 sm:space-y-4 text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 <p>
                   Utilizamos sus datos para tres finalidades claramente diferenciadas. En primer lugar,{" "}
                   <strong>prestación del servicio de transcripción</strong>: procesamos sus grabaciones para
@@ -151,8 +151,8 @@ export const PrivacyPolicy = () => {
 
             {/* Legal Basis */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Bases jurídicas</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Bases jurídicas</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Para la prestación de la transcripción sustentamos el tratamiento en la{" "}
                 <strong>ejecución del contrato</strong> y, por el carácter biométrico y la posible presencia de datos de
                 salud, recabamos además su <strong>consentimiento explícito</strong> conforme a los artículos
@@ -165,8 +165,8 @@ export const PrivacyPolicy = () => {
 
             {/* AI Processing */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Cómo tratamos sus grabaciones con IA</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Cómo tratamos sus grabaciones con IA</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Sus grabaciones solo se obtienen por su acción intencional dentro de los Servicios. No realizamos
                 grabaciones en segundo plano ni "siempre encendido". Para el procesamiento automático y, cuando usted lo
                 ha permitido, para la mejora de modelos, segmentamos el audio en unidades cortas de 1 a 3 segundos,
@@ -181,8 +181,8 @@ export const PrivacyPolicy = () => {
 
             {/* Data Retention */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Conservación de datos</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Conservación de datos</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Aplicamos plazos diferenciados y limitados. Las <strong>grabaciones biométricas de voz</strong> se
                 conservan mientras exista un consentimiento válido y, si usted lo retira, se inicia un proceso de
                 eliminación con una ventana técnica de hasta 30 días para garantizar el borrado en sistemas activos y
@@ -197,8 +197,8 @@ export const PrivacyPolicy = () => {
 
             {/* Security Measures */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Medidas de seguridad</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Medidas de seguridad</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Protegemos los datos con cifrado de extremo a extremo, incluyendo cifrado fuerte en tránsito y en reposo
                 (por ejemplo, AES‑256‑GCM), gestión segura de claves con rotación programada y hardware de seguridad
                 cuando procede, controles de acceso de mínimo privilegio, autenticación multifactor para personal
@@ -213,8 +213,8 @@ export const PrivacyPolicy = () => {
 
             {/* Enhanced Rights */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Derechos reforzados y controles</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Derechos reforzados y controles</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Usted puede acceder a sus grabaciones originales, a las características derivadas que hayamos generado,
                 al historial de uso y a un registro trazable de consentimientos. Puede obtener copia, rectificar datos
                 inexactos, <strong>retirar en cualquier momento</strong> los consentimientos (incluido el de
@@ -229,8 +229,8 @@ export const PrivacyPolicy = () => {
 
             {/* Minors */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Menores de edad</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Menores de edad</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 No prestamos los Servicios a menores sin el consentimiento verificable del progenitor o representante
                 legal. En España, el consentimiento autónomo requiere, como mínimo, 14 años; en otros países del Espacio
                 Económico Europeo puede exigirse una edad superior. Si detectamos una cuenta de un menor sin los
@@ -241,8 +241,8 @@ export const PrivacyPolicy = () => {
 
             {/* Communications */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Comunicaciones y marketing</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Comunicaciones y marketing</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Solo le enviaremos comunicaciones comerciales si usted ha dado su consentimiento o si existe otra base
                 legal aplicable. Puede darse de baja en cualquier momento mediante el enlace incluido en los mensajes o
                 desde el Centro de Privacidad. Continuaremos enviando comunicaciones estrictamente operativas o de
@@ -252,8 +252,8 @@ export const PrivacyPolicy = () => {
 
             {/* Recipients */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Destinatarios y terceros</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Destinatarios y terceros</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 No vendemos sus datos personales. Compartimos información con{" "}
                 <strong>encargados del tratamiento</strong> que nos prestan servicios bajo contrato y siguiendo
                 instrucciones documentadas: alojamiento y nube, herramientas de anotación y calidad, ingeniería y
@@ -264,8 +264,8 @@ export const PrivacyPolicy = () => {
 
             {/* International Transfers */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Transferencias internacionales</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Transferencias internacionales</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Podemos tratar y almacenar datos fuera de su país de residencia. Cuando se transfieren datos desde el
                 EEE o el Reino Unido a países que no ofrecen un nivel de protección esencialmente equivalente,
                 implementamos salvaguardas adecuadas como <strong>Cláusulas Contractuales Tipo</strong> y evaluaciones
@@ -275,8 +275,8 @@ export const PrivacyPolicy = () => {
 
             {/* Cookies */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Cookies y tecnologías similares</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Cookies y tecnologías similares</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Utilizamos únicamente tecnologías <strong>estrictamente necesarias</strong> para operar, mantener la
                 seguridad de la sesión y recordar preferencias básicas. No empleamos cookies de publicidad
                 comportamental ni plug‑ins de terceros con fines de seguimiento entre sitios.
@@ -285,8 +285,8 @@ export const PrivacyPolicy = () => {
 
             {/* Analytics */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Analítica y uso interno</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Analítica y uso interno</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Analizamos de forma agregada el rendimiento del sistema, la estabilidad y la usabilidad para detectar
                 problemas técnicos, comprender tendencias de uso y mejorar la experiencia. Cuando es posible, empleamos{" "}
                 <strong>datos agregados o seudonimizados</strong>, y evitamos rastreos innecesarios a nivel individual.
@@ -295,8 +295,8 @@ export const PrivacyPolicy = () => {
 
             {/* California Users */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Usuarios de California y EE. UU.</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Usuarios de California y EE. UU.</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Si reside en California u otros estados con legislación específica, puede disponer de derechos
                 adicionales. Adagio <strong>no vende</strong> datos personales según la definición aplicable y no
                 comparte información con fines de publicidad dirigida. Puede ejercer estos derechos a través del Centro
@@ -306,8 +306,8 @@ export const PrivacyPolicy = () => {
 
             {/* Policy Updates */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Actualizaciones de esta Política</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Actualizaciones de esta Política</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Podemos modificar esta Política para reflejar cambios en la ley, en los Servicios o en nuestras
                 prácticas. Publicaremos la nueva versión indicando la <strong>fecha de última revisión</strong> y,
                 cuando el cambio sea material, le informaremos a través de la aplicación o por medios razonables y
@@ -316,9 +316,9 @@ export const PrivacyPolicy = () => {
             </section>
 
             {/* Summary of Key Commitments */}
-            <section className="bg-[#005C64]/5 border border-[#005C64]/10 rounded-3xl p-10">
-              <h2 className="text-2xl font-bold mb-6 text-[#005C64]">Resumen de compromisos clave</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+            <section className="bg-[#005C64]/5 border border-[#005C64]/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-10">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Resumen de compromisos clave</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Tratamos su voz como dato biométrico y pedimos un <strong>doble consentimiento explícito</strong> cuando
                 pueda existir información sanitaria implícita; la <strong>transcripción</strong> se ofrece incluso si no
                 consiente el <strong>entrenamiento</strong> de modelos; aplicamos{" "}
@@ -329,8 +329,8 @@ export const PrivacyPolicy = () => {
 
             {/* How to Exercise Rights */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Cómo ejercer sus derechos</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Cómo ejercer sus derechos</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 Puede gestionar consentimientos, descargar o borrar datos, y contactar con nuestro DPO desde el{" "}
                 <strong>Centro de Privacidad</strong> de la aplicación. Si considera que no hemos atendido adecuadamente
                 su solicitud, puede presentar una reclamación ante su autoridad de control de protección de datos.
@@ -339,8 +339,8 @@ export const PrivacyPolicy = () => {
 
             {/* Technical Controls Appendix */}
             <section>
-              <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Anexo: Controles técnicos</h2>
-              <p className="text-[#0D0C1D]/80 leading-relaxed text-lg">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-[#005C64]">Anexo: Controles técnicos</h2>
+              <p className="text-[#0D0C1D]/80 leading-relaxed text-sm sm:text-base md:text-lg">
                 En la eliminación de datos biométricos y derivados, ejecutamos borrados en sistemas activos y
                 programamos la purga en copias de seguridad. Para conjuntos de datos utilizados en entrenamiento con su
                 consentimiento, aplicamos procesos de <strong>despersonalización</strong>. En seguridad, empleamos
