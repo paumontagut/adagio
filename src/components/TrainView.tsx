@@ -512,6 +512,16 @@ const TrainView = () => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!e.key) return; // Guard against undefined key
       
+      // Ignore shortcuts when user is typing in an input field
+      const activeElement = document.activeElement;
+      const isTyping = activeElement instanceof HTMLInputElement || 
+                       activeElement instanceof HTMLTextAreaElement ||
+                       activeElement?.getAttribute('contenteditable') === 'true';
+      
+      if (isTyping) {
+        return; // Don't intercept keys while typing
+      }
+      
       if (e.ctrlKey && !e.repeat) {
         handlePlayPhrase();
       }
