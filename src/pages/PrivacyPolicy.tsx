@@ -8,39 +8,39 @@ export const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen w-full font-sans selection:bg-[#005C64] selection:text-white bg-[#F5F8DE] text-[#0D0C1D] flex flex-col">
       {/* --- BOTÓN "VOLVER" FLOTANTE --- */}
-      <div className="fixed top-6 right-6 z-50">
+      <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50">
         <Link to="/">
           <Button
             variant="ghost"
-            className="rounded-full bg-white/70 backdrop-blur-md border border-white/50 hover:bg-black/5 text-[#0D0C1D] shadow-sm px-4 py-2"
+            className="rounded-full bg-white/70 backdrop-blur-md border border-white/50 hover:bg-black/5 text-[#0D0C1D] shadow-sm px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Volver
           </Button>
         </Link>
       </div>
 
       {/* --- CONTENIDO PRINCIPAL --- */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 pt-20 pb-20">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 pt-16 sm:pt-20 pb-12 sm:pb-20">
         {/* Cabecera de Página */}
-        <div className="text-center mb-16 space-y-6">
+        <div className="text-center mb-8 sm:mb-12 md:mb-16 space-y-4 sm:space-y-6">
           <Link to="/" className="inline-block hover:opacity-80 transition-opacity">
-            <img src={logo} alt="Adagio Logo" className="h-32 md:h-40 w-auto -ml-4" />
+            <img src={logo} alt="Adagio Logo" className="h-16 sm:h-24 md:h-32 lg:h-40 w-auto" />
           </Link>
 
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-6xl font-bold text-[#0D0C1D] tracking-tight">Política de Privacidad</h1>
-            <p className="text-[#0D0C1D]/60 font-medium text-lg">Última actualización: 10/11/2025</p>
+          <div className="space-y-1 sm:space-y-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-[#0D0C1D] tracking-tight">Política de Privacidad</h1>
+            <p className="text-[#0D0C1D]/60 font-medium text-sm sm:text-base md:text-lg">Última actualización: 10/11/2025</p>
           </div>
         </div>
 
         {/* --- PANEL DE CRISTAL --- */}
-        <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-[2.5rem] p-8 md:p-16 shadow-sm relative overflow-hidden">
+        <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] p-4 sm:p-8 md:p-16 shadow-sm relative overflow-hidden">
           {/* Decoración de fondo */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#90C2E7]/10 rounded-full blur-3xl -z-10 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-48 sm:w-72 md:w-96 h-48 sm:h-72 md:h-96 bg-[#90C2E7]/10 rounded-full blur-3xl -z-10 pointer-events-none" />
 
           {/* Contenedor de texto limitado para lectura cómoda */}
-          <div className="max-w-4xl mx-auto space-y-16">
+          <div className="max-w-4xl mx-auto space-y-8 sm:space-y-12 md:space-y-16">
             {/* Introduction */}
             <section>
               <h2 className="text-3xl font-bold mb-6 text-[#005C64]">Introducción y alcance</h2>

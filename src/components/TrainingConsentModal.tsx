@@ -1573,66 +1573,64 @@ export const TrainingConsentModal = ({
   };
   return <Dialog open={isOpen} modal onOpenChange={() => {}}>
       <DialogContent 
-        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto [&>button]:hidden"
+        className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto [&>button]:hidden p-4 sm:p-6"
         onEscapeKeyDown={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <DialogHeader className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-adagio-primary/10 flex items-center justify-center">
-              <Shield className="h-5 w-5 text-adagio-primary" />
+        <DialogHeader className="space-y-2 sm:space-y-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-adagio-primary/10 flex items-center justify-center flex-shrink-0">
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-adagio-primary" />
             </div>
-            <div>
-              <DialogTitle className="text-xl font-semibold">
-                Consentimiento y Privacidad - Entrenamiento
+            <div className="min-w-0">
+              <DialogTitle className="text-base sm:text-xl font-semibold">
+                Consentimiento y Privacidad
               </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground">
-                Antes de comenzar a grabar, necesitamos tu consentimiento explícito
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+                Antes de comenzar, necesitamos tu consentimiento explícito
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Biometric Data Warning */}
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
+          <Alert className="p-3 sm:p-4">
+            <Info className="h-3 w-3 sm:h-4 sm:w-4" />
+            <AlertDescription className="text-xs sm:text-sm">
               <strong>Tu voz es un dato biométrico</strong> que puede contener información sanitaria implícita. 
               Este procesamiento requiere tu consentimiento explícito según el RGPD (Art. 9).
             </AlertDescription>
           </Alert>
 
           {/* Consent Options */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Declaración de mayoría de edad - OBLIGATORIO */}
-            <div className="flex items-start space-x-3 p-4 border-2 border-destructive/50 rounded-lg hover:bg-muted/30 transition-colors bg-destructive/5">
-              <Checkbox id="adult-declaration" checked={adultDeclaration} onCheckedChange={checked => setAdultDeclaration(checked as boolean)} className="mt-1" />
-              <div className="flex-1">
-                <label htmlFor="adult-declaration" className="text-sm font-medium cursor-pointer flex items-center gap-2">
-                  Declaro ser mayor de edad (18 años o más)
-                  <span className="text-xs bg-destructive text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
+            <div className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 border-2 border-destructive/50 rounded-lg hover:bg-muted/30 transition-colors bg-destructive/5">
+              <Checkbox id="adult-declaration" checked={adultDeclaration} onCheckedChange={checked => setAdultDeclaration(checked as boolean)} className="mt-0.5 sm:mt-1" />
+              <div className="flex-1 min-w-0">
+                <label htmlFor="adult-declaration" className="text-xs sm:text-sm font-medium cursor-pointer flex flex-wrap items-center gap-1 sm:gap-2">
+                  Declaro ser mayor de edad (18+)
+                  <span className="text-[10px] sm:text-xs bg-destructive text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">OBLIGATORIO</span>
                 </label>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                   Es obligatorio ser mayor de edad para participar en el entrenamiento del modelo.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start space-x-3 p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5">
-              <Checkbox id="consent-train" checked={consentTrain} onCheckedChange={checked => setConsentTrain(checked as boolean)} className="mt-1" />
-              <div className="flex-1">
-                <label htmlFor="consent-train" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+            <div className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5">
+              <Checkbox id="consent-train" checked={consentTrain} onCheckedChange={checked => setConsentTrain(checked as boolean)} className="mt-0.5 sm:mt-1" />
+              <div className="flex-1 min-w-0">
+                <label htmlFor="consent-train" className="text-xs sm:text-sm font-medium cursor-pointer flex flex-wrap items-center gap-1 sm:gap-2">
                   Usar mi audio para entrenar el modelo de IA
-                  <span className="text-xs bg-adagio-primary text-white px-2 py-1 rounded-full">OBLIGATORIO</span>
+                  <span className="text-[10px] sm:text-xs bg-adagio-primary text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">OBLIGATORIO</span>
                 </label>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                   Tu voz será utilizada para mejorar la precisión del reconocimiento de voz mediante técnicas de aprendizaje automático.
                   <br /><br />
-                  <strong>Cesión de derechos:</strong> Cedo voluntariamente y sin remuneración los derechos de uso de mi grabación de voz para los fines de entrenamiento del modelo de IA. Confirmo que no reclamaré derechos sobre las grabaciones y autorizo expresamente su utilización y explotación en el contexto del desarrollo, mejora y entrenamiento del modelo de IA, tanto presente como futuro.
-                  <br /><br />
-                  Comprendo que mis datos podrán ser transferidos y almacenados en UE u otros países donde se encuentren los servidores del proyecto, comprometiéndose Adagio a garantizar niveles adecuados de protección de datos.
+                  <strong>Cesión de derechos:</strong> Cedo voluntariamente y sin remuneración los derechos de uso de mi grabación de voz para los fines de entrenamiento del modelo de IA.
                 </p>
               </div>
             </div>
@@ -1640,31 +1638,31 @@ export const TrainingConsentModal = ({
           </div>
 
           {/* Personal Information Fields */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Full Name Field */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-adagio-primary" />
-                <Label htmlFor="fullName" className="text-sm font-medium">
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <User className="h-3 w-3 sm:h-4 sm:w-4 text-adagio-primary" />
+                <Label htmlFor="fullName" className="text-xs sm:text-sm font-medium">
                   Nombre completo <span className="text-destructive">*</span>
                 </Label>
               </div>
-              <Input id="fullName" type="text" placeholder="Ingresa tu nombre completo" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full" />
-              <p className="text-xs text-muted-foreground">
+              <Input id="fullName" type="text" placeholder="Ingresa tu nombre completo" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full h-9 sm:h-10 text-sm" />
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
                 Tu nombre será asociado con las grabaciones para fines de entrenamiento
               </p>
             </div>
 
             {/* Age Range Field */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-adagio-primary" />
-                <Label htmlFor="ageRange" className="text-sm font-medium">
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-adagio-primary" />
+                <Label htmlFor="ageRange" className="text-xs sm:text-sm font-medium">
                   Rango de edad <span className="text-destructive">*</span>
                 </Label>
               </div>
               <Select value={ageRange} onValueChange={setAgeRange}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 sm:h-10 text-sm">
                   <SelectValue placeholder="Selecciona tu rango de edad" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1675,21 +1673,18 @@ export const TrainingConsentModal = ({
                   <SelectItem value="61+">61+ años</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Los rangos de edad ayudan a mejorar la precisión del modelo
-              </p>
             </div>
 
             {/* Country Field */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-adagio-primary" />
-                <Label htmlFor="country" className="text-sm font-medium">
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-adagio-primary" />
+                <Label htmlFor="country" className="text-xs sm:text-sm font-medium">
                   País <span className="text-destructive">*</span>
                 </Label>
               </div>
               <Select value={country} onValueChange={handleCountryChange}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 sm:h-10 text-sm">
                   <SelectValue placeholder="Selecciona tu país" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1723,16 +1718,16 @@ export const TrainingConsentModal = ({
             </div>
 
             {/* Region Field */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-adagio-primary" />
-                <Label htmlFor="region" className="text-sm font-medium">
+            <div className="space-y-1.5 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-adagio-primary" />
+                <Label htmlFor="region" className="text-xs sm:text-sm font-medium">
                   {country === 'spain' ? 'Comunidad Autónoma' : country === 'mexico' ? 'Estado' : country === 'argentina' ? 'Provincia' : country === 'colombia' ? 'Departamento' : country === 'peru' ? 'Departamento' : country === 'chile' ? 'Región' : country === 'venezuela' ? 'Estado' : country === 'ecuador' ? 'Provincia' : country === 'bolivia' ? 'Departamento' : country === 'paraguay' ? 'Departamento' : country === 'uruguay' ? 'Departamento' : country === 'costa-rica' ? 'Provincia' : country === 'panama' ? 'Provincia' : country === 'nicaragua' ? 'Departamento' : country === 'honduras' ? 'Departamento' : country === 'el-salvador' ? 'Departamento' : country === 'guatemala' ? 'Departamento' : country === 'belize' ? 'Distrito' : country === 'cuba' ? 'Provincia' : country === 'republica-dominicana' ? 'Provincia' : country === 'haiti' ? 'Departamento' : country === 'puerto-rico' ? 'Municipio' : country === 'usa' ? 'Estado' : country === 'brasil' ? 'Estado' : 'Región'} <span className="text-destructive">*</span>
                 </Label>
               </div>
               <Select value={region} onValueChange={setRegion} disabled={!country}>
-                <SelectTrigger>
-                  <SelectValue placeholder={!country ? "Primero selecciona un país" : country === 'spain' ? "Selecciona tu comunidad autónoma" : country === 'mexico' ? "Selecciona tu estado" : country === 'argentina' ? "Selecciona tu provincia" : country === 'colombia' ? "Selecciona tu departamento" : country === 'peru' ? "Selecciona tu departamento" : country === 'chile' ? "Selecciona tu región" : "Selecciona tu región"} />
+                <SelectTrigger className="h-9 sm:h-10 text-sm">
+                  <SelectValue placeholder={!country ? "Primero selecciona un país" : "Selecciona tu región"} />
                 </SelectTrigger>
                 <SelectContent>
                   {getRegionsForCountry(country).map(regionOption => <SelectItem key={regionOption.value} value={regionOption.value}>
@@ -1740,15 +1735,12 @@ export const TrainingConsentModal = ({
                     </SelectItem>)}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                La ubicación ayuda a mejorar el reconocimiento de acentos y variaciones dialectales
-              </p>
             </div>
           </div>
 
           {/* Validation Error */}
-          {!isValid && <Alert variant="destructive">
-              <AlertDescription>
+          {!isValid && <Alert variant="destructive" className="p-3 sm:p-4">
+              <AlertDescription className="text-xs sm:text-sm">
                 {!adultDeclaration && <div>• Debes declarar ser mayor de edad</div>}
                 {!consentTrain && <div>• Debes aceptar el consentimiento de entrenamiento</div>}
                 {!fullName.trim() && <div>• Debes ingresar tu nombre completo</div>}
@@ -1759,41 +1751,33 @@ export const TrainingConsentModal = ({
             </Alert>}
 
           {/* Legal Information */}
-          <div className="text-xs text-muted-foreground space-y-2 p-4 bg-muted/30 rounded-lg">
+          <div className="text-[10px] sm:text-xs text-muted-foreground space-y-1.5 sm:space-y-2 p-3 sm:p-4 bg-muted/30 rounded-lg">
             <p><strong>Información RGPD:</strong></p>
-            <ul className="space-y-1 ml-4">
-              <li>• <strong>Responsable:</strong> Adagio (hola@adagioweb.com)</li>
-              <li>• <strong>Finalidad:</strong> Entrenamiento de modelos de IA y mejora del servicio</li>
+            <ul className="space-y-0.5 sm:space-y-1 ml-3 sm:ml-4">
+              <li>• <strong>Responsable:</strong> Adagio</li>
+              <li>• <strong>Finalidad:</strong> Entrenamiento de modelos de IA</li>
               <li>• <strong>Base legal:</strong> Consentimiento explícito (Art. 6.1.a y 9.2.a RGPD)</li>
-              <li>• <strong>Conservación:</strong> Hasta revocación del consentimiento</li>
-              <li>• <strong>Destinatarios:</strong> No se ceden a terceros</li>
-              <li>• <strong>Derechos:</strong> Acceso, rectificación, supresión, portabilidad y oposición</li>
+              <li>• <strong>Derechos:</strong> Acceso, rectificación, supresión, portabilidad</li>
             </ul>
             
-            <div className="flex flex-wrap gap-4 mt-3 pt-2 border-t border-border/50">
-              <Link to="/my-data" className="text-adagio-primary hover:text-adagio-accent text-xs flex items-center gap-1">
-                Mis Datos <ExternalLink className="h-3 w-3" />
+            <div className="flex flex-wrap gap-2 sm:gap-4 mt-2 sm:mt-3 pt-2 border-t border-border/50">
+              <Link to="/privacy-center" className="text-adagio-primary hover:text-adagio-accent text-[10px] sm:text-xs flex items-center gap-1">
+                Centro de Privacidad <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               </Link>
-              <Link to="/privacy-center" className="text-adagio-primary hover:text-adagio-accent text-xs flex items-center gap-1">
-                Centro de Privacidad <ExternalLink className="h-3 w-3" />
-              </Link>
-              <Link to="/privacy-policy" className="text-adagio-primary hover:text-adagio-accent text-xs flex items-center gap-1">
-                Política de Privacidad <ExternalLink className="h-3 w-3" />
-              </Link>
-              <Link to="/terms" className="text-adagio-primary hover:text-adagio-accent text-xs flex items-center gap-1">
-                Términos y Condiciones <ExternalLink className="h-3 w-3" />
+              <Link to="/privacy-policy" className="text-adagio-primary hover:text-adagio-accent text-[10px] sm:text-xs flex items-center gap-1">
+                Política de Privacidad <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               </Link>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-between pt-4 gap-3">
-            <Button variant="outline" onClick={handleCancel} className="flex-1 sm:flex-none">
+          <div className="flex flex-col-reverse sm:flex-row justify-between pt-2 sm:pt-4 gap-2 sm:gap-3">
+            <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto text-xs sm:text-sm h-9 sm:h-10">
               Cancelar
             </Button>
-            <Button onClick={handleAccept} disabled={!isValid} className="flex-1 sm:flex-none">
-              <Shield className="mr-2 h-4 w-4" />
-              Acepto y quiero continuar
+            <Button onClick={handleAccept} disabled={!isValid} className="w-full sm:w-auto text-xs sm:text-sm h-9 sm:h-10">
+              <Shield className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+              Acepto y continúo
             </Button>
           </div>
         </div>
