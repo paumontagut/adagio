@@ -72,6 +72,27 @@ const TrainView = () => {
       }
       sessionManager.pageView('train');
 
+      // Check if authenticated user already has consent
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase.functions.invoke('check-user-consent', {
+            body: { user_id: user.id }
+          });
+
+          if (!error && data?.hasConsent) {
+            console.log('User already has consent, loading data:', data.consent);
+            setConsentTrain(data.consent.consent_train);
+            setConsentStore(data.consent.consent_store);
+            setFullName(data.consent.full_name);
+            setAgeRange(data.consent.age_range);
+            setRegion(`${data.consent.country}-${data.consent.region}`);
+            setShowTrainingConsentModal(false);
+          }
+        } catch (err) {
+          console.error('Error checking user consent:', err);
+        }
+      }
+
       // Precargar nombre desde perfil de usuario si está disponible
       loadUserProfile();
       
@@ -363,7 +384,8 @@ const TrainView = () => {
         body: {
           session_pseudonym: sessionId,
           full_name: fullNameValue,
-          email: null, // Email opcional para guest users
+          email: user?.email || null,
+          user_id: user?.id || null,
           age_range: ageRangeValue,
           country: countryValue,
           region: regionValue,
