@@ -286,6 +286,7 @@ export type Database = {
           region: string
           session_pseudonym: string
           user_agent: string | null
+          user_id: string | null
         }
         Insert: {
           adult_declaration?: boolean
@@ -303,6 +304,7 @@ export type Database = {
           region: string
           session_pseudonym: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Update: {
           adult_declaration?: boolean
@@ -320,6 +322,7 @@ export type Database = {
           region?: string
           session_pseudonym?: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.admin-delete-recording]
 verify_jwt = false
 
+[functions.check-user-consent]
+verify_jwt = false
+
 [functions.consent-evidence-handler]
 verify_jwt = false
 
