@@ -1,93 +1,103 @@
 
+# Plan: Permitir Espacios en el Campo de Nombre Completo
 
-## Plan: Sincronizar Credenciales de Google OAuth
+## Problema Identificado
 
-### Problema Identificado
+El campo "Nombre completo" en el modal de consentimiento no permite escribir espacios porque hay un **manejador de teclado global** en `TrainView.tsx` que intercepta la tecla espacio para usarla como atajo de grabación.
 
-Las credenciales de Google en Lovable Cloud no coinciden con las de Google Cloud Console:
-- Login desde `adagiotest.lovable.app`: **Funciona**
-- Login desde `app.adagioweb.com`: **Falla con invalid_client**
+### Código Problemático (TrainView.tsx, líneas 518-525)
 
-Esto indica que cuando cambiaste el Client Secret en Google Cloud Console, el valor que ingresaste en Lovable Cloud no es el correcto.
-
----
-
-### Paso 1: Verificar el Tipo de OAuth Client en Google
-
-1. Ve a [Google Cloud Console](https://console.cloud.google.com)
-2. Navega a **APIs & Services** → **Credentials**
-3. Haz clic en tu OAuth 2.0 Client ID
-4. **Verifica que el tipo sea "Web application"** (no Android, iOS, etc.)
-
----
-
-### Paso 2: Obtener las Credenciales Correctas
-
-1. En la página del OAuth Client, copia el **Client ID** completo
-   - Tiene formato: `xxxxx.apps.googleusercontent.com`
-2. En la sección **Client secrets**:
-   - Si ves varios secretos, **desactiva todos los antiguos**
-   - Crea un **nuevo secreto** (botón "ADD SECRET")
-   - **Copia el secreto INMEDIATAMENTE** (solo se muestra una vez)
-
----
-
-### Paso 3: Actualizar Credenciales en Lovable Cloud
-
-1. Abre el panel de backend de Lovable Cloud
-2. Ve a **Users** → **Auth Settings** → **Google Settings**
-3. **Borra los valores actuales** y pega los nuevos:
-   - **Google Client ID**: El ID que copiaste (xxxxx.apps.googleusercontent.com)
-   - **Google Client Secret**: El nuevo secreto que acabas de crear
-4. **Guarda los cambios**
-
----
-
-### Paso 4: Verificar URIs Autorizadas en Google
-
-En Google Cloud Console, verifica que tienes estas URIs:
-
-**Authorized JavaScript origins:**
-```
-https://app.adagioweb.com
-https://adagiotest.lovable.app
+```javascript
+if (e.key === ' ' && !e.repeat) {
+  e.preventDefault();  // Bloquea TODOS los espacios
+  if (audioBlob) {
+    handleSubmit();
+  } else {
+    handleRecordToggle();
+  }
+}
 ```
 
-**Authorized redirect URIs:**
+El `e.preventDefault()` se ejecuta **siempre** que se presiona espacio, sin verificar si el foco está en un campo de texto.
+
+---
+
+## Solución
+
+Modificar el manejador de teclado para que **ignore la tecla espacio cuando el usuario está escribiendo** en un input o textarea.
+
+### Cambio Requerido
+
+**Archivo:** `src/components/TrainView.tsx`  
+**Líneas:** 512-536
+
+```typescript
+useEffect(() => {
+  const handleKeyPress = (e: KeyboardEvent) => {
+    if (!e.key) return;
+    
+    // Ignorar atajos si el foco está en un campo de texto
+    const activeElement = document.activeElement;
+    const isTyping = activeElement instanceof HTMLInputElement || 
+                     activeElement instanceof HTMLTextAreaElement ||
+                     activeElement?.getAttribute('contenteditable') === 'true';
+    
+    if (isTyping) {
+      return; // No interceptar teclas mientras se escribe
+    }
+    
+    if (e.ctrlKey && !e.repeat) {
+      handlePlayPhrase();
+    }
+    if (e.key === ' ' && !e.repeat) {
+      e.preventDefault();
+      if (audioBlob) {
+        handleSubmit();
+      } else {
+        handleRecordToggle();
+      }
+    }
+    if (e.altKey && !e.repeat) {
+      if (audioBlob) {
+        handleReRecord();
+      }
+    }
+    if (e.key.toLowerCase() === 'p' && !e.repeat) {
+      if (audioBlob) {
+        handlePlayRecording();
+      }
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyPress);
+  return () => window.removeEventListener('keydown', handleKeyPress);
+}, [audioBlob, isRecording, isPlaying]);
 ```
-https://tuozgcqmznlnwteodprx.supabase.co/auth/v1/callback
-```
 
 ---
 
-### Paso 5: Probar el Login
+## Lógica de la Solución
 
-1. **Espera 3-5 minutos** para que los cambios se propaguen
-2. **Abre una ventana de incógnito** (importante)
-3. Accede a `https://app.adagioweb.com`
-4. Intenta iniciar sesión con Google
-5. Debería funcionar correctamente
-
----
-
-### Alternativa: Usar OAuth Gestionado
-
-Si prefieres no gestionar credenciales propias:
-
-1. En Google Cloud Console, **desactiva o elimina** tu OAuth Client
-2. En Lovable Cloud → Auth Settings → Google Settings:
-   - **Deja ambos campos vacíos** (Client ID y Secret)
-3. Lovable usará automáticamente sus propias credenciales gestionadas
+| Situación | Comportamiento Actual | Comportamiento Nuevo |
+|-----------|----------------------|---------------------|
+| Espacio en input | Bloqueado, inicia grabación | Permite escribir espacio |
+| Espacio fuera de input | Inicia grabación | Sin cambios |
+| Otras teclas en input | Funcionan | Sin cambios |
 
 ---
 
-### Resumen de Acciones
+## Beneficios
 
-| Paso | Acción | Dónde |
-|------|--------|-------|
-| 1 | Verificar tipo = "Web application" | Google Cloud Console |
-| 2 | Crear nuevo secreto y copiarlo | Google Cloud Console |
-| 3 | Actualizar Client ID y Secret | Lovable Cloud → Auth Settings → Google |
-| 4 | Verificar redirect URIs | Google Cloud Console |
-| 5 | Probar en incógnito | app.adagioweb.com |
+1. Los usuarios podrán escribir nombres completos con espacios (ej: "Juan García López")
+2. Los atajos de teclado seguirán funcionando cuando no se está escribiendo
+3. Mejora la accesibilidad del formulario de consentimiento
 
+---
+
+## Verificación
+
+Después de implementar:
+1. Abrir la sección "Entrenar"
+2. En el modal de consentimiento, escribir un nombre con espacios
+3. Verificar que los espacios aparecen correctamente
+4. Cerrar el modal y verificar que la barra espaciadora sigue funcionando para grabar
