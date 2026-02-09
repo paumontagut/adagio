@@ -53,6 +53,15 @@ export const Footer = () => {
                   Términos y Condiciones
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/colabora"
+                  className="flex items-center gap-2 text-white/90 hover:text-[#FFBC42] hover:translate-x-1 transition-all duration-300 group"
+                >
+                  <FileText className="w-4 h-4 opacity-70 group-hover:opacity-100" />
+                  Colabora con Adagio
+                </Link>
+              </li>
             </ul>
           </div>
 
