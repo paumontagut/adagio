@@ -82,6 +82,12 @@ const Index = () => {
               >
                 {isMobile ? "Entrenar" : "Entrenar Modelo"}
               </button>
+              <button
+                onClick={() => navigate("/colabora")}
+                className="rounded-full px-3 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all bg-transparent text-black/60 hover:bg-black/5 hover:text-black"
+              >
+                {isMobile ? "Colaborar" : "Colabora con Adagio"}
+              </button>
             </div>
 
             {/* Separador sutil */}

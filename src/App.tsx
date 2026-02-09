@@ -20,6 +20,7 @@ import { AdminRecordings } from "./pages/admin/AdminRecordings";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 import AdminConsents from "./pages/admin/AdminConsents";
 import { AdminLayout } from "./components/admin/AdminLayout";
+import { Colabora } from "./pages/Colabora";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/terms" element={<TermsAndConditions />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/my-data" element={<MyData />} />
+              <Route path="/colabora" element={<Colabora />} />
               
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
