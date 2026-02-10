@@ -1,30 +1,74 @@
-import { ExternalLink, Mail } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ExternalLink, LogIn } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Footer } from "@/components/Footer";
+import { UserMenu } from "@/components/UserMenu";
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/logo.svg";
 
 export const Colabora = () => {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const isMobile = useIsMobile();
+
   return (
     <div
       className="min-h-screen w-full flex flex-col selection:bg-primary/20 selection:text-white"
       style={{ backgroundColor: "#F5F8DE", color: "#0D0C1D" }}
     >
-      {/* Header */}
-      <header className="w-full max-w-7xl mx-auto px-4 md:px-8 pt-6 flex items-center justify-between">
-        <Link to="/" className="hover:opacity-80 transition-opacity">
-          <img src={logo} alt="Adagio Logo" className="h-12 md:h-16 w-auto" />
-        </Link>
-        <Link
-          to="/privacy-center"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white/60 backdrop-blur-xl border border-white/40 hover:bg-white/80 transition-all"
-        >
-          <Mail className="w-4 h-4" />
-          <span className="hidden sm:inline">Contacto</span>
-        </Link>
-      </header>
+      {/* Logo */}
+      <Link
+        to="/"
+        className="absolute top-4 left-4 md:left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity"
+      >
+        <img src={logo} alt="Adagio Logo" className="h-12 md:h-20 lg:h-24 w-auto" />
+      </Link>
+
+      {/* Floating Navigation Bar */}
+      <div className="fixed top-4 md:top-6 left-0 right-0 z-40 flex justify-center px-2 md:px-4">
+        <nav className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 bg-white/70 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 w-auto max-w-2xl">
+          <div className="flex items-center gap-0.5 md:gap-1">
+            <button
+              onClick={() => navigate("/?tab=transcribe")}
+              className="rounded-full px-3 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all bg-transparent text-black/60 hover:bg-black/5 hover:text-black"
+            >
+              {isMobile ? "Transcribir" : "Transcribir"}
+            </button>
+            <button
+              onClick={() => navigate("/?tab=train")}
+              className="rounded-full px-3 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all bg-transparent text-black/60 hover:bg-black/5 hover:text-black"
+            >
+              {isMobile ? "Entrenar" : "Entrenar Modelo"}
+            </button>
+            <button
+              className="rounded-full px-3 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all bg-white text-black shadow-sm"
+            >
+              {isMobile ? "Colaborar" : "Colabora con Adagio"}
+            </button>
+          </div>
+
+          <div className="w-px h-5 md:h-6 bg-black/10 mx-1 md:mx-2"></div>
+
+          <div className="flex-shrink-0">
+            {user ? (
+              <UserMenu />
+            ) : (
+              !loading && (
+                <button
+                  onClick={() => navigate("/auth")}
+                  className="bg-[#005C64] text-white px-3 md:px-6 py-2 md:py-2.5 rounded-full font-semibold text-xs md:text-sm flex items-center gap-1 md:gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span className="hidden sm:inline">Iniciar sesión</span>
+                </button>
+              )
+            )}
+          </div>
+        </nav>
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-4 md:px-8 py-12 md:py-20">
+      <main className="flex-1 flex items-center justify-center px-4 md:px-8 pt-24 md:pt-32 pb-12 md:pb-20">
         <div className="w-full max-w-2xl">
           <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-2xl md:rounded-[2.5rem] p-6 md:p-10 lg:p-14 shadow-sm relative overflow-hidden">
             {/* Background decoration */}
