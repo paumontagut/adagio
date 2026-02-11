@@ -22,11 +22,8 @@ import {
   Volume2,
   Square,
   Mic,
-  Sparkles,
-  ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useSearchParams } from "react-router-dom"; // <--- IMPORTANTE: Para la navegación
 
 type TranscribeState = "idle" | "uploading" | "transcribing" | "completed" | "error";
 
@@ -45,9 +42,6 @@ export const TranscribeView = () => {
   const [backendOnline, setBackendOnline] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
-
-  // Hook para cambiar de pestaña
-  const [_, setSearchParams] = useSearchParams();
 
   // Accessibility: Focus management
   useEffect(() => {
@@ -165,41 +159,7 @@ export const TranscribeView = () => {
   const hasResults = state === "completed" && adagioResult;
 
   return (
-    // AÑADIDO: 'relative' para que el overlay se posicione sobre este bloque
-    <div className="w-full max-w-3xl mx-auto space-y-8 relative">
-      {/* ------------------------------------------------------------------ */}
-      {/* OVERLAY DE "COMING SOON" / MANTENIMIENTO */}
-      {/* ------------------------------------------------------------------ */}
-      <div className="absolute inset-0 z-50 flex items-center justify-center p-4 -m-4">
-        {/* Fondo de cristal desenfocado que bloquea la interacción */}
-        <div className="absolute inset-0 bg-white/60 backdrop-blur-md rounded-[2.5rem] border border-white/50" />
-
-        {/* Tarjeta del mensaje */}
-        <div className="relative bg-white border border-white shadow-2xl rounded-[2rem] p-8 max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
-          {/* Icono Flotante */}
-          <div className="mx-auto w-16 h-16 bg-[#005C64]/10 rounded-full flex items-center justify-center mb-2">
-            <Sparkles className="w-8 h-8 text-[#005C64]" />
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-[#0D0C1D] tracking-tight">Estamos trabajando en Adagio</h3>
-            <p className="text-gray-500 leading-relaxed">
-              Esta función saldrá muy pronto para todos. Mientras tanto, puedes ayudarnos a mejorar.
-            </p>
-          </div>
-
-          {/* Botón de Acción: Redirige a la pestaña de entrenar */}
-          <Button
-            onClick={() => setSearchParams({ tab: "train" })}
-            className="w-full bg-[#005C64] hover:bg-[#004a50] text-white rounded-full h-12 text-base font-medium shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group"
-          >
-            Ir a Entrenar Modelo
-            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </div>
-      </div>
-      {/* ------------------------------------------------------------------ */}
-
+    <div className="w-full max-w-3xl mx-auto space-y-8">
       {/* ENLACE DE ACCESIBILIDAD OCULTO VISUALMENTE (sr-only) */}
       <a
         href="#transcribe-controls"
@@ -208,9 +168,7 @@ export const TranscribeView = () => {
         Saltar a controles de transcripción
       </a>
 
-      {/* El resto de la interfaz se renderiza debajo (con efecto borroso por el overlay) */}
-      {/* Añadimos 'pointer-events-none' y 'opacity-50' para asegurar que visualmente parezca inactivo debajo del cristal */}
-      <div className="pointer-events-none opacity-50 filter blur-[2px] transition-all">
+      <div>
         <Tabs defaultValue="adagio" className="w-full">
           {/* PESTAÑAS ESTILIZADAS */}
           <div className="flex justify-center mb-8">
