@@ -176,7 +176,50 @@ const ComparisonView: React.FC = () => {
     });
   }, [audioPlayerAdagio, audioPlayerChatGPT]);
 
-// ... keep existing code (handleSpeakAdagio, handleStopAdagio)
+  const handleSpeakAdagio = async () => {
+    if (!state.adagio.result?.text?.trim()) return;
+    
+    setIsLoadingTTSAdagio(true);
+    try {
+      const audio = await speakWithElevenLabs(state.adagio.result.text);
+      setAudioPlayerAdagio(audio);
+      
+      audio.onended = () => setAudioPlayerAdagio(null);
+      audio.onerror = () => {
+        setAudioPlayerAdagio(null);
+        toast({
+          title: "Error de audio",
+          description: "No se pudo reproducir el audio generado",
+          variant: "destructive"
+        });
+      };
+      
+      await audio.play();
+      
+      toast({
+        title: "Reproduciendo",
+        description: "Audio de Adagio generado con ElevenLabs"
+      });
+      
+    } catch (error) {
+      console.error('TTS error:', error);
+      toast({
+        title: "Error de síntesis de voz",
+        description: "No se pudo generar el audio",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingTTSAdagio(false);
+    }
+  };
+
+  const handleStopAdagio = () => {
+    if (audioPlayerAdagio) {
+      audioPlayerAdagio.pause();
+      audioPlayerAdagio.currentTime = 0;
+      setAudioPlayerAdagio(null);
+    }
+  };
 
   const handleSpeakChatGPT = async () => {
     if (!state.chatgpt.result?.text?.trim()) return;
@@ -252,11 +295,168 @@ const ComparisonView: React.FC = () => {
         </p>
       </div>
 
-// ... keep existing code (Audio Input card)
+      {/* Audio Input */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            Entrada de Audio
+          </CardTitle>
+          <CardDescription>
+            Graba o sube un archivo de audio para comparar
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <RecorderUploader
+            onAudioReady={handleAudioReady}
+            disabled={state.isProcessing}
+          />
+
+          {state.audioMetadata && (
+            <div className="grid grid-cols-3 gap-2 p-3 bg-muted rounded-lg text-sm">
+              <div className="text-center">
+                <span className="text-muted-foreground">Duración</span>
+                <p className="font-mono">{state.audioMetadata.duration.toFixed(1)}s</p>
+              </div>
+              <div className="text-center">
+                <span className="text-muted-foreground">Tamaño</span>
+                <p className="font-mono">{(state.audioMetadata.size / 1024).toFixed(0)} KB</p>
+              </div>
+              <div className="text-center">
+                <span className="text-muted-foreground">Formato</span>
+                <p className="font-mono">{state.audioMetadata.format}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <Button
+              onClick={startComparison}
+              disabled={!state.audioFile || state.isProcessing}
+              className="flex-1"
+            >
+              {state.isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Comparando...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Comparar
+                </>
+              )}
+            </Button>
+            {(state.adagio.status !== 'idle' || state.chatgpt.status !== 'idle') && (
+              <Button variant="outline" onClick={resetComparison} disabled={state.isProcessing}>
+                Nueva comparación
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Results */}
       <div className="grid md:grid-cols-2 gap-6">
-// ... keep existing code (Adagio Results card)
+        {/* Adagio Results */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                {getStatusIcon(state.adagio.status)}
+                Adagio
+              </span>
+              <Badge variant="outline">Local</Badge>
+            </CardTitle>
+            <CardDescription>
+              Transcripción usando servidor Adagio local
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(state.adagio.status === 'completed' || state.adagio.result) && (
+              <div className="grid grid-cols-1 gap-2 p-3 bg-muted rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span>Tiempo Total:</span>
+                  <span className="font-mono">{formatTime(state.adagio.result?.ms)}</span>
+                </div>
+              </div>
+            )}
+
+            {state.adagio.status === 'processing' && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4 animate-spin" />
+                Procesando...
+              </div>
+            )}
+
+            {state.adagio.status === 'error' && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <div className="flex items-center gap-2 text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  Error
+                </div>
+                <p className="text-sm text-destructive/80 mt-1">
+                  {state.adagio.error}
+                </p>
+              </div>
+            )}
+
+            {state.adagio.status === 'completed' && state.adagio.result && (
+              <>
+                <div className="p-3 bg-background border rounded-lg">
+                  <p className="text-sm whitespace-pre-wrap">
+                    {state.adagio.result.text || 'Sin transcripción'}
+                  </p>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(state.adagio.result!.text, 'Adagio')}
+                    className="flex-1"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copiar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => downloadTranscription(state.adagio.result!.text, 'Adagio')}
+                    className="flex-1"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Descargar
+                  </Button>
+                  {audioPlayerAdagio ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleStopAdagio}
+                      title="Detener reproducción"
+                    >
+                      <Square className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSpeakAdagio}
+                      disabled={isLoadingTTSAdagio || !state.adagio.result?.text?.trim()}
+                      title="Reproducir con ElevenLabs"
+                    >
+                      {isLoadingTTSAdagio ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Volume2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* ChatGPT Results */}
         <Card>
