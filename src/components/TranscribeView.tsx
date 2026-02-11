@@ -196,6 +196,17 @@ export const TranscribeView = () => {
               <RecorderUploader onAudioReady={handleAudioReady} disabled={isProcessing} />
             </div>
 
+            <BackendStatus onStatusChange={setBackendOnline} />
+
+            {isProcessing && (
+              <div className="space-y-3 animate-in fade-in duration-300">
+                <Progress value={progress} className="h-2" />
+                <p className="text-sm text-muted-foreground text-center">
+                  {state === "uploading" ? "Subiendo audio..." : "Transcribiendo..."}
+                </p>
+              </div>
+            )}
+
             {!isProcessing && !hasResults && audioBlob && (
               <div
                 className="flex flex-col items-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500"
@@ -214,6 +225,45 @@ export const TranscribeView = () => {
               </div>
             )}
 
+            {state === "error" && error && (
+              <ErrorState
+                title={error.message}
+                description={error.details || "Ha ocurrido un error inesperado."}
+                onRetry={handleRetry}
+              />
+            )}
+
+            {hasResults && adagioResult && (
+              <Card className="p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500" id="transcription-result" tabIndex={-1}>
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" aria-hidden="true" />
+                  <h3 className="font-semibold text-lg">Resultado</h3>
+                  <Badge variant="secondary" className="ml-auto">{adagioResult.provider}</Badge>
+                </div>
+                <Textarea
+                  value={adagioResult.text}
+                  readOnly
+                  className="min-h-[120px] resize-y"
+                  aria-label="Texto transcrito"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleCopy(adagioResult.text)}>
+                    <Copy className="mr-1 h-4 w-4" /> Copiar
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDownload(adagioResult.text)}>
+                    <Download className="mr-1 h-4 w-4" /> Descargar
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleTTS(adagioResult.text)} disabled={isPlaying}>
+                    {isPlaying ? <Square className="mr-1 h-4 w-4" /> : <Volume2 className="mr-1 h-4 w-4" />}
+                    {isPlaying ? "Reproduciendo..." : "Escuchar"}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setState("idle"); setAdagioResult(null); setAudioBlob(null); setCanTranscribe(false); }}>
+                    Transcribir otro audio
+                  </Button>
+                </div>
+              </Card>
+            )}
+
             {!audioBlob && !hasResults && !error && state === "idle" && (
               <div className="opacity-70 scale-95 transform transition-all">
                 <EmptyState
@@ -223,6 +273,13 @@ export const TranscribeView = () => {
                 />
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent
+            value="comparison"
+            className="focus-visible:outline-none mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500"
+          >
+            <ComparisonView />
           </TabsContent>
         </Tabs>
       </div>
