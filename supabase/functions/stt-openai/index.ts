@@ -53,7 +53,7 @@ serve(async (req) => {
 
     // Prepare form data for OpenAI
     const openAIFormData = new FormData();
-    openAIFormData.append("model", "gpt-4o-mini-transcribe");
+    openAIFormData.append("model", "gpt-4o-mini-transcribe-2025-12-15");
     openAIFormData.append("file", file, file.name);
     openAIFormData.append("language", "es"); // Spanish language hint
 

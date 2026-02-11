@@ -7,8 +7,13 @@ import { Copy, Download, AlertCircle, CheckCircle2, Clock, Zap, Volume2, Square,
 import { useToast } from '@/components/ui/use-toast';
 import { RecorderUploader } from '@/components/RecorderUploader';
 import { transcribeAdagio, type AdagioResult } from '@/services/adagio';
-import { startRealtimeTranscription, type RealtimeResult, type RealtimeCallbacks } from '@/services/realtime';
 import { speakWithElevenLabs } from '@/services/tts';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ChatGPTResult {
+  text: string;
+  totalMs: number;
+}
 
 interface ComparisonState {
   isProcessing: boolean;
@@ -23,12 +28,10 @@ interface ComparisonState {
     result?: AdagioResult;
     error?: string;
   };
-  realtime: {
+  chatgpt: {
     status: 'idle' | 'processing' | 'completed' | 'error';
-    partialText: string;
-    result?: RealtimeResult;
+    result?: ChatGPTResult;
     error?: string;
-    ttfb?: number;
   };
 }
 
@@ -37,7 +40,7 @@ const ComparisonView: React.FC = () => {
   const [state, setState] = useState<ComparisonState>({
     isProcessing: false,
     adagio: { status: 'idle' },
-    realtime: { status: 'idle', partialText: '' }
+    chatgpt: { status: 'idle' }
   });
   
   // TTS states
@@ -62,6 +65,23 @@ const ComparisonView: React.FC = () => {
     }));
   }, []);
 
+  const transcribeChatGPT = async (file: File): Promise<ChatGPTResult> => {
+    const start = performance.now();
+    
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    const { data, error } = await supabase.functions.invoke('stt-openai', {
+      body: formData,
+    });
+
+    if (error) throw new Error(error.message);
+    if (data?.error) throw new Error(data.error);
+
+    const totalMs = performance.now() - start;
+    return { text: data?.text ?? '', totalMs };
+  };
+
   const startComparison = useCallback(async () => {
     if (!state.audioFile) {
       toast({
@@ -76,82 +96,27 @@ const ComparisonView: React.FC = () => {
       ...prev,
       isProcessing: true,
       adagio: { status: 'processing' },
-      realtime: { status: 'processing', partialText: '' }
+      chatgpt: { status: 'processing' }
     }));
 
-    // Start Adagio transcription
     const adagioPromise = transcribeAdagio(state.audioFile)
       .then(result => {
-        setState(prev => ({
-          ...prev,
-          adagio: { status: 'completed', result }
-        }));
-        console.log('Adagio completed:', result);
+        setState(prev => ({ ...prev, adagio: { status: 'completed', result } }));
       })
       .catch(error => {
-        setState(prev => ({
-          ...prev,
-          adagio: { status: 'error', error: error.message }
-        }));
-        console.error('Adagio error:', error);
+        setState(prev => ({ ...prev, adagio: { status: 'error', error: error.message } }));
       });
 
-    // Start Realtime transcription
-    const realtimeCallbacks: RealtimeCallbacks = {
-      onPartial: (text: string, ttfb?: number) => {
-        setState(prev => ({
-          ...prev,
-          realtime: {
-            ...prev.realtime,
-            partialText: text,
-            ttfb
-          }
-        }));
-      },
-      onFinal: (result: RealtimeResult) => {
-        setState(prev => ({
-          ...prev,
-          realtime: {
-            ...prev.realtime,
-            status: 'completed',
-            result,
-            ttfb: prev.realtime.ttfb || result.ttfb
-          }
-        }));
-        console.log('Realtime completed:', result);
-      },
-      onError: (error: string) => {
-        setState(prev => ({
-          ...prev,
-          realtime: {
-            ...prev.realtime,
-            status: 'error',
-            error
-          }
-        }));
-        console.error('Realtime error:', error);
-      }
-    };
-
-    const realtimePromise = startRealtimeTranscription(state.audioFile, realtimeCallbacks)
+    const chatgptPromise = transcribeChatGPT(state.audioFile)
+      .then(result => {
+        setState(prev => ({ ...prev, chatgpt: { status: 'completed', result } }));
+      })
       .catch(error => {
-        setState(prev => ({
-          ...prev,
-          realtime: {
-            ...prev.realtime,
-            status: 'error',
-            error: error.message
-          }
-        }));
-        console.error('Realtime setup error:', error);
+        setState(prev => ({ ...prev, chatgpt: { status: 'error', error: error.message } }));
       });
 
-    // Wait for both to complete or error
-    Promise.allSettled([adagioPromise, realtimePromise]).finally(() => {
-      setState(prev => ({
-        ...prev,
-        isProcessing: false
-      }));
+    Promise.allSettled([adagioPromise, chatgptPromise]).finally(() => {
+      setState(prev => ({ ...prev, isProcessing: false }));
     });
 
   }, [state.audioFile, toast]);
@@ -207,61 +172,18 @@ const ComparisonView: React.FC = () => {
     setState({
       isProcessing: false,
       adagio: { status: 'idle' },
-      realtime: { status: 'idle', partialText: '' }
+      chatgpt: { status: 'idle' }
     });
   }, [audioPlayerAdagio, audioPlayerChatGPT]);
 
-  const handleSpeakAdagio = async () => {
-    if (!state.adagio.result?.text?.trim()) return;
-    
-    setIsLoadingTTSAdagio(true);
-    try {
-      const audio = await speakWithElevenLabs(state.adagio.result.text);
-      setAudioPlayerAdagio(audio);
-      
-      audio.onended = () => setAudioPlayerAdagio(null);
-      audio.onerror = () => {
-        setAudioPlayerAdagio(null);
-        toast({
-          title: "Error de audio",
-          description: "No se pudo reproducir el audio generado",
-          variant: "destructive"
-        });
-      };
-      
-      await audio.play();
-      
-      toast({
-        title: "Reproduciendo",
-        description: "Audio de Adagio generado con ElevenLabs"
-      });
-      
-    } catch (error) {
-      console.error('TTS error:', error);
-      toast({
-        title: "Error de síntesis de voz",
-        description: "No se pudo generar el audio",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoadingTTSAdagio(false);
-    }
-  };
-
-  const handleStopAdagio = () => {
-    if (audioPlayerAdagio) {
-      audioPlayerAdagio.pause();
-      audioPlayerAdagio.currentTime = 0;
-      setAudioPlayerAdagio(null);
-    }
-  };
+// ... keep existing code (handleSpeakAdagio, handleStopAdagio)
 
   const handleSpeakChatGPT = async () => {
-    if (!state.realtime.result?.text?.trim()) return;
+    if (!state.chatgpt.result?.text?.trim()) return;
     
     setIsLoadingTTSChatGPT(true);
     try {
-      const audio = await speakWithElevenLabs(state.realtime.result.text);
+      const audio = await speakWithElevenLabs(state.chatgpt.result.text);
       setAudioPlayerChatGPT(audio);
       
       audio.onended = () => setAudioPlayerChatGPT(null);
@@ -326,97 +248,66 @@ const ComparisonView: React.FC = () => {
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold">Comparativa de Transcripción</h2>
         <p className="text-muted-foreground">
-          Compara los resultados de Adagio vs ChatGPT 4o Transcribe en tiempo real
+          Compara los resultados de Adagio vs ChatGPT 4o Transcribe
         </p>
       </div>
 
-      {/* Audio Input */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Audio de Entrada
-          </CardTitle>
-          <CardDescription>
-            Graba o sube un archivo para comparar las transcripciones
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <RecorderUploader
-            onAudioReady={handleAudioReady}
-            disabled={state.isProcessing}
-          />
-          
-          {state.audioMetadata && (
-            <div className="flex gap-4 text-sm text-muted-foreground">
-              <span>Duración: {formatTime(state.audioMetadata.duration * 1000)}</span>
-              <span>Tamaño: {(state.audioMetadata.size / 1024).toFixed(1)} KB</span>
-              <span>Formato: {state.audioMetadata.format}</span>
-            </div>
-          )}
-
-          <Button 
-            onClick={startComparison}
-            disabled={!state.audioFile || state.isProcessing}
-            className="w-full"
-          >
-            {state.isProcessing ? 'Procesando...' : 'Iniciar Comparación'}
-          </Button>
-        </CardContent>
-      </Card>
+// ... keep existing code (Audio Input card)
 
       {/* Results */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Adagio Results */}
+// ... keep existing code (Adagio Results card)
+
+        {/* ChatGPT Results */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
-                {getStatusIcon(state.adagio.status)}
-                Adagio (Servidor)
+                {getStatusIcon(state.chatgpt.status)}
+                ChatGPT 4o Transcribe
               </span>
-              <Badge variant="outline">Batch</Badge>
+              <Badge variant="outline">API</Badge>
             </CardTitle>
             <CardDescription>
-              Transcripción por lotes usando tu servidor FastAPI
+              Transcripción usando OpenAI gpt-4o-mini-transcribe
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Metrics */}
-            {(state.adagio.status === 'completed' || state.adagio.result) && (
+            {(state.chatgpt.status === 'completed' || state.chatgpt.result) && (
               <div className="grid grid-cols-1 gap-2 p-3 bg-muted rounded-lg">
                 <div className="flex justify-between text-sm">
                   <span>Tiempo Total:</span>
-                  <span className="font-mono">{formatTime(state.adagio.result?.ms)}</span>
+                  <span className="font-mono">{formatTime(state.chatgpt.result?.totalMs)}</span>
                 </div>
               </div>
             )}
 
             {/* Content */}
-            {state.adagio.status === 'processing' && (
+            {state.chatgpt.status === 'processing' && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4 animate-spin" />
                 Procesando...
               </div>
             )}
 
-            {state.adagio.status === 'error' && (
+            {state.chatgpt.status === 'error' && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
                 <div className="flex items-center gap-2 text-destructive">
                   <AlertCircle className="h-4 w-4" />
                   Error
                 </div>
                 <p className="text-sm text-destructive/80 mt-1">
-                  {state.adagio.error}
+                  {state.chatgpt.error}
                 </p>
               </div>
             )}
 
-            {state.adagio.status === 'completed' && state.adagio.result && (
+            {state.chatgpt.status === 'completed' && state.chatgpt.result && (
               <>
                 <div className="p-3 bg-background border rounded-lg">
                   <p className="text-sm whitespace-pre-wrap">
-                    {state.adagio.result.text || 'Sin transcripción'}
+                    {state.chatgpt.result.text || 'Sin transcripción'}
                   </p>
                 </div>
                 
@@ -424,7 +315,7 @@ const ComparisonView: React.FC = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => copyToClipboard(state.adagio.result!.text, 'Adagio')}
+                    onClick={() => copyToClipboard(state.chatgpt.result!.text, 'ChatGPT')}
                     className="flex-1"
                   >
                     <Copy className="h-4 w-4 mr-2" />
@@ -433,120 +324,7 @@ const ComparisonView: React.FC = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => downloadTranscription(state.adagio.result!.text, 'Adagio')}
-                    className="flex-1"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Descargar
-                  </Button>
-                  {audioPlayerAdagio ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleStopAdagio}
-                      title="Detener reproducción"
-                    >
-                      <Square className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSpeakAdagio}
-                      disabled={isLoadingTTSAdagio || !state.adagio.result?.text?.trim()}
-                      title="Reproducir con ElevenLabs"
-                    >
-                      {isLoadingTTSAdagio ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Volume2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Realtime Results */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                {getStatusIcon(state.realtime.status)}
-                ChatGPT 4o Transcribe
-              </span>
-              <Badge variant="outline">Realtime</Badge>
-            </CardTitle>
-            <CardDescription>
-              Transcripción en tiempo real usando OpenAI Realtime API
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Metrics */}
-            {(state.realtime.status === 'completed' || state.realtime.result) && (
-              <div className="grid grid-cols-1 gap-2 p-3 bg-muted rounded-lg">
-                <div className="flex justify-between text-sm">
-                  <span>Tiempo Total:</span>
-                  <span className="font-mono">{formatTime(state.realtime.result?.totalMs)}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Content */}
-            {state.realtime.status === 'processing' && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4 animate-spin" />
-                  {state.realtime.partialText ? 'Transcribiendo...' : 'Conectando...'}
-                </div>
-                
-                {state.realtime.partialText && (
-                  <div className="p-3 bg-background border rounded-lg">
-                    <p className="text-sm whitespace-pre-wrap">
-                      {state.realtime.partialText}
-                      <span className="animate-pulse">|</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {state.realtime.status === 'error' && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                <div className="flex items-center gap-2 text-destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  Error
-                </div>
-                <p className="text-sm text-destructive/80 mt-1">
-                  {state.realtime.error}
-                </p>
-              </div>
-            )}
-
-            {state.realtime.status === 'completed' && state.realtime.result && (
-              <>
-                <div className="p-3 bg-background border rounded-lg">
-                  <p className="text-sm whitespace-pre-wrap">
-                    {state.realtime.result.text || 'Sin transcripción'}
-                  </p>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyToClipboard(state.realtime.result!.text, 'ChatGPT')}
-                    className="flex-1"
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copiar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => downloadTranscription(state.realtime.result!.text, 'ChatGPT')}
+                    onClick={() => downloadTranscription(state.chatgpt.result!.text, 'ChatGPT')}
                     className="flex-1"
                   >
                     <Download className="h-4 w-4 mr-2" />
@@ -566,7 +344,7 @@ const ComparisonView: React.FC = () => {
                       size="sm"
                       variant="outline"
                       onClick={handleSpeakChatGPT}
-                      disabled={isLoadingTTSChatGPT || !state.realtime.result?.text?.trim()}
+                      disabled={isLoadingTTSChatGPT || !state.chatgpt.result?.text?.trim()}
                       title="Reproducir con ElevenLabs"
                     >
                       {isLoadingTTSChatGPT ? (
@@ -584,7 +362,7 @@ const ComparisonView: React.FC = () => {
       </div>
 
       {/* Comparison Summary */}
-      {state.adagio.status === 'completed' && state.realtime.status === 'completed' && (
+      {state.adagio.status === 'completed' && state.chatgpt.status === 'completed' && (
         <Card>
           <CardHeader>
             <CardTitle>Resumen de Comparación</CardTitle>
@@ -597,7 +375,7 @@ const ComparisonView: React.FC = () => {
                   Adagio: {formatTime(state.adagio.result?.ms)}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  vs ChatGPT: {formatTime(state.realtime.result?.totalMs)}
+                  vs ChatGPT: {formatTime(state.chatgpt.result?.totalMs)}
                 </p>
               </div>
               
@@ -607,7 +385,7 @@ const ComparisonView: React.FC = () => {
                   Adagio: {state.adagio.result?.text.length} chars
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  vs ChatGPT: {state.realtime.result?.text.length} chars
+                  vs ChatGPT: {state.chatgpt.result?.text.length} chars
                 </p>
               </div>
             </div>
