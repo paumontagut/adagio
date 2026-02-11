@@ -144,7 +144,7 @@ export class RealtimeTranscriber {
       let answerSdp: string | null = null;
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          const response = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17`, {
+          const response = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${ephemeralToken}`,

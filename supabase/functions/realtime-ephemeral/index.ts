@@ -24,7 +24,7 @@ serve(async (req) => {
 
     // Request body with model configuration
     const sessionConfig = {
-      model: "gpt-4o-realtime-preview-2024-12-17", // Using the available realtime model
+      model: "gpt-4o-mini-realtime-preview",
       voice: "alloy",
       instructions: "You are a transcription assistant. Listen to the audio and provide accurate transcriptions."
     };

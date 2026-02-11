@@ -80,8 +80,12 @@ export const RecorderUploader = ({
           description: `Convertido a WAV 16kHz mono (${Math.round(converted.duration)}s)`
         });
       } else {
-        // Use original file
+        // Use original file but decode to get real duration
         const arrayBuffer = await file.arrayBuffer();
+        const audioCtx = new AudioContext();
+        const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+        const realDuration = decoded.duration;
+        audioCtx.close();
         const tempBlob = new Blob([arrayBuffer], {
           type: file.type
         });
@@ -89,9 +93,8 @@ export const RecorderUploader = ({
           blob: tempBlob,
           format: file.type.includes('wav') ? 'wav' : 'mp3',
           sampleRate: 16000,
-          // Assume optimal if no conversion needed
           channels: 1,
-          duration: 0 // Will be updated by audio element
+          duration: realDuration
         };
         finalBlob = tempBlob;
       }
