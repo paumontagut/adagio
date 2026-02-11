@@ -1,47 +1,31 @@
 
 
-# Corregir modelo ChatGPT Realtime y duracion de audio
+# Simplificar transcripcion ChatGPT: usar stt-openai en vez de Realtime API
 
-## Problema 1: Modelo Realtime no encontrado
+## Problema actual
+La comparacion "ChatGPT vs Adagio" usa la API Realtime de OpenAI (WebRTC, tokens efimeros, data channels), que es compleja y falla con errores de `model_not_found` y `rate_limit_error`. El usuario solo necesita: recibir un audio y transcribirlo con el modelo `gpt-4o-mini-transcribe-2025-12-15`.
 
-El modelo `gpt-4o-realtime-preview-2024-12-17` ya no esta disponible. Aparece el error `model_not_found` cuando se intenta generar la respuesta.
+## Solucion
+Eliminar la dependencia de la API Realtime para la comparacion y usar directamente la funcion backend `stt-openai`, que llama a `/v1/audio/transcriptions` de OpenAI. Es mucho mas simple y fiable.
 
-**Solucion**: Cambiar a `gpt-4o-mini-realtime-preview` en tres lugares:
+## Cambios
 
-| Archivo | Cambio |
-|---------|--------|
-| `.env` | Cambiar `VITE_REALTIME_MODEL` a `gpt-4o-mini-realtime-preview` |
-| `supabase/functions/realtime-ephemeral/index.ts` (linea 30) | Cambiar modelo en `sessionConfig` |
-| `src/services/realtime.ts` (linea 147) | Cambiar modelo en la URL de conexion WebRTC |
+### 1. `supabase/functions/stt-openai/index.ts`
+- Cambiar el modelo de `gpt-4o-mini-transcribe` a `gpt-4o-mini-transcribe-2025-12-15` (linea 56).
 
-## Problema 2: Duracion muestra 0 segundos
+### 2. `src/components/ComparisonView.tsx`
+- Eliminar la importacion de `startRealtimeTranscription` y tipos de `realtime.ts`.
+- Crear una funcion `transcribeChatGPT(file)` que llame a la funcion backend `stt-openai` via `supabase.functions.invoke()` (multipart/form-data), mida el tiempo, y devuelva `{ text, totalMs }`.
+- Reemplazar toda la logica de Realtime (callbacks, partial text, WebRTC) por una simple llamada async a `transcribeChatGPT`.
+- Simplificar el estado `realtime` (ya no necesita `partialText` ni `ttfb`).
+- Actualizar la UI para quitar la etiqueta "Realtime" y el texto parcial; mostrar solo el resultado final como hace Adagio.
 
-En `src/components/RecorderUploader.tsx`, cuando un archivo subido no necesita conversion (ya es WAV 16kHz mono), se asigna `duration: 0` sin calcularla.
+### 3. Sin cambios necesarios en otros archivos
+- `realtime.ts` y `realtime-ephemeral` quedan sin usar por la comparacion pero no se eliminan por si se usan en otro lugar.
 
-**Solucion**: Decodificar siempre el audio con `AudioContext.decodeAudioData()` para obtener la duracion real, incluso cuando no se necesita conversion de formato.
-
-### Cambio en `src/components/RecorderUploader.tsx`
-
-En la rama `else` de `handleFileSelect` (lineas 82-96), en vez de asumir `duration: 0`, decodificar el ArrayBuffer para leer `audioBuffer.duration`.
-
-```text
-// Antes (linea 94):
-duration: 0 // Will be updated by audio element
-
-// Despues:
-// Decode to get real duration
-const audioCtx = new AudioContext();
-const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
-const realDuration = decoded.duration;
-audioCtx.close();
-// ... usar realDuration en metadata
-```
-
-## Resumen de archivos afectados
-
-| Archivo | Que cambia |
-|---------|-----------|
-| `supabase/functions/realtime-ephemeral/index.ts` | Modelo a `gpt-4o-mini-realtime-preview` |
-| `src/services/realtime.ts` | Modelo en URL WebRTC |
-| `src/components/RecorderUploader.tsx` | Calcular duracion real decodificando audio |
+## Resultado esperado
+- La comparacion envia el audio al backend `stt-openai`.
+- El backend lo transcribe con `gpt-4o-mini-transcribe-2025-12-15`.
+- Se muestra el texto y el tiempo total, igual que Adagio.
+- Sin WebRTC, sin tokens efimeros, sin errores de modelo Realtime.
 
