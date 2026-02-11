@@ -1,49 +1,47 @@
 
 
-# Corregir Transcripcion Adagio y pestana ChatGPT vs Adagio
+# Corregir modelo ChatGPT Realtime y duracion de audio
 
-## Problema 1: El boton "Transcribir con Adagio" esta desactivado
+## Problema 1: Modelo Realtime no encontrado
 
-El boton requiere que `backendOnline` sea `true`, pero el componente `BackendStatus` no esta renderizado en la vista actual, asi que `backendOnline` nunca cambia de `false`. Ademas, falta mostrar el estado del backend al usuario.
+El modelo `gpt-4o-realtime-preview-2024-12-17` ya no esta disponible. Aparece el error `model_not_found` cuando se intenta generar la respuesta.
 
-**Solucion**: Anadir el componente `BackendStatus` con su callback `onStatusChange` para actualizar el estado `backendOnline`.
+**Solucion**: Cambiar a `gpt-4o-mini-realtime-preview` en tres lugares:
 
-## Problema 2: La pestana "ChatGPT vs Adagio" esta vacia
+| Archivo | Cambio |
+|---------|--------|
+| `.env` | Cambiar `VITE_REALTIME_MODEL` a `gpt-4o-mini-realtime-preview` |
+| `supabase/functions/realtime-ephemeral/index.ts` (linea 30) | Cambiar modelo en `sessionConfig` |
+| `src/services/realtime.ts` (linea 147) | Cambiar modelo en la URL de conexion WebRTC |
 
-La pestana existe en la barra de tabs, pero no tiene contenido: falta el bloque `<TabsContent value="comparison">` con el componente `ComparisonView`.
+## Problema 2: Duracion muestra 0 segundos
 
-**Solucion**: Anadir el `TabsContent` con el `ComparisonView` que ya esta importado.
+En `src/components/RecorderUploader.tsx`, cuando un archivo subido no necesita conversion (ya es WAV 16kHz mono), se asigna `duration: 0` sin calcularla.
 
-## Problema 3: Faltan los estados de progreso, error y resultados en la pestana Adagio
+**Solucion**: Decodificar siempre el audio con `AudioContext.decodeAudioData()` para obtener la duracion real, incluso cuando no se necesita conversion de formato.
 
-Cuando se quito el overlay se perdieron tambien los bloques de UI para mostrar progreso durante la transcripcion, errores, y los resultados finales (textarea con botones de copiar/descargar).
+### Cambio en `src/components/RecorderUploader.tsx`
 
-**Solucion**: Restaurar los bloques de UI para:
-- Barra de progreso durante procesamiento
-- Estado de error con boton de reintentar
-- Resultado de transcripcion con acciones (copiar, descargar, escuchar, nueva transcripcion)
+En la rama `else` de `handleFileSelect` (lineas 82-96), en vez de asumir `duration: 0`, decodificar el ArrayBuffer para leer `audioBuffer.duration`.
 
----
+```text
+// Antes (linea 94):
+duration: 0 // Will be updated by audio element
 
-## Cambios en un solo archivo
+// Despues:
+// Decode to get real duration
+const audioCtx = new AudioContext();
+const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+const realDuration = decoded.duration;
+audioCtx.close();
+// ... usar realDuration en metadata
+```
 
-### `src/components/TranscribeView.tsx`
+## Resumen de archivos afectados
 
-1. **Anadir `BackendStatus`** debajo del `RecorderUploader`, conectado a `setBackendOnline`.
-
-2. **Anadir bloque de progreso**: Mostrar `Progress` y texto de estado cuando `isProcessing` es `true`.
-
-3. **Anadir bloque de error**: Mostrar `ErrorState` cuando `state === "error"`, con boton de reintentar.
-
-4. **Anadir bloque de resultados**: Cuando `hasResults`, mostrar el texto transcrito en un `Textarea` de solo lectura, con botones de copiar, descargar, escuchar (TTS) y "Transcribir otro audio".
-
-5. **Anadir `TabsContent value="comparison"`** con el componente `ComparisonView` que ya esta importado.
-
-| Seccion | Que se anade |
-|---------|-------------|
-| Despues de RecorderUploader | `BackendStatus` con `onStatusChange` |
-| Despues del boton Transcribir | Barra de progreso (cuando `isProcessing`) |
-| Despues del progreso | `ErrorState` (cuando `state === "error"`) |
-| Despues del error | Resultados: textarea + copiar/descargar/TTS/reset |
-| Despues del `TabsContent adagio` | `TabsContent comparison` con `ComparisonView` |
+| Archivo | Que cambia |
+|---------|-----------|
+| `supabase/functions/realtime-ephemeral/index.ts` | Modelo a `gpt-4o-mini-realtime-preview` |
+| `src/services/realtime.ts` | Modelo en URL WebRTC |
+| `src/components/RecorderUploader.tsx` | Calcular duracion real decodificando audio |
 
