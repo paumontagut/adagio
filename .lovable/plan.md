@@ -1,24 +1,49 @@
 
 
-# Eliminar overlay "Estamos trabajando en Adagio" de TranscribeView
+# Corregir Transcripcion Adagio y pestana ChatGPT vs Adagio
 
-## Cambio
+## Problema 1: El boton "Transcribir con Adagio" esta desactivado
 
-En `src/components/TranscribeView.tsx`, eliminar:
+El boton requiere que `backendOnline` sea `true`, pero el componente `BackendStatus` no esta renderizado en la vista actual, asi que `backendOnline` nunca cambia de `false`. Ademas, falta mostrar el estado del backend al usuario.
 
-1. El bloque del overlay (lineas ~152-181): el `div` con clase `absolute inset-0 z-50` que contiene el mensaje "Estamos trabajando en Adagio" y el boton "Ir a Entrenar Modelo".
+**Solucion**: Anadir el componente `BackendStatus` con su callback `onStatusChange` para actualizar el estado `backendOnline`.
 
-2. Las clases que desactivan el contenido de fondo (linea ~191): quitar `pointer-events-none opacity-50 filter blur-[2px] transition-all` del wrapper inferior, dejandolo como un `div` normal.
+## Problema 2: La pestana "ChatGPT vs Adagio" esta vacia
 
-3. Las importaciones no utilizadas: `Sparkles`, `ArrowRight` y `useSearchParams` que solo se usaban para el overlay.
+La pestana existe en la barra de tabs, pero no tiene contenido: falta el bloque `<TabsContent value="comparison">` con el componente `ComparisonView`.
 
-## Resultado
+**Solucion**: Anadir el `TabsContent` con el `ComparisonView` que ya esta importado.
 
-La seccion de transcripcion volvera a ser funcional e interactiva, mostrando el grabador/uploader, el boton "Transcribir con Adagio" y los resultados sin ningun bloqueo visual.
+## Problema 3: Faltan los estados de progreso, error y resultados en la pestana Adagio
 
-## Archivo afectado
+Cuando se quito el overlay se perdieron tambien los bloques de UI para mostrar progreso durante la transcripcion, errores, y los resultados finales (textarea con botones de copiar/descargar).
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/TranscribeView.tsx` | Eliminar overlay y restaurar interactividad |
+**Solucion**: Restaurar los bloques de UI para:
+- Barra de progreso durante procesamiento
+- Estado de error con boton de reintentar
+- Resultado de transcripcion con acciones (copiar, descargar, escuchar, nueva transcripcion)
+
+---
+
+## Cambios en un solo archivo
+
+### `src/components/TranscribeView.tsx`
+
+1. **Anadir `BackendStatus`** debajo del `RecorderUploader`, conectado a `setBackendOnline`.
+
+2. **Anadir bloque de progreso**: Mostrar `Progress` y texto de estado cuando `isProcessing` es `true`.
+
+3. **Anadir bloque de error**: Mostrar `ErrorState` cuando `state === "error"`, con boton de reintentar.
+
+4. **Anadir bloque de resultados**: Cuando `hasResults`, mostrar el texto transcrito en un `Textarea` de solo lectura, con botones de copiar, descargar, escuchar (TTS) y "Transcribir otro audio".
+
+5. **Anadir `TabsContent value="comparison"`** con el componente `ComparisonView` que ya esta importado.
+
+| Seccion | Que se anade |
+|---------|-------------|
+| Despues de RecorderUploader | `BackendStatus` con `onStatusChange` |
+| Despues del boton Transcribir | Barra de progreso (cuando `isProcessing`) |
+| Despues del progreso | `ErrorState` (cuando `state === "error"`) |
+| Despues del error | Resultados: textarea + copiar/descargar/TTS/reset |
+| Despues del `TabsContent adagio` | `TabsContent comparison` con `ComparisonView` |
 
