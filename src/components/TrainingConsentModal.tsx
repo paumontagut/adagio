@@ -1607,26 +1607,40 @@ export const TrainingConsentModal = ({
           {/* Consent Options */}
           <div className="space-y-3 sm:space-y-4">
             {/* Declaración de mayoría de edad - OBLIGATORIO */}
-            <div className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 border-2 border-destructive/50 rounded-lg hover:bg-muted/30 transition-colors bg-destructive/5">
-              <Checkbox id="adult-declaration" checked={adultDeclaration} onCheckedChange={checked => setAdultDeclaration(checked as boolean)} className="mt-0.5 sm:mt-1" />
+            <div 
+              className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 border-2 border-destructive/50 rounded-lg hover:bg-muted/30 transition-colors bg-destructive/5 cursor-pointer select-none"
+              onClick={() => setAdultDeclaration(!adultDeclaration)}
+              role="checkbox"
+              aria-checked={adultDeclaration}
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setAdultDeclaration(!adultDeclaration); } }}
+            >
+              <Checkbox id="adult-declaration" checked={adultDeclaration} onCheckedChange={checked => setAdultDeclaration(checked as boolean)} className="mt-0.5 sm:mt-1 pointer-events-none" tabIndex={-1} />
               <div className="flex-1 min-w-0">
-                <label htmlFor="adult-declaration" className="text-xs sm:text-sm font-medium cursor-pointer flex flex-wrap items-center gap-1 sm:gap-2">
+                <span className="text-xs sm:text-sm font-medium flex flex-wrap items-center gap-1 sm:gap-2">
                   Declaro ser mayor de edad (18+)
                   <span className="text-[10px] sm:text-xs bg-destructive text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">OBLIGATORIO</span>
-                </label>
+                </span>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                   Es obligatorio ser mayor de edad para participar en el entrenamiento del modelo.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5">
-              <Checkbox id="consent-train" checked={consentTrain} onCheckedChange={checked => setConsentTrain(checked as boolean)} className="mt-0.5 sm:mt-1" />
+            <div 
+              className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 border-2 border-adagio-primary/30 rounded-lg hover:bg-muted/30 transition-colors bg-adagio-primary/5 cursor-pointer select-none"
+              onClick={() => setConsentTrain(!consentTrain)}
+              role="checkbox"
+              aria-checked={consentTrain}
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setConsentTrain(!consentTrain); } }}
+            >
+              <Checkbox id="consent-train" checked={consentTrain} onCheckedChange={checked => setConsentTrain(checked as boolean)} className="mt-0.5 sm:mt-1 pointer-events-none" tabIndex={-1} />
               <div className="flex-1 min-w-0">
-                <label htmlFor="consent-train" className="text-xs sm:text-sm font-medium cursor-pointer flex flex-wrap items-center gap-1 sm:gap-2">
+                <span className="text-xs sm:text-sm font-medium flex flex-wrap items-center gap-1 sm:gap-2">
                   Usar mi audio para entrenar el modelo de IA
                   <span className="text-[10px] sm:text-xs bg-adagio-primary text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">OBLIGATORIO</span>
-                </label>
+                </span>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                   Tu voz será utilizada para mejorar la precisión del reconocimiento de voz mediante técnicas de aprendizaje automático.
                   <br /><br />
