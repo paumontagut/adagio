@@ -37,8 +37,8 @@ interface RecordingData {
 }
 const TrainView = () => {
   const [currentPhrase, setCurrentPhrase] = useState(() => phraseService.getRandomPhrase());
-  const [phraseHistory, setPhraseHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const phraseHistoryRef = useRef<string[]>([]);
+  const historyIndexRef = useRef(-1);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [hasConsented, setHasConsented] = useState(false);
@@ -137,7 +137,6 @@ const TrainView = () => {
 
   // No encryption initialization needed anymore
   const getNewPhrase = useCallback(() => {
-    // Advance phrase according to the 2-phase training flow
     const goldenCompleted = phraseService.nextPhrase();
     if (goldenCompleted) {
       phraseService.transitionToExtendedPhase();
@@ -147,11 +146,12 @@ const TrainView = () => {
     setCurrentPhrase(newPhrase);
     
     // Add to history (trim any forward history if we were browsing back)
-    setPhraseHistory(prev => {
-      const trimmed = historyIndex >= 0 ? prev.slice(0, prev.length - historyIndex) : prev;
-      return [...trimmed, newPhrase];
-    });
-    setHistoryIndex(-1);
+    const idx = historyIndexRef.current;
+    if (idx >= 0) {
+      phraseHistoryRef.current = phraseHistoryRef.current.slice(0, phraseHistoryRef.current.length - idx);
+    }
+    phraseHistoryRef.current = [...phraseHistoryRef.current, newPhrase];
+    historyIndexRef.current = -1;
 
     // Reset UI state for the next phrase
     setAudioBlob(null);
@@ -160,19 +160,42 @@ const TrainView = () => {
     setIsSuccess(false);
     setIsRecording(false);
     setIsPlaying(false);
-  }, [historyIndex]);
+  }, []);
 
   const goToPreviousPhrase = useCallback(() => {
-    setPhraseHistory(prev => {
-      // If this is the first navigation back, save current phrase to history first
-      const history = historyIndex === -1 ? [...prev, currentPhrase] : prev;
-      const newIndex = historyIndex === -1 ? 1 : historyIndex + 1;
-      
-      if (newIndex >= history.length) return prev; // No more history
+    const idx = historyIndexRef.current;
+    let history = phraseHistoryRef.current;
+    
+    // If first time going back, save current phrase to history
+    if (idx === -1) {
+      // Get current phrase from DOM state via a functional update trick
+      setCurrentPhrase(curr => {
+        history = [...history, curr];
+        phraseHistoryRef.current = history;
+        
+        const newIndex = 1;
+        if (newIndex >= history.length) return curr; // No more history
+        
+        const targetPhrase = history[history.length - 1 - newIndex];
+        historyIndexRef.current = newIndex;
+        
+        // Reset UI state
+        setAudioBlob(null);
+        setProcessingResult(null);
+        setError(null);
+        setIsSuccess(false);
+        setIsRecording(false);
+        setIsPlaying(false);
+        
+        return targetPhrase;
+      });
+    } else {
+      const newIndex = idx + 1;
+      if (newIndex >= history.length) return; // No more history
       
       const targetPhrase = history[history.length - 1 - newIndex];
+      historyIndexRef.current = newIndex;
       setCurrentPhrase(targetPhrase);
-      setHistoryIndex(newIndex);
       
       // Reset UI state
       setAudioBlob(null);
@@ -181,10 +204,8 @@ const TrainView = () => {
       setIsSuccess(false);
       setIsRecording(false);
       setIsPlaying(false);
-      
-      return history;
-    });
-  }, [historyIndex, currentPhrase]);
+    }
+  }, []);
   const handleRecordingComplete = (blob: Blob, result?: ProcessingResult) => {
     console.log('[TrainView] Recording complete, blob size:', blob.size);
     setAudioBlob(blob);
@@ -753,7 +774,7 @@ const TrainView = () => {
             variant="ghost" 
             size="sm" 
             onClick={goToPreviousPhrase}
-            disabled={phraseHistory.length === 0 && historyIndex === -1}
+            disabled={phraseHistoryRef.current.length === 0 && historyIndexRef.current === -1}
             className="text-muted-foreground hover:text-foreground text-sm md:text-base px-3 md:px-5 py-2 md:py-3"
           >
             <ArrowLeft className="h-4 w-4 md:h-5 md:w-5 mr-1.5 md:mr-2" />
