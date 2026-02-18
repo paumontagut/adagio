@@ -6,6 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function generatePseudonym(sessionId: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(sessionId + '_pseudonym_salt');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return `ps_${hashHex.substring(0, 16)}`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -18,7 +27,7 @@ serve(async (req) => {
     );
 
     const {
-      session_pseudonym,
+      session_pseudonym: rawSessionId,
       full_name,
       email,
       user_id,
@@ -35,12 +44,15 @@ serve(async (req) => {
     } = await req.json();
 
     // Validar que todos los campos obligatorios están presentes
-    if (!session_pseudonym || !full_name || !age_range || !country || !region) {
+    if (!rawSessionId || !full_name || !age_range || !country || !region) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Generate the same deterministic pseudonym used by encrypted-audio-api
+    const session_pseudonym = await generatePseudonym(rawSessionId);
 
     // Validar declaración de mayoría de edad
     if (!adult_declaration) {
@@ -70,7 +82,6 @@ serve(async (req) => {
     const digital_signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
     // Guardar evidencia de consentimiento en la tabla
-    // Incluir firma digital en consent_evidence_data
     const enrichedEvidenceData = {
       ...consent_evidence_data,
       digital_signature,
@@ -106,7 +117,6 @@ serve(async (req) => {
       );
     }
 
-    // Log success (audit_logs table may not exist, so we just log to console)
     console.log('Consent evidence saved successfully:', {
       consent_evidence_id: consentEvidence?.id,
       session_pseudonym,
