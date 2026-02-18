@@ -63,8 +63,9 @@ serve(async (req) => {
     }, 200);
 
   } catch (error) {
-    console.error('Error in realtime-ephemeral function:', error);
-    return json({ error: String(error) }, 500);
+    const correlationId = crypto.randomUUID();
+    console.error(`Error [${correlationId}] in realtime-ephemeral:`, error);
+    return json({ error: 'Session creation failed', correlationId }, 500);
   }
 });
 

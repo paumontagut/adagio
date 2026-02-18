@@ -93,9 +93,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    const correlationId = crypto.randomUUID();
+    console.error(`Error [${correlationId}]:`, error);
     return new Response(
-      JSON.stringify({ error: String(error) }), 
+      JSON.stringify({ error: 'Transcription failed', correlationId }), 
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

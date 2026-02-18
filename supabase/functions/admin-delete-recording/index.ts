@@ -168,8 +168,9 @@ serve(async (req) => {
     console.log('Modern recording deleted successfully');
     return json({ success: true });
   } catch (error) {
-    console.error('Error in admin-delete-recording:', error);
-    return json({ error: String(error) }, 500);
+    const correlationId = crypto.randomUUID();
+    console.error(`Error [${correlationId}] in admin-delete-recording:`, error);
+    return json({ error: 'Operation failed', correlationId }, 500);
   }
 });
 
