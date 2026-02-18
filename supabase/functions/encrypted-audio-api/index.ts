@@ -231,11 +231,13 @@ async function handleStoreAudio(req: Request, supabase: any) {
     .eq('session_pseudonym', sessionPseudonym)
     .maybeSingle();
 
-  // Only create new consent record if one doesn't exist
+   // Only create new consent record if one doesn't exist
   if (!existingConsent) {
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 
                      req.headers.get('x-real-ip') || 
                      'unknown';
+    
+    const digitalSignature = await generateSignature(sessionPseudonym, data);
     
     const { error: consentErr } = await supabase.from('participant_consents').insert({
       session_pseudonym: sessionPseudonym,
@@ -246,7 +248,11 @@ async function handleStoreAudio(req: Request, supabase: any) {
       country: 'Unknown',
       region: 'Unknown',
       adult_declaration: true,
-      digital_signature: await generateSignature(sessionPseudonym, data),
+      consent_evidence_data: {
+        digital_signature: digitalSignature,
+        consent_timestamp: new Date().toISOString(),
+        source: 'encrypted-audio-api-fallback'
+      },
       ip_address: clientIp,
       user_agent: req.headers.get('user-agent') || 'unknown',
       device_info: `Audio upload via encrypted-audio-api`
@@ -368,11 +374,13 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
     .eq('session_pseudonym', sessionPseudonym)
     .maybeSingle();
 
-  // Only create new consent record if one doesn't exist
+   // Only create new consent record if one doesn't exist
   if (!existingConsent) {
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 
                      req.headers.get('x-real-ip') || 
                      'unknown';
+    
+    const digitalSignature = await generateSignature(sessionPseudonym, data);
     
     const { error: consentErr } = await supabase.from('participant_consents').insert({
       session_pseudonym: sessionPseudonym,
@@ -383,7 +391,11 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
       country: 'Unknown',
       region: 'Unknown',
       adult_declaration: true,
-      digital_signature: await generateSignature(sessionPseudonym, data),
+      consent_evidence_data: {
+        digital_signature: digitalSignature,
+        consent_timestamp: new Date().toISOString(),
+        source: 'encrypted-audio-api-fallback'
+      },
       ip_address: clientIp,
       user_agent: req.headers.get('user-agent') || 'unknown',
       device_info: `Audio upload via encrypted-audio-api`
