@@ -619,7 +619,7 @@ const TrainView = () => {
             >
               <Volume2 className="h-4 w-4 md:h-5 md:w-5" />
               <span>Escuchar</span>
-              <span className="ml-1 md:ml-2 text-[10px] md:text-xs text-muted-foreground bg-muted px-1.5 md:px-2 py-0.5 md:py-1 rounded hidden sm:inline">Ctrl</span>
+              <span className="ml-1 md:ml-2 text-sm md:text-base text-muted-foreground bg-muted px-2.5 md:px-3 py-0.5 md:py-1 rounded-md font-medium hidden sm:inline">Ctrl</span>
             </Button>
           </div>
         </Card>
@@ -678,7 +678,7 @@ const TrainView = () => {
                     </>
                   )}
                 </button>
-                <span className="text-[10px] md:text-xs text-muted-foreground bg-muted px-2 md:px-3 py-0.5 md:py-1 rounded">[Espacio]</span>
+                <span className="text-sm md:text-base text-muted-foreground bg-muted px-3 md:px-4 py-1 md:py-1.5 rounded-md font-medium">[Espacio]</span>
               </div>
 
               {/* Play Button */}
@@ -694,7 +694,7 @@ const TrainView = () => {
                     <Play className="h-5 w-5 md:h-6 md:w-6" />
                   </Button>
                   <span className="text-xs md:text-sm text-muted-foreground">{isPlaying ? 'Reproduciendo' : 'Reproducir'}</span>
-                  <span className="text-[10px] md:text-xs text-muted-foreground bg-muted px-1.5 md:px-2 py-0.5 md:py-1 rounded hidden sm:inline">P</span>
+                  <span className="text-sm md:text-base text-muted-foreground bg-muted px-2.5 md:px-3 py-0.5 md:py-1 rounded-md font-medium hidden sm:inline">P</span>
                 </div>
               )}
             </div>
@@ -722,9 +722,9 @@ const TrainView = () => {
             onClick={() => {
               getNewPhrase();
             }}
-            className="text-muted-foreground hover:text-foreground text-xs md:text-sm px-2 md:px-4"
+            className="text-muted-foreground hover:text-foreground text-sm md:text-base px-3 md:px-5 py-2 md:py-3"
           >
-            <ArrowLeft className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <ArrowLeft className="h-4 w-4 md:h-5 md:w-5 mr-1.5 md:mr-2" />
             Anterior
           </Button>
 
@@ -736,10 +736,10 @@ const TrainView = () => {
               getNewPhrase();
               setPhraseCount(prev => prev + 1);
             }}
-            className="text-muted-foreground hover:text-foreground text-xs md:text-sm px-2 md:px-4"
+            className="text-muted-foreground hover:text-foreground text-sm md:text-base px-3 md:px-5 py-2 md:py-3"
           >
             Siguiente
-            <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2" />
+            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 ml-1.5 md:ml-2" />
           </Button>
         </div>
       </div>
