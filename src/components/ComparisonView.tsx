@@ -415,8 +415,9 @@ const ComparisonView: React.FC = () => {
                     variant="outline"
                     onClick={() => copyToClipboard(state.adagio.result!.text, 'Adagio')}
                     className="flex-1"
+                    aria-label="Copiar transcripción de Adagio"
                   >
-                    <Copy className="h-4 w-4 mr-2" />
+                    <Copy className="h-4 w-4 mr-2" aria-hidden="true" />
                     Copiar
                   </Button>
                   <Button
@@ -424,8 +425,9 @@ const ComparisonView: React.FC = () => {
                     variant="outline"
                     onClick={() => downloadTranscription(state.adagio.result!.text, 'Adagio')}
                     className="flex-1"
+                    aria-label="Descargar transcripción de Adagio"
                   >
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="h-4 w-4 mr-2" aria-hidden="true" />
                     Descargar
                   </Button>
                   {audioPlayerAdagio ? (
@@ -433,9 +435,9 @@ const ComparisonView: React.FC = () => {
                       size="sm"
                       variant="outline"
                       onClick={handleStopAdagio}
-                      title="Detener reproducción"
+                      aria-label="Detener reproducción de audio de Adagio"
                     >
-                      <Square className="h-4 w-4" />
+                      <Square className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   ) : (
                     <Button
@@ -443,12 +445,12 @@ const ComparisonView: React.FC = () => {
                       variant="outline"
                       onClick={handleSpeakAdagio}
                       disabled={isLoadingTTSAdagio || !state.adagio.result?.text?.trim()}
-                      title="Reproducir con ElevenLabs"
+                      aria-label="Escuchar transcripción de Adagio"
                     >
                       {isLoadingTTSAdagio ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                       ) : (
-                        <Volume2 className="h-4 w-4" />
+                        <Volume2 className="h-4 w-4" aria-hidden="true" />
                       )}
                     </Button>
                   )}
@@ -517,8 +519,9 @@ const ComparisonView: React.FC = () => {
                     variant="outline"
                     onClick={() => copyToClipboard(state.chatgpt.result!.text, 'ChatGPT')}
                     className="flex-1"
+                    aria-label="Copiar transcripción de ChatGPT"
                   >
-                    <Copy className="h-4 w-4 mr-2" />
+                    <Copy className="h-4 w-4 mr-2" aria-hidden="true" />
                     Copiar
                   </Button>
                   <Button
@@ -526,8 +529,9 @@ const ComparisonView: React.FC = () => {
                     variant="outline"
                     onClick={() => downloadTranscription(state.chatgpt.result!.text, 'ChatGPT')}
                     className="flex-1"
+                    aria-label="Descargar transcripción de ChatGPT"
                   >
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="h-4 w-4 mr-2" aria-hidden="true" />
                     Descargar
                   </Button>
                   {audioPlayerChatGPT ? (
@@ -535,9 +539,9 @@ const ComparisonView: React.FC = () => {
                       size="sm"
                       variant="outline"
                       onClick={handleStopChatGPT}
-                      title="Detener reproducción"
+                      aria-label="Detener reproducción de audio de ChatGPT"
                     >
-                      <Square className="h-4 w-4" />
+                      <Square className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   ) : (
                     <Button
@@ -545,12 +549,12 @@ const ComparisonView: React.FC = () => {
                       variant="outline"
                       onClick={handleSpeakChatGPT}
                       disabled={isLoadingTTSChatGPT || !state.chatgpt.result?.text?.trim()}
-                      title="Reproducir con ElevenLabs"
+                      aria-label="Escuchar transcripción de ChatGPT"
                     >
                       {isLoadingTTSChatGPT ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                       ) : (
-                        <Volume2 className="h-4 w-4" />
+                        <Volume2 className="h-4 w-4" aria-hidden="true" />
                       )}
                     </Button>
                   )}

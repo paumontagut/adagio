@@ -88,14 +88,30 @@
 }
 
 @layer base {
+  /* Tamaño base mayor para accesibilidad */
+  html {
+    font-size: 18px;
+  }
+
   * {
     @apply border-border/10; /* Bordes sutiles globales (10% opacidad) */
   }
 
   body {
-    /* Quitamos font-space-grotesk para usar la del sistema (configurada en tailwind config) */
     @apply bg-background text-foreground antialiased selection:bg-primary/20;
     font-feature-settings: "cv11", "ss01";
+  }
+
+  /* Tamaño mínimo para texto pequeño (accesibilidad) */
+  .text-xs { font-size: max(0.8rem, 14px) !important; }
+  .text-sm { font-size: max(0.9rem, 15px) !important; }
+  .text-\[10px\] { font-size: 14px !important; }
+
+  /* Focus visible global - alto contraste para navegación con teclado */
+  *:focus-visible {
+    outline: 3px solid hsl(185 100% 20%);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
   /* Utility Class para efecto cristal estilo Apple */

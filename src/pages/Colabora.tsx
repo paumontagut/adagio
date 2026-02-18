@@ -26,28 +26,29 @@ export const Colabora = () => {
 
       {/* Floating Navigation Bar */}
       <div className="fixed top-4 md:top-6 left-0 right-0 z-40 flex justify-center px-2 md:px-4">
-        <nav className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 bg-white/70 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 w-auto max-w-2xl">
+        <nav aria-label="Navegación principal" className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 bg-white/70 backdrop-blur-xl border border-white/50 rounded-full shadow-sm hover:shadow-md transition-all duration-300 w-auto max-w-2xl">
           <div className="flex items-center gap-0.5 md:gap-1">
             <button
               onClick={() => navigate("/?tab=transcribe")}
-              className="rounded-full px-3 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all bg-transparent text-black/60 hover:bg-black/5 hover:text-black"
+              className="rounded-full px-3 md:px-6 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all bg-transparent text-black/60 hover:bg-black/5 hover:text-black"
             >
-              {isMobile ? "Transcribir" : "Transcribir"}
+              Transcribir
             </button>
             <button
               onClick={() => navigate("/?tab=train")}
-              className="rounded-full px-3 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all bg-transparent text-black/60 hover:bg-black/5 hover:text-black"
+              className="rounded-full px-3 md:px-6 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all bg-transparent text-black/60 hover:bg-black/5 hover:text-black"
             >
               {isMobile ? "Entrenar" : "Entrenar Modelo"}
             </button>
             <button
-              className="rounded-full px-3 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all bg-white text-black shadow-sm"
+              aria-current="page"
+              className="rounded-full px-3 md:px-6 py-2.5 md:py-3 text-sm md:text-base font-medium transition-all bg-white text-black shadow-sm"
             >
               {isMobile ? "Colaborar" : "Colabora con Adagio"}
             </button>
           </div>
 
-          <div className="w-px h-5 md:h-6 bg-black/10 mx-1 md:mx-2"></div>
+          <div className="w-px h-5 md:h-6 bg-black/10 mx-1 md:mx-2" aria-hidden="true"></div>
 
           <div className="flex-shrink-0">
             {user ? (
@@ -56,10 +57,11 @@ export const Colabora = () => {
               !loading && (
                 <button
                   onClick={() => navigate("/auth")}
-                  className="bg-[#005C64] text-white px-3 md:px-6 py-2 md:py-2.5 rounded-full font-semibold text-xs md:text-sm flex items-center gap-1 md:gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md"
+                  className="bg-[#005C64] text-white px-3 md:px-6 py-2.5 md:py-3 rounded-full font-semibold text-sm md:text-base flex items-center gap-1 md:gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md"
                 >
-                  <LogIn className="w-4 h-4" />
+                  <LogIn className="w-4 h-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Iniciar sesión</span>
+                  <span className="sm:hidden">Entrar</span>
                 </button>
               )
             )}

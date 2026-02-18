@@ -629,8 +629,8 @@ const TrainView = () => {
           <div className="flex flex-col items-center gap-4 md:gap-8">
             {/* Recording Status Indicator */}
             {isRecording && (
-              <div className="flex items-center gap-2 md:gap-3 text-destructive animate-pulse">
-                <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-destructive" />
+              <div className="flex items-center gap-2 md:gap-3 text-destructive animate-pulse" aria-live="assertive" role="status">
+                <div className="w-3 h-3 md:w-4 md:h-4 rounded-full bg-destructive" aria-hidden="true" />
                 <span className="font-semibold text-base md:text-lg">Grabando...</span>
               </div>
             )}
@@ -643,6 +643,7 @@ const TrainView = () => {
                     variant="ghost"
                     size="icon"
                     onClick={handleReRecord}
+                    aria-label="Re-grabar audio"
                     className="h-10 w-10 md:h-12 md:w-12 rounded-full text-primary hover:text-primary/80"
                   >
                     <RotateCcw className="h-5 w-5 md:h-6 md:w-6" />
@@ -657,6 +658,7 @@ const TrainView = () => {
                 <button
                   onClick={audioBlob && !isRecording ? handleSubmit : handleRecordToggle}
                   disabled={isSubmitting}
+                  aria-label={isSubmitting ? 'Enviando grabación' : audioBlob && !isRecording ? 'Enviar grabación' : isRecording ? 'Parar grabación' : 'Iniciar grabación'}
                   className={`h-28 w-28 md:h-40 md:w-40 rounded-full flex flex-col items-center justify-center text-white font-semibold text-sm md:text-lg transition-all shadow-lg hover:shadow-xl
                     ${audioBlob && !isRecording
                       ? 'bg-green-600 hover:bg-green-700' 
@@ -668,11 +670,11 @@ const TrainView = () => {
                   `}
                 >
                   {isSubmitting ? (
-                    <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin" />
+                    <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin" aria-hidden="true" />
                   ) : (
                     <>
                       <span>Toca</span>
-                      <span className="text-xs md:text-base">{audioBlob && !isRecording ? 'para enviar' : isRecording ? 'para parar' : 'para grabar'}</span>
+                      <span className="text-sm md:text-base">{audioBlob && !isRecording ? 'para enviar' : isRecording ? 'para parar' : 'para grabar'}</span>
                     </>
                   )}
                 </button>
@@ -686,6 +688,7 @@ const TrainView = () => {
                     variant="ghost"
                     size="icon"
                     onClick={handlePlayRecording}
+                    aria-label={isPlaying ? 'Pausar reproducción' : 'Reproducir grabación'}
                     className={`h-10 w-10 md:h-12 md:w-12 rounded-full ${isPlaying ? 'text-green-600' : 'text-primary'} hover:text-primary/80`}
                   >
                     <Play className="h-5 w-5 md:h-6 md:w-6" />
