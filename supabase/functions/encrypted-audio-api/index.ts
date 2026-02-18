@@ -287,6 +287,18 @@ async function handleStoreAudioRaw(req: Request, supabase: any) {
   // Generate pseudonym directly (no DB function needed)
   const sessionPseudonym = await generatePseudonym(data.sessionId)
 
+  // Upsert session mapping for traceability
+  const mappingIv = crypto.getRandomValues(new Uint8Array(12));
+  const mappingSalt = crypto.getRandomValues(new Uint8Array(16));
+  const encryptedSessionId = new TextEncoder().encode(data.sessionId);
+  const { error: mapErr } = await supabase.from('session_mapping').upsert({
+    session_pseudonym: sessionPseudonym,
+    encrypted_session_id: encryptedSessionId,
+    mapping_iv: mappingIv,
+    mapping_salt: mappingSalt
+  }, { onConflict: 'session_pseudonym' });
+  if (mapErr) console.warn('Session mapping warning (raw)', mapErr);
+
   // Get active key (use key_hash bytes directly as AES-256 key)
   const { data: keyRow, error: keyErr } = await supabase
     .from('encryption_keys')
@@ -532,6 +544,18 @@ async function handleStoreAudioPlaintext(req: Request, supabase: any) {
   // Generate pseudonym directly (no DB function needed)
   const sessionPseudonym = await generatePseudonym(data.sessionId);
 
+  // Upsert session mapping for traceability
+  const mappingIv = crypto.getRandomValues(new Uint8Array(12));
+  const mappingSalt = crypto.getRandomValues(new Uint8Array(16));
+  const encryptedSessionId = new TextEncoder().encode(data.sessionId);
+  const { error: mapErr } = await supabase.from('session_mapping').upsert({
+    session_pseudonym: sessionPseudonym,
+    encrypted_session_id: encryptedSessionId,
+    mapping_iv: mappingIv,
+    mapping_salt: mappingSalt
+  }, { onConflict: 'session_pseudonym' });
+  if (mapErr) console.warn('Session mapping warning', mapErr);
+
   // Decode raw audio
   const rawBytes = base64ToUint8(data.rawBlob);
 
@@ -550,7 +574,6 @@ async function handleStoreAudioPlaintext(req: Request, supabase: any) {
   }
 
   const unencryptedFileSize = rawBytes.byteLength;
-
   console.log(`Stored unencrypted audio: ${unencryptedFileName}`);
 
   // Insert metadata (without encryption info)
@@ -566,7 +589,7 @@ async function handleStoreAudioPlaintext(req: Request, supabase: any) {
       consent_train: data.consentTrain,
       consent_store: data.consentStore,
       device_info: data.deviceInfo,
-      encryption_key_version: 0, // 0 indicates no encryption
+      encryption_key_version: 0,
       file_size_bytes: 0,
       unencrypted_file_path: unencryptedFileName,
       unencrypted_storage_bucket: 'audio_raw',
@@ -580,29 +603,38 @@ async function handleStoreAudioPlaintext(req: Request, supabase: any) {
     return jsonError('Failed to store audio metadata', 500);
   }
 
-  // Save to recordings table as well
-  await supabase.from('recordings').insert({
-    session_id: data.sessionId,
-    phrase_text: data.phraseText,
-    audio_url: `audio_raw/${unencryptedFileName}`,
-    duration_ms: data.durationMs,
-    sample_rate: data.sampleRate,
-    format: data.audioFormat,
-    device_label: data.deviceInfo,
-    consent_train: data.consentTrain,
-    consent_store: data.consentStore,
-    full_name: data.fullName,
-    session_pseudonym: sessionPseudonym
-  });
+  // Check if consent already exists for this session
+  const { data: existingConsent } = await supabase
+    .from('participant_consents')
+    .select('id')
+    .eq('session_pseudonym', sessionPseudonym)
+    .maybeSingle();
 
-  // Consent log
-  await supabase.from('consent_logs').insert({
-    session_id: data.sessionId,
-    consent_train: data.consentTrain,
-    consent_store: data.consentStore,
-    full_name: data.fullName,
-    user_agent: req.headers.get('user-agent') || 'unknown'
-  });
+  if (!existingConsent) {
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+    const digitalSignature = await generateSignature(sessionPseudonym, data);
+    const { error: consentErr } = await supabase.from('participant_consents').insert({
+      session_pseudonym: sessionPseudonym,
+      full_name: data.fullName || 'Anonymous',
+      consent_train: data.consentTrain,
+      consent_store: data.consentStore,
+      age_range: 'not_specified',
+      country: 'Unknown',
+      region: 'Unknown',
+      adult_declaration: true,
+      consent_evidence_data: {
+        digital_signature: digitalSignature,
+        consent_timestamp: new Date().toISOString(),
+        source: 'encrypted-audio-api-plaintext-fallback'
+      },
+      ip_address: clientIp,
+      user_agent: req.headers.get('user-agent') || 'unknown',
+      device_info: `Audio upload via encrypted-audio-api (plaintext)`
+    });
+    if (consentErr) console.warn('Consent creation warning', consentErr);
+  }
 
   console.log(`Plaintext audio stored successfully. Metadata ID: ${meta.id}, Pseudonym: ${sessionPseudonym}`);
 
