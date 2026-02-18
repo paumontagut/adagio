@@ -191,14 +191,14 @@ export const RecorderUploader = ({
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleReset} disabled={disabled}>
-              <X className="h-4 w-4" />
+            <Button variant="ghost" size="sm" onClick={handleReset} disabled={disabled} aria-label="Eliminar audio y empezar de nuevo">
+              <X className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
 
           <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-md">
-            <Button variant="outline" size="sm" onClick={handlePlayPause} disabled={disabled}>
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            <Button variant="outline" size="sm" onClick={handlePlayPause} disabled={disabled} aria-label={isPlaying ? 'Pausar audio' : 'Reproducir audio'}>
+              {isPlaying ? <Pause className="h-4 w-4" aria-hidden="true" /> : <Play className="h-4 w-4" aria-hidden="true" />}
             </Button>
             
             <div className="flex-1 text-sm">
