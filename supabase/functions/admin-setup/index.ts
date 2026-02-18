@@ -13,8 +13,9 @@ Deno.serve(async (req) => {
   try {
     const { email, password, fullName, setupKey } = await req.json();
 
-    // Simple setup key validation (should be changed in production)
-    if (setupKey !== 'ADAGIO_ADMIN_SETUP_2024') {
+    // Validate setup key from environment variable
+    const expectedKey = Deno.env.get('ADMIN_SETUP_SECRET');
+    if (!expectedKey || setupKey !== expectedKey) {
       return new Response(
         JSON.stringify({ error: 'Invalid setup key' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

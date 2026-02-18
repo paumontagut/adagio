@@ -107,10 +107,10 @@ serve(async (req) => {
     });
 
   } catch (error: unknown) {
-    console.error('TTS error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const correlationId = crypto.randomUUID();
+    console.error(`TTS error [${correlationId}]:`, error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Audio generation failed', correlationId }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

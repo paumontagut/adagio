@@ -118,10 +118,10 @@ Deno.serve(async (req) => {
     );
 
   } catch (error: unknown) {
-    console.error('Error in admin-dashboard-stats:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const correlationId = crypto.randomUUID();
+    console.error(`Error [${correlationId}] in admin-dashboard-stats:`, error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Operation failed', correlationId }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
