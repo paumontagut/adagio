@@ -71,6 +71,18 @@ serve(async (req) => {
 
     const result = await response.json();
 
+    console.log('RunPod response status:', result.status);
+    console.log('RunPod output type:', typeof result.output, result.output ? Object.keys(result.output) : 'null');
+
+    // Check if RunPod reported a failure
+    if (result.status === 'FAILED') {
+      console.error('RunPod job FAILED:', JSON.stringify(result));
+      return new Response(
+        JSON.stringify({ error: 'Transcription failed on RunPod', details: result.error || result.output || 'Unknown error' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // RunPod returns { output: { text: "...", segments: [...] } } or { output: "..." }
     let transcriptionText = '';
     if (result.output) {
@@ -86,6 +98,14 @@ serve(async (req) => {
     // Also check for direct text field
     if (!transcriptionText && result.text) {
       transcriptionText = result.text;
+    }
+
+    if (!transcriptionText) {
+      console.error('Empty transcription from RunPod:', JSON.stringify(result));
+      return new Response(
+        JSON.stringify({ error: 'No transcription text returned', details: JSON.stringify(result) }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(
