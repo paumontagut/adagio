@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.admin-users-api]
 verify_jwt = false
+
+[functions.stt-runpod]
+verify_jwt = false
