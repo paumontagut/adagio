@@ -1,19 +1,15 @@
-// Adagio transcription service for batch processing
+// Adagio transcription service (via RunPod serverless edge function)
 export interface AdagioResult {
   text: string;
   ms: number;
 }
 
-export interface AdagioError {
-  message: string;
-  code: string;
-}
+const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID || '';
+const ADAGIO_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/stt-runpod`;
 
 export async function transcribeAdagio(file: File): Promise<AdagioResult> {
-  const url = import.meta.env.VITE_ADAGIO_URL as string;
-  
-  if (!url) {
-    throw new Error('VITE_ADAGIO_URL no está configurada');
+  if (!ADAGIO_URL || !SUPABASE_PROJECT_ID) {
+    throw new Error('Configuración de Adagio no disponible');
   }
 
   const formData = new FormData();
@@ -22,74 +18,34 @@ export async function transcribeAdagio(file: File): Promise<AdagioResult> {
   const startTime = performance.now();
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(ADAGIO_URL, {
       method: 'POST',
       body: formData,
     });
 
-    const endTime = performance.now();
-    const totalMs = endTime - startTime;
+    const totalMs = performance.now() - startTime;
 
     if (!response.ok) {
       const errorText = await response.text();
       const errorData = safeParseJson(errorText);
-      
-      throw new Error(
-        errorData?.detail || 
-        errorData?.message || 
-        `HTTP ${response.status}: ${errorText}`
-      );
+      throw new Error(errorData?.error || errorData?.message || `HTTP ${response.status}: ${errorText}`);
     }
 
-    const responseText = await response.text();
-    const data = safeParseJson(responseText);
+    const data = await response.json();
 
     if (!data || typeof data.text !== 'string') {
-      throw new Error('Respuesta inválida de Adagio: ' + responseText);
+      throw new Error('Respuesta inválida de Adagio');
     }
 
-    return {
-      text: data.text,
-      ms: totalMs
-    };
-
+    return { text: data.text, ms: totalMs };
   } catch (error) {
-    const endTime = performance.now();
-    const totalMs = endTime - startTime;
-
-    // Re-throw with timing information
-    const adagioError = error as Error;
-    adagioError.message = `${adagioError.message} (${totalMs.toFixed(0)}ms)`;
-    throw adagioError;
+    const totalMs = performance.now() - startTime;
+    const err = error as Error;
+    err.message = `${err.message} (${totalMs.toFixed(0)}ms)`;
+    throw err;
   }
 }
 
 function safeParseJson(text: string): any {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-// Health check for Adagio server
-export async function checkAdagioHealth(): Promise<boolean> {
-  const healthUrl = import.meta.env.VITE_HEALTH_URL as string;
-  
-  if (!healthUrl) {
-    return false;
-  }
-
-  try {
-    const response = await fetch(healthUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-    
-    return response.ok;
-  } catch {
-    return false;
-  }
+  try { return JSON.parse(text); } catch { return null; }
 }
