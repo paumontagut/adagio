@@ -23,7 +23,7 @@ const ENV = import.meta.env as any;
 const SUPABASE_PROJECT_ID = ENV.VITE_SUPABASE_PROJECT_ID || '';
 const ADAGIO_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/stt-runpod`;
 const OPENAI_URL = ENV.VITE_STT_OPENAI_URL || `https://cydqkoohhzesogvctvhy.functions.supabase.co/functions/v1/stt-openai`;
-const TIMEOUT_MS = (parseInt(ENV.VITE_TRANSCRIBE_TIMEOUT || '90')) * 1000;
+const TIMEOUT_MS = (parseInt(ENV.VITE_TRANSCRIBE_TIMEOUT || '200')) * 1000;
 
 class TranscribeService {
   private currentProvider: TranscribeProvider = 'adagio';
