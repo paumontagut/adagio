@@ -34,10 +34,16 @@ serve(async (req) => {
       );
     }
 
-    // Convert file to base64 for RunPod
+    // Convert file to base64 for RunPod (chunked to avoid stack overflow)
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
-    const base64Audio = btoa(String.fromCharCode(...uint8Array));
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, i + chunkSize);
+      binary += String.fromCharCode(...chunk);
+    }
+    const base64Audio = btoa(binary);
 
     // Call RunPod Whisper endpoint
     const response = await fetch(RUNPOD_URL, {
