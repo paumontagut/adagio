@@ -5,6 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const POLL_INTERVAL_MS = 3000;
+const MAX_POLL_TIME_MS = 180000; // 3 minutes max
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -12,18 +15,15 @@ serve(async (req) => {
 
   try {
     const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
-    if (!RUNPOD_API_KEY) {
-      throw new Error('RUNPOD_API_KEY is not configured');
-    }
+    if (!RUNPOD_API_KEY) throw new Error('RUNPOD_API_KEY is not configured');
 
     const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_ENDPOINT_ID');
-    if (!RUNPOD_ENDPOINT_ID) {
-      throw new Error('RUNPOD_ENDPOINT_ID is not configured');
-    }
+    if (!RUNPOD_ENDPOINT_ID) throw new Error('RUNPOD_ENDPOINT_ID is not configured');
 
-    const RUNPOD_URL = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/runsync`;
+    // Use /run (async) instead of /runsync to handle cold starts
+    const RUNPOD_RUN_URL = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`;
+    const RUNPOD_STATUS_URL = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/status`;
 
-    // Parse multipart form data to get the audio file
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
 
@@ -34,7 +34,7 @@ serve(async (req) => {
       );
     }
 
-    // Convert file to base64 for RunPod (chunked to avoid stack overflow)
+    // Convert file to base64 (chunked to avoid stack overflow)
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     let binary = '';
@@ -45,8 +45,10 @@ serve(async (req) => {
     }
     const base64Audio = btoa(binary);
 
-    // Call RunPod Whisper endpoint
-    const response = await fetch(RUNPOD_URL, {
+    console.log(`Submitting async job, audio size: ${uint8Array.length} bytes`);
+
+    // Step 1: Submit async job
+    const submitResponse = await fetch(RUNPOD_RUN_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RUNPOD_API_KEY}`,
@@ -60,61 +62,77 @@ serve(async (req) => {
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`RunPod API error [${response.status}]:`, errorText);
+    if (!submitResponse.ok) {
+      const errorText = await submitResponse.text();
+      console.error(`RunPod submit error [${submitResponse.status}]:`, errorText);
       return new Response(
-        JSON.stringify({ error: 'Transcription service error' }),
+        JSON.stringify({ error: 'Failed to submit transcription job' }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const result = await response.json();
+    const submitResult = await submitResponse.json();
+    const jobId = submitResult.id;
+    console.log(`Job submitted: ${jobId}, status: ${submitResult.status}`);
 
-    console.log('RunPod response status:', result.status);
-    console.log('RunPod output type:', typeof result.output, result.output ? Object.keys(result.output) : 'null');
+    // If already completed (warm worker)
+    if (submitResult.status === 'COMPLETED' && submitResult.output) {
+      return buildSuccessResponse(submitResult);
+    }
 
-    // Check if RunPod reported a failure
-    if (result.status === 'FAILED') {
-      console.error('RunPod job FAILED:', JSON.stringify(result));
+    if (submitResult.status === 'FAILED') {
+      console.error('Job immediately FAILED:', JSON.stringify(submitResult));
       return new Response(
-        JSON.stringify({ error: 'Transcription failed on RunPod', details: result.error || result.output || 'Unknown error' }),
+        JSON.stringify({ error: 'Transcription failed', details: submitResult.error || 'Unknown error' }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // RunPod returns { output: { text: "...", segments: [...] } } or { output: "..." }
-    let transcriptionText = '';
-    if (result.output) {
-      if (typeof result.output === 'string') {
-        transcriptionText = result.output;
-      } else if (result.output.text) {
-        transcriptionText = result.output.text;
-      } else if (result.output.transcription) {
-        transcriptionText = result.output.transcription;
+    // Step 2: Poll for completion
+    const startTime = Date.now();
+    while (Date.now() - startTime < MAX_POLL_TIME_MS) {
+      await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+
+      const statusResponse = await fetch(`${RUNPOD_STATUS_URL}/${jobId}`, {
+        headers: { 'Authorization': `Bearer ${RUNPOD_API_KEY}` },
+      });
+
+      if (!statusResponse.ok) {
+        const errText = await statusResponse.text();
+        console.error(`Status poll error [${statusResponse.status}]:`, errText);
+        continue; // retry
       }
+
+      const statusResult = await statusResponse.json();
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`Poll ${elapsed}s - status: ${statusResult.status}`);
+
+      if (statusResult.status === 'COMPLETED') {
+        return buildSuccessResponse(statusResult);
+      }
+
+      if (statusResult.status === 'FAILED') {
+        console.error('Job FAILED:', JSON.stringify(statusResult));
+        return new Response(
+          JSON.stringify({ error: 'Transcription failed on RunPod', details: statusResult.error || 'Unknown error' }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (statusResult.status === 'CANCELLED') {
+        return new Response(
+          JSON.stringify({ error: 'Transcription was cancelled' }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // IN_QUEUE or IN_PROGRESS → keep polling
     }
 
-    // Also check for direct text field
-    if (!transcriptionText && result.text) {
-      transcriptionText = result.text;
-    }
-
-    if (!transcriptionText) {
-      console.error('Empty transcription from RunPod:', JSON.stringify(result));
-      return new Response(
-        JSON.stringify({ error: 'No transcription text returned', details: JSON.stringify(result) }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
+    // Timeout after MAX_POLL_TIME_MS
     return new Response(
-      JSON.stringify({ 
-        text: transcriptionText,
-        segments: result.output?.segments || [],
-        status: result.status,
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Transcription timed out after polling', details: `Waited ${MAX_POLL_TIME_MS / 1000}s` }),
+      { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error: unknown) {
@@ -126,3 +144,36 @@ serve(async (req) => {
     );
   }
 });
+
+function buildSuccessResponse(result: any): Response {
+  let transcriptionText = '';
+  if (result.output) {
+    if (typeof result.output === 'string') {
+      transcriptionText = result.output;
+    } else if (result.output.text) {
+      transcriptionText = result.output.text;
+    } else if (result.output.transcription) {
+      transcriptionText = result.output.transcription;
+    }
+  }
+  if (!transcriptionText && result.text) {
+    transcriptionText = result.text;
+  }
+
+  if (!transcriptionText) {
+    console.error('Empty transcription from RunPod:', JSON.stringify(result));
+    return new Response(
+      JSON.stringify({ error: 'No transcription text returned', details: JSON.stringify(result) }),
+      { status: 502, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } }
+    );
+  }
+
+  return new Response(
+    JSON.stringify({
+      text: transcriptionText,
+      segments: result.output?.segments || [],
+      status: result.status,
+    }),
+    { status: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } }
+  );
+}
