@@ -56,8 +56,9 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         input: {
-          audio_base64: base64Audio,
+          audio_url: `data:audio/wav;base64,${base64Audio}`,
           language: 'es',
+          task: 'transcribe',
         },
       }),
     });
