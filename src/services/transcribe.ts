@@ -16,13 +16,15 @@ export interface TranscribeError {
   details?: string;
 }
 
-export type TranscribeProvider = 'adagio' | 'openai';
+export type TranscribeProvider = 'adagio' | 'openai' | 'runpod';
 
 // Environment configuration
 const ENV = import.meta.env as any;
 const STT_PROVIDER = (ENV.VITE_STT_PROVIDER || 'adagio').toLowerCase() as TranscribeProvider;
 const ADAGIO_URL = ENV.VITE_TRANSCRIBE_URL || ENV.NEXT_PUBLIC_TRANSCRIBE_URL || '';
 const OPENAI_URL = ENV.VITE_STT_OPENAI_URL || `https://cydqkoohhzesogvctvhy.functions.supabase.co/functions/v1/stt-openai`;
+const SUPABASE_PROJECT_ID = ENV.VITE_SUPABASE_PROJECT_ID || '';
+const RUNPOD_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/stt-runpod`;
 const HEALTH_URL = ENV.VITE_HEALTH_URL || ENV.NEXT_PUBLIC_HEALTH_URL || '';
 const TIMEOUT_MS = (parseInt(ENV.VITE_TRANSCRIBE_TIMEOUT || ENV.NEXT_PUBLIC_TRANSCRIBE_TIMEOUT) || 90) * 1000;
 
@@ -33,10 +35,20 @@ class TranscribeService {
    * Get current provider configuration
    */
   getProviderInfo() {
+    const names: Record<TranscribeProvider, string> = {
+      openai: 'ChatGPT 4o Transcribe',
+      adagio: 'Adagio',
+      runpod: 'RunPod Whisper',
+    };
+    const urls: Record<TranscribeProvider, string> = {
+      openai: OPENAI_URL,
+      adagio: ADAGIO_URL,
+      runpod: RUNPOD_URL,
+    };
     return {
       provider: this.currentProvider,
-      name: this.currentProvider === 'openai' ? 'ChatGPT 4o Transcribe' : 'Adagio',
-      url: this.currentProvider === 'openai' ? OPENAI_URL : ADAGIO_URL
+      name: names[this.currentProvider],
+      url: urls[this.currentProvider],
     };
   }
 
@@ -51,8 +63,8 @@ class TranscribeService {
    * Check if the transcription backend is online
    */
   async ping(): Promise<HealthResponse> {
-    // OpenAI doesn't have a health check endpoint, assume it's online
-    if (this.currentProvider === 'openai') {
+    // OpenAI and RunPod don't have a direct health check, assume online
+    if (this.currentProvider === 'openai' || this.currentProvider === 'runpod') {
       return { online: true };
     }
 
@@ -97,14 +109,19 @@ class TranscribeService {
    * Upload and transcribe an audio file
    */
   async transcribeFile(file: File): Promise<TranscribeResponse> {
-    const endpoint = this.currentProvider === 'openai' ? OPENAI_URL : ADAGIO_URL;
+    const urlMap: Record<TranscribeProvider, string> = {
+      adagio: ADAGIO_URL,
+      openai: OPENAI_URL,
+      runpod: RUNPOD_URL,
+    };
+    const endpoint = urlMap[this.currentProvider];
     const providerName = this.getProviderInfo().name;
 
     if (!endpoint) {
       throw this.createError(
         'CONFIG_ERROR',
         `URL de transcripción no configurada para ${providerName}`,
-        `Verifica que ${this.currentProvider === 'openai' ? 'VITE_STT_OPENAI_URL' : 'VITE_TRANSCRIBE_URL'} esté configurado`
+        `Verifica la configuración del proveedor ${this.currentProvider}`
       );
     }
 
