@@ -651,12 +651,15 @@ const TrainView = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-4xl mx-auto space-y-6 md:space-y-12">
+      <div className="max-w-5xl mx-auto space-y-6 md:space-y-12">
         
         {/* Phrase Card - Flashcard Style */}
-        <Card className="p-6 md:p-12 text-center shadow-lg border-2 overflow-hidden">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-foreground mb-4 md:mb-8 leading-relaxed uppercase break-all hyphens-auto text-wrap-balance"
-              style={{ overflowWrap: 'anywhere' }}>
+        <Card className="p-6 md:p-12 text-center shadow-lg border-2">
+          <h1 className={`font-bold text-foreground mb-4 md:mb-8 leading-relaxed uppercase ${
+            currentPhrase.length > 40 ? 'text-xl sm:text-2xl md:text-3xl' :
+            currentPhrase.length > 25 ? 'text-2xl sm:text-3xl md:text-4xl' :
+            'text-2xl sm:text-3xl md:text-5xl'
+          }`}>
             {currentPhrase}
           </h1>
 
