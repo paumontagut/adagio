@@ -104,17 +104,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signInWithGoogle = async () => {
-    const redirectUrl = `${window.location.origin}/auth/callback`;
+    const { lovable } = await import('@/integrations/lovable/index');
     
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        }
-      }
+    const { error } = await lovable.auth.signInWithOAuth('google', {
+      redirect_uri: window.location.origin,
     });
     
     if (error) {
