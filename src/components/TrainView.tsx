@@ -658,7 +658,7 @@ const TrainView = () => {
         
         {/* Phrase Card - Flashcard Style */}
         <Card className="p-6 md:p-12 text-center shadow-lg border-2">
-          <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-foreground mb-4 md:mb-8 leading-relaxed">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-foreground mb-4 md:mb-8 leading-relaxed uppercase">
             {currentPhrase}
           </h1>
 
