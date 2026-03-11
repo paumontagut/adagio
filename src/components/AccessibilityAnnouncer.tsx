@@ -12,7 +12,7 @@ export const AccessibilityAnnouncer = ({
   delay = 100 
 }: AccessibilityAnnouncerProps) => {
   const announceRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (message && announceRef.current) {

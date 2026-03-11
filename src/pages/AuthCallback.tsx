@@ -17,13 +17,9 @@ export const AuthCallback = () => {
           return;
         }
 
-        if (data.session) {
-          // Successful authentication, redirect to home
-          navigate('/');
-        } else {
-          // No session found, redirect to home
-          navigate('/');
-        }
+        // Clean hash fragment left by OAuth flow
+        window.history.replaceState(null, '', window.location.pathname);
+        navigate('/', { replace: true });
       } catch (error) {
         console.error('Unexpected error during auth callback:', error);
         navigate('/');

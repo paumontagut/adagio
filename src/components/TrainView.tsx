@@ -22,6 +22,7 @@ import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Volume2, Arr
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { phraseService } from '@/services/phraseService';
+import { useTrainingProgress } from '@/hooks/useTrainingProgress';
 
 // Get constants for direct fetch calls
 const SUPABASE_URL = "https://cydqkoohhzesogvctvhy.supabase.co";
@@ -62,6 +63,7 @@ const TrainView = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isLoading: isLoadingProgress, saveProgress, isAuthenticated } = useTrainingProgress();
 
   // Check if user already gave consent and track page view
   useEffect(() => {
@@ -110,8 +112,8 @@ const TrainView = () => {
       // Precargar nombre desde perfil de usuario si está disponible
       loadUserProfile();
       
-      // Set initial random phrase after service is initialized
-      setCurrentPhrase(phraseService.getRandomPhrase());
+      // Set current phrase from progress (may have been restored by useTrainingProgress)
+      setCurrentPhrase(phraseService.getCurrentPhrase());
     };
     
     initializeComponent();
@@ -356,6 +358,11 @@ const TrainView = () => {
       });
 
       // Reset for next recording after a delay
+      // Save progress for authenticated users
+      if (isAuthenticated) {
+        saveProgress();
+      }
+
       setTimeout(() => {
         setAudioBlob(null);
         setProcessingResult(null);
@@ -651,7 +658,7 @@ const TrainView = () => {
         
         {/* Phrase Card - Flashcard Style */}
         <Card className="p-6 md:p-12 text-center shadow-lg border-2">
-          <h1 className="text-xl sm:text-2xl md:text-4xl font-bold text-foreground mb-4 md:mb-8 leading-relaxed">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-foreground mb-4 md:mb-8 leading-relaxed uppercase">
             {currentPhrase}
           </h1>
 
