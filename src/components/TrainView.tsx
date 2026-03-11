@@ -358,6 +358,11 @@ const TrainView = () => {
       });
 
       // Reset for next recording after a delay
+      // Save progress for authenticated users
+      if (isAuthenticated) {
+        saveProgress();
+      }
+
       setTimeout(() => {
         setAudioBlob(null);
         setProcessingResult(null);
