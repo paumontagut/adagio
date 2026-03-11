@@ -65,12 +65,16 @@ const TrainView = () => {
   const { user } = useAuth();
   const { isLoading: isLoadingProgress, saveProgress, progressLoaded, isAuthenticated } = useTrainingProgress();
 
+  // Set phrase once progress has been loaded
+  useEffect(() => {
+    if (progressLoaded) {
+      setCurrentPhrase(phraseService.getCurrentPhrase());
+    }
+  }, [progressLoaded]);
+
   // Check if user already gave consent and track page view
   useEffect(() => {
     const initializeComponent = async () => {
-      // Initialize phrase service
-      await phraseService.initialize();
-      
       const session = sessionManager.getSession();
       if (session) {
         setHasConsented(session.consentGiven);
@@ -92,9 +96,7 @@ const TrainView = () => {
             setAgeRange(data.consent.age_range);
             setRegion(`${data.consent.country}-${data.consent.region}`);
             setIsCheckingConsent(false);
-            // Don't show modal - user already consented
           } else {
-            // User doesn't have consent, show modal
             setIsCheckingConsent(false);
             setShowTrainingConsentModal(true);
           }
@@ -104,16 +106,12 @@ const TrainView = () => {
           setShowTrainingConsentModal(true);
         }
       } else {
-        // Guest user - show consent modal
         setIsCheckingConsent(false);
         setShowTrainingConsentModal(true);
       }
 
       // Precargar nombre desde perfil de usuario si está disponible
       loadUserProfile();
-      
-      // Set current phrase from progress (may have been restored by useTrainingProgress)
-      setCurrentPhrase(phraseService.getCurrentPhrase());
     };
     
     initializeComponent();
