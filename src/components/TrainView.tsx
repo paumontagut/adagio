@@ -22,6 +22,7 @@ import { Loader2, RefreshCw, MessageSquare, CheckCircle, BarChart3, Volume2, Arr
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { phraseService } from '@/services/phraseService';
+import { useTrainingProgress } from '@/hooks/useTrainingProgress';
 
 // Get constants for direct fetch calls
 const SUPABASE_URL = "https://cydqkoohhzesogvctvhy.supabase.co";
