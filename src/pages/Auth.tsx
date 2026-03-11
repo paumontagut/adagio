@@ -23,13 +23,10 @@ export const Auth = () => {
   const handleGoogleAuth = async () => {
     try {
       setIsLoading(true);
-      const redirectUrl = window.location.origin + "/auth/callback";
+      const { lovable } = await import('@/integrations/lovable/index');
 
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl,
-        },
+      const { error } = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
       });
 
       if (error) throw error;
