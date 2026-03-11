@@ -118,15 +118,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw error;
     }
   };
-    
-    if (error) {
-      logger.error('Error signing in with Google', error, {
-        component: 'AuthContext',
-        action: 'signInWithGoogle'
-      });
-      throw error;
-    }
-  };
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
