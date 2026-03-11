@@ -792,6 +792,9 @@ const TrainView = () => {
               console.log('[TrainView] Next button clicked');
               getNewPhrase();
               setPhraseCount(prev => prev + 1);
+              if (isAuthenticated) {
+                saveProgress();
+              }
             }}
             className="text-muted-foreground hover:text-foreground text-sm md:text-base px-3 md:px-5 py-2 md:py-3"
           >
