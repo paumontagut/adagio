@@ -21,16 +21,20 @@ export const useTrainingProgress = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [progressLoaded, setProgressLoaded] = useState(false);
 
   // Load progress from Supabase for authenticated users
   const loadProgress = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
+      setProgressLoaded(true);
       return;
     }
 
     try {
-      // Use untyped query since table may not exist in generated types yet
+      // Ensure phraseService is initialized before loading progress
+      await phraseService.initialize();
+
       const { data, error } = await (supabase as any)
         .from('training_progress')
         .select('phase, golden_index, completed_phrases')
@@ -38,13 +42,13 @@ export const useTrainingProgress = () => {
         .maybeSingle();
 
       if (error) {
-        // Table might not exist yet - this is expected
         if (error.code === '42P01') {
           console.log('Training progress table not yet created');
         } else {
           console.error('Error loading training progress:', error);
         }
         setIsLoading(false);
+        setProgressLoaded(true);
         return;
       }
 
@@ -56,26 +60,28 @@ export const useTrainingProgress = () => {
           completedPhrases: row.completed_phrases || []
         };
         phraseService.loadProgress(progress);
-        console.log('Loaded training progress from database');
+        console.log('Loaded training progress from database:', progress.phase, 'index:', progress.goldenIndex);
+      } else {
+        console.log('No training progress found for user, starting fresh');
       }
     } catch (err) {
       console.error('Error in loadProgress:', err);
     } finally {
       setIsLoading(false);
+      setProgressLoaded(true);
     }
   }, [user]);
 
   // Save progress to Supabase for authenticated users
   const saveProgress = useCallback(async () => {
     if (!user) {
-      return; // Only save for authenticated users
+      return;
     }
 
     setIsSaving(true);
     try {
       const progress = phraseService.getProgress();
       
-      // Use untyped query since table may not exist in generated types yet
       const { error } = await (supabase as any)
         .from('training_progress')
         .upsert({
@@ -95,7 +101,7 @@ export const useTrainingProgress = () => {
           console.error('Error saving training progress:', error);
         }
       } else {
-        console.log('Training progress saved');
+        console.log('Training progress saved successfully');
       }
     } catch (err) {
       console.error('Error in saveProgress:', err);
@@ -104,8 +110,10 @@ export const useTrainingProgress = () => {
     }
   }, [user]);
 
-  // Load progress on mount
+  // Load progress on mount / user change
   useEffect(() => {
+    setProgressLoaded(false);
+    setIsLoading(true);
     loadProgress();
   }, [loadProgress]);
 
@@ -113,6 +121,7 @@ export const useTrainingProgress = () => {
     isLoading,
     isSaving,
     saveProgress,
+    progressLoaded,
     isAuthenticated: !!user
   };
 };
