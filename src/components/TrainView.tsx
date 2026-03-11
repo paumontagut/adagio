@@ -63,7 +63,7 @@ const TrainView = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isLoading: isLoadingProgress, saveProgress, isAuthenticated } = useTrainingProgress();
+  const { isLoading: isLoadingProgress, saveProgress, progressLoaded, isAuthenticated } = useTrainingProgress();
 
   // Check if user already gave consent and track page view
   useEffect(() => {
