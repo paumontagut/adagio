@@ -356,17 +356,16 @@ const TrainView = () => {
       });
 
       // Reset for next recording after a delay
-      // Save progress for authenticated users
-      if (isAuthenticated) {
-        saveProgress();
-      }
-
       setTimeout(() => {
         setAudioBlob(null);
         setProcessingResult(null);
         setIsSuccess(false);
         setFullName('');
         getNewPhrase();
+        // Save progress AFTER advancing the phrase
+        if (isAuthenticated) {
+          saveProgress();
+        }
       }, 3000);
 
     } catch (error) {
