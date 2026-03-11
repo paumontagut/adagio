@@ -112,8 +112,8 @@ const TrainView = () => {
       // Precargar nombre desde perfil de usuario si está disponible
       loadUserProfile();
       
-      // Set initial random phrase after service is initialized
-      setCurrentPhrase(phraseService.getRandomPhrase());
+      // Set current phrase from progress (may have been restored by useTrainingProgress)
+      setCurrentPhrase(phraseService.getCurrentPhrase());
     };
     
     initializeComponent();
