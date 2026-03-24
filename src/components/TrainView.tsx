@@ -37,7 +37,7 @@ interface RecordingData {
   created_at: string;
 }
 const TrainView = () => {
-  const [currentPhrase, setCurrentPhrase] = useState(() => phraseService.getRandomPhrase());
+  const [currentPhrase, setCurrentPhrase] = useState("Cargando...");
   const phraseHistoryRef = useRef<string[]>([]);
   const historyIndexRef = useRef(-1);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
