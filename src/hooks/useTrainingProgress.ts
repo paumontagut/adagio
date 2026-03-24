@@ -25,6 +25,9 @@ export const useTrainingProgress = () => {
 
   // Load progress from Supabase for authenticated users
   const loadProgress = useCallback(async () => {
+    // Always initialize phraseService, even for guests
+    await phraseService.initialize();
+
     if (!user) {
       setIsLoading(false);
       setProgressLoaded(true);
