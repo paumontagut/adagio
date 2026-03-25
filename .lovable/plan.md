@@ -1,86 +1,43 @@
 
-# Mejoras de Accesibilidad para Adagio
 
-## Contexto
-Adagio es una herramienta para personas con habla atipica, y los voluntarios que la usan pueden tener trastornos fisicos diversos. Es fundamental que toda la web sea navegable con teclado y que el texto sea legible con tamanos grandes.
+## Diagnóstico: Google Auth 404 en despliegue propio
 
-## Cambios propuestos
+### Problema raíz
 
-### 1. Aumentar el tamano base de fuente (index.css + tailwind.config.ts)
-- Aumentar el `font-size` base del `body` de 16px a 18px
-- Definir una clase CSS de escalado global para que todos los `text-sm`, `text-xs` etc. sean proporcionalmente mas grandes
-- Configurar `min-font-size` para que ningun texto sea menor de 14px
+El proyecto usa `@lovable.dev/cloud-auth-js` (la librería `lovable.auth.signInWithOAuth`) para el flujo OAuth con Google. Esta librería **solo funciona dentro del ecosistema de Lovable** (dominios `*.lovable.app` y dominios personalizados configurados en Lovable Cloud). 
 
-### 2. Indicadores de foco visibles globalmente (index.css)
-- Anadir estilos globales de `focus-visible` con un anillo grueso y de alto contraste (borde teal de 3px) para TODOS los elementos interactivos
-- Asegurar que el outline nunca se oculte excepto en elementos decorativos
+Cuando descargas la carpeta `dist` y la subes a tu propio servidor, la librería intenta redirigir a endpoints de Lovable Cloud (`/~oauth` o similares) que **no existen en tu servidor**, provocando el 404.
 
-### 3. Navegacion principal accesible (Index.tsx + Colabora.tsx)
-- Cambiar los `<button>` de navegacion a un patron con `role="tablist"` / `role="tab"` o anadir `aria-current` al boton activo
-- Anadir `aria-label` a la barra de navegacion flotante
-- Aumentar el tamano de los botones de la barra (`py-3` en vez de `py-2`, `text-sm` en vez de `text-xs` en movil)
-- Asegurar que todos los botones tienen focus ring visible
+Además, hay un segundo problema: al ser una SPA (Single Page Application) con React Router, cualquier ruta que no sea `/` (por ejemplo `/auth`, `/auth/callback`) devuelve 404 si el servidor web no está configurado para redirigir todas las rutas a `index.html`.
 
-### 4. TrainView - boton principal accesible (TrainView.tsx)
-- El boton grande de grabar/enviar es un `<button>` nativo pero le faltan `aria-label` y `role` descriptivos
-- Anadir `aria-label` dinamico segun estado (grabar / parar / enviar)
-- Anadir `aria-live="assertive"` al indicador de estado de grabacion
-- Aumentar tamanos de texto en las etiquetas de los controles
+### Dos problemas distintos
 
-### 5. RecorderUploader - tamanos y foco (RecorderUploader.tsx)
-- Aumentar tamanos de texto en las etiquetas y metadatos del audio
-- Asegurar que Play/Pause/Reset tienen `aria-label`
+1. **SPA routing**: Tu servidor necesita configurarse para servir `index.html` en todas las rutas. Sin esto, cualquier URL como `/auth` da 404.
 
-### 6. ComparisonView - accesibilidad (ComparisonView.tsx)
-- Anadir `aria-label` a los botones de accion (Copiar, Descargar, TTS)
-- Aumentar tamano de texto en resultados
+2. **Lovable Cloud Auth**: La librería `@lovable.dev/cloud-auth-js` depende de la infraestructura de Lovable. No funciona en servidores externos. Para que Google OAuth funcione fuera de Lovable, necesitas usar directamente `supabase.auth.signInWithOAuth()` con tus propias credenciales de Google OAuth (Client ID y Secret configurados en Google Cloud Console y en tu proyecto Supabase).
 
-### 7. Footer accesible (Footer.tsx)
-- Anadir `aria-label="Pie de pagina"` al `<footer>`
-- Asegurar que los enlaces externos tienen `aria-label` descriptivo
+### Plan de solución
 
-### 8. TranscribeView - tamanos (TranscribeView.tsx)
-- Aumentar tamano de texto de las pestanas
-- Aumentar tamano del boton "Transcribir con Adagio"
+#### Paso 1 — Configurar SPA fallback en tu servidor
+Dependiendo de tu servidor:
+- **Nginx**: añadir `try_files $uri $uri/ /index.html;`
+- **Apache**: añadir un `.htaccess` con `FallbackResource /index.html`
+- **Vercel/Netlify**: crear `vercel.json` o `_redirects` con rewrite a `/index.html`
 
----
+#### Paso 2 — Reemplazar Lovable Auth por Supabase Auth directo
+Modificar `src/contexts/AuthContext.tsx` y `src/pages/Auth.tsx` para usar `supabase.auth.signInWithOAuth('google', ...)` directamente en lugar de `lovable.auth.signInWithOAuth`.
 
-## Detalle tecnico
+Esto requiere:
+- Configurar un proyecto Google OAuth en Google Cloud Console
+- Añadir el Client ID y Secret en los Auth Settings de tu proyecto Supabase (o Lovable Cloud)
+- Configurar la redirect URL de tu dominio personalizado en Google Cloud Console y en Supabase
 
-### index.css
-```css
-/* Tamano base mayor */
-html {
-  font-size: 18px;
-}
+#### Paso 3 — Configurar Redirect URLs
+En la configuración de Auth de Supabase/Lovable Cloud:
+- **Site URL**: `https://app.adagioweb.com` (o tu dominio)
+- **Redirect URLs**: añadir `https://app.adagioweb.com/**`
 
-/* Tamano minimo para texto pequeno */
-.text-xs { font-size: max(0.8rem, 14px); }
-.text-sm { font-size: max(0.9rem, 15px); }
+### Pregunta clave
 
-/* Focus visible global */
-*:focus-visible {
-  outline: 3px solid hsl(185 100% 20%);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-```
+¿Estás desplegando en `app.adagioweb.com` o en otro dominio/servidor? Y ¿qué servidor web usas (Nginx, Apache, otro)? Esto determina la configuración exacta del SPA fallback y las redirect URLs.
 
-### Componentes principales
-- Index.tsx, Colabora.tsx: aumentar `text-xs md:text-sm` a `text-sm md:text-base` en botones de nav; anadir `aria-current="page"` al tab activo
-- TrainView.tsx: anadir `aria-label` al boton grande; `aria-live="assertive"` al estado de grabacion
-- TranscribeView.tsx: aumentar texto de tabs y botones
-- ComparisonView.tsx: anadir `aria-label` a botones icon-only
-- Footer.tsx: `aria-label` en el footer y enlaces externos
-
-### Archivos afectados
-| Archivo | Tipo de cambio |
-|---------|---------------|
-| `src/index.css` | Tamano base, focus global, min font sizes |
-| `src/pages/Index.tsx` | Nav accesible, tamanos de texto |
-| `src/pages/Colabora.tsx` | Nav accesible, tamanos de texto |
-| `src/components/TrainView.tsx` | ARIA labels, tamanos |
-| `src/components/TranscribeView.tsx` | Tamanos de pestanas y botones |
-| `src/components/ComparisonView.tsx` | ARIA labels en botones |
-| `src/components/RecorderUploader.tsx` | ARIA labels, tamanos |
-| `src/components/Footer.tsx` | ARIA labels |
