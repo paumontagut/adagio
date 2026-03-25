@@ -1,43 +1,55 @@
 
 
-## Diagnóstico: Google Auth 404 en despliegue propio
+## Diagnóstico del 404 antes de llegar a Google
 
-### Problema raíz
+Viendo tus capturas, la configuración de Google Cloud Console y Lovable Cloud se ve correcta. El 404 ocurre **antes** de que Google abra, lo que indica que el problema es la configuración de **Redirect URLs** en los ajustes de autenticación del backend.
 
-El proyecto usa `@lovable.dev/cloud-auth-js` (la librería `lovable.auth.signInWithOAuth`) para el flujo OAuth con Google. Esta librería **solo funciona dentro del ecosistema de Lovable** (dominios `*.lovable.app` y dominios personalizados configurados en Lovable Cloud). 
+### Problema
 
-Cuando descargas la carpeta `dist` y la subes a tu propio servidor, la librería intenta redirigir a endpoints de Lovable Cloud (`/~oauth` o similares) que **no existen en tu servidor**, provocando el 404.
+Cuando `supabase.auth.signInWithOAuth` se ejecuta desde `https://app.adagioweb.com`, envía como `redirect_to` la URL `https://app.adagioweb.com/auth/callback`. Si esta URL no esta en la lista de **Redirect URLs permitidas** en la configuración de autenticacion del backend, la peticion falla con 404.
 
-Además, hay un segundo problema: al ser una SPA (Single Page Application) con React Router, cualquier ruta que no sea `/` (por ejemplo `/auth`, `/auth/callback`) devuelve 404 si el servidor web no está configurado para redirigir todas las rutas a `index.html`.
+### Lo que hay que hacer
 
-### Dos problemas distintos
+#### 1. Añadir tu dominio a las Redirect URLs del backend
 
-1. **SPA routing**: Tu servidor necesita configurarse para servir `index.html` en todas las rutas. Sin esto, cualquier URL como `/auth` da 404.
+En la configuracion de autenticacion del backend (Cloud -> Auth -> URL Configuration):
 
-2. **Lovable Cloud Auth**: La librería `@lovable.dev/cloud-auth-js` depende de la infraestructura de Lovable. No funciona en servidores externos. Para que Google OAuth funcione fuera de Lovable, necesitas usar directamente `supabase.auth.signInWithOAuth()` con tus propias credenciales de Google OAuth (Client ID y Secret configurados en Google Cloud Console y en tu proyecto Supabase).
-
-### Plan de solución
-
-#### Paso 1 — Configurar SPA fallback en tu servidor
-Dependiendo de tu servidor:
-- **Nginx**: añadir `try_files $uri $uri/ /index.html;`
-- **Apache**: añadir un `.htaccess` con `FallbackResource /index.html`
-- **Vercel/Netlify**: crear `vercel.json` o `_redirects` con rewrite a `/index.html`
-
-#### Paso 2 — Reemplazar Lovable Auth por Supabase Auth directo
-Modificar `src/contexts/AuthContext.tsx` y `src/pages/Auth.tsx` para usar `supabase.auth.signInWithOAuth('google', ...)` directamente en lugar de `lovable.auth.signInWithOAuth`.
-
-Esto requiere:
-- Configurar un proyecto Google OAuth en Google Cloud Console
-- Añadir el Client ID y Secret en los Auth Settings de tu proyecto Supabase (o Lovable Cloud)
-- Configurar la redirect URL de tu dominio personalizado en Google Cloud Console y en Supabase
-
-#### Paso 3 — Configurar Redirect URLs
-En la configuración de Auth de Supabase/Lovable Cloud:
-- **Site URL**: `https://app.adagioweb.com` (o tu dominio)
+- **Site URL**: `https://app.adagioweb.com`
 - **Redirect URLs**: añadir `https://app.adagioweb.com/**`
 
-### Pregunta clave
+Esto es lo que falta para que el flujo OAuth funcione desde tu dominio.
 
-¿Estás desplegando en `app.adagioweb.com` o en otro dominio/servidor? Y ¿qué servidor web usas (Nginx, Apache, otro)? Esto determina la configuración exacta del SPA fallback y las redirect URLs.
+#### 2. Configurar Nginx para SPA (responde a tu pregunta "donde añado eso")
+
+En tu archivo de configuracion de Nginx (normalmente `/etc/nginx/sites-available/tu-sitio` o `/etc/nginx/conf.d/adagio.conf`), dentro del bloque `server` existente. Ejemplo completo:
+
+```text
+server {
+    listen 80;
+    server_name app.adagioweb.com;
+
+    root /ruta/a/tu/carpeta/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+La linea clave es `try_files $uri $uri/ /index.html;` — esto hace que cualquier ruta como `/auth`, `/auth/callback`, `/privacy-center`, etc., sirva el `index.html` en lugar de devolver 404. Sin esto, Nginx busca archivos reales para cada ruta y no los encuentra.
+
+Si ya tienes un bloque `server` para tu sitio, solo necesitas asegurarte de que el `location /` contenga esa linea `try_files`.
+
+#### 3. No hay cambios de codigo necesarios
+
+El codigo actual ya tiene la estrategia dual correcta (Lovable Auth en `*.lovable.app`, Supabase Auth directo en dominios externos). No necesita modificaciones.
+
+### Resumen de acciones
+
+| Accion | Donde |
+|--------|-------|
+| Añadir `https://app.adagioweb.com/**` a Redirect URLs | Cloud -> Auth -> URL Configuration |
+| Añadir `try_files $uri $uri/ /index.html;` | Archivo de config Nginx del servidor |
+| Reiniciar Nginx: `sudo nginx -t && sudo systemctl reload nginx` | Terminal del servidor |
 
