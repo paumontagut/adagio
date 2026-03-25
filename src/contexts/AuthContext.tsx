@@ -104,18 +104,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signInWithGoogle = async () => {
-    const { lovable } = await import('@/integrations/lovable/index');
+    const isLovableDomain = window.location.hostname.endsWith('.lovable.app');
     
-    const { error } = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: window.location.origin,
-    });
-    
-    if (error) {
-      logger.error('Error signing in with Google', error, {
-        component: 'AuthContext',
-        action: 'signInWithGoogle'
+    if (isLovableDomain) {
+      // Use Lovable Cloud Auth on lovable.app domains
+      const { lovable } = await import('@/integrations/lovable/index');
+      const { error } = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
       });
-      throw error;
+      if (error) {
+        logger.error('Error signing in with Google (Lovable)', error, {
+          component: 'AuthContext',
+          action: 'signInWithGoogle'
+        });
+        throw error;
+      }
+    } else {
+      // Use direct Supabase Auth on custom domains
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) {
+        logger.error('Error signing in with Google (Supabase)', error, {
+          component: 'AuthContext',
+          action: 'signInWithGoogle'
+        });
+        throw error;
+      }
     }
   };
 

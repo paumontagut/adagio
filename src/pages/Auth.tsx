@@ -23,13 +23,23 @@ export const Auth = () => {
   const handleGoogleAuth = async () => {
     try {
       setIsLoading(true);
-      const { lovable } = await import('@/integrations/lovable/index');
-
-      const { error } = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
-      });
-
-      if (error) throw error;
+      const isLovableDomain = window.location.hostname.endsWith('.lovable.app');
+      
+      if (isLovableDomain) {
+        const { lovable } = await import('@/integrations/lovable/index');
+        const { error } = await lovable.auth.signInWithOAuth('google', {
+          redirect_uri: window.location.origin,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+        if (error) throw error;
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
