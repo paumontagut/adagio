@@ -41,39 +41,18 @@ serve(async (req) => {
       );
     }
 
-    // Upload to Supabase Storage to get a real URL
-    const tempFileName = `temp-stt/${crypto.randomUUID()}.wav`;
+    // Convert audio to base64 for RunPod worker
     const arrayBuffer = await file.arrayBuffer();
-
-    const { error: uploadError } = await supabase.storage
-      .from(TEMP_BUCKET)
-      .upload(tempFileName, arrayBuffer, { contentType: 'audio/wav', upsert: true });
-
-    if (uploadError) {
-      console.error('Storage upload error:', uploadError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to upload audio temporarily' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const uint8Array = new Uint8Array(arrayBuffer);
+    let binaryString = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+      binaryString += String.fromCharCode(uint8Array[i]);
     }
+    const audioBase64 = btoa(binaryString);
 
-    // Create a signed URL valid for 10 minutes
-    const { data: signedData, error: signError } = await supabase.storage
-      .from(TEMP_BUCKET)
-      .createSignedUrl(tempFileName, 600);
+    console.log(`Submitting async job with audio_base64, file size: ${arrayBuffer.byteLength} bytes`);
 
-    if (signError || !signedData?.signedUrl) {
-      console.error('Signed URL error:', signError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create signed URL' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const audioUrl = signedData.signedUrl;
-    console.log(`Submitting async job with audio URL, file size: ${arrayBuffer.byteLength} bytes`);
-
-    // Step 1: Submit async job with a real URL
+    // Step 1: Submit async job with base64 audio
     const submitResponse = await fetch(RUNPOD_RUN_URL, {
       method: 'POST',
       headers: {
@@ -82,7 +61,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         input: {
-          audio_url: audioUrl,
+          audio_base64: audioBase64,
           language: 'es',
           task: 'transcribe',
         },
