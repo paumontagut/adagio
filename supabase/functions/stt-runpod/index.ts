@@ -71,7 +71,6 @@ serve(async (req) => {
     if (!submitResponse.ok) {
       const errorText = await submitResponse.text();
       console.error(`RunPod submit error [${submitResponse.status}]:`, errorText);
-      await cleanupTempFile(supabase, tempFileName);
       return new Response(
         JSON.stringify({ error: 'Failed to submit transcription job' }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
