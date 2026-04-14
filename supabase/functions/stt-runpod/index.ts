@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +7,6 @@ const corsHeaders = {
 
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_TIME_MS = 180000; // 3 minutes max
-const TEMP_BUCKET = 'audio_raw';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -21,12 +19,6 @@ serve(async (req) => {
 
     const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_ENDPOINT_ID');
     if (!RUNPOD_ENDPOINT_ID) throw new Error('RUNPOD_ENDPOINT_ID is not configured');
-
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error('Supabase config missing');
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const RUNPOD_RUN_URL = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`;
     const RUNPOD_STATUS_URL = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/status`;
@@ -50,9 +42,9 @@ serve(async (req) => {
     }
     const audioBase64 = btoa(binaryString);
 
-    console.log(`Submitting async job with audio_base64, file size: ${arrayBuffer.byteLength} bytes`);
+    console.log(`Submitting job with audio_base64, file size: ${arrayBuffer.byteLength} bytes`);
 
-    // Step 1: Submit async job with base64 audio
+    // Submit async job
     const submitResponse = await fetch(RUNPOD_RUN_URL, {
       method: 'POST',
       headers: {
@@ -83,20 +75,18 @@ serve(async (req) => {
 
     // If already completed (warm worker)
     if (submitResult.status === 'COMPLETED' && submitResult.output) {
-      await cleanupTempFile(supabase, tempFileName);
       return buildSuccessResponse(submitResult);
     }
 
     if (submitResult.status === 'FAILED') {
       console.error('Job immediately FAILED:', JSON.stringify(submitResult));
-      await cleanupTempFile(supabase, tempFileName);
       return new Response(
         JSON.stringify({ error: 'Transcription failed', details: submitResult.error || 'Unknown error' }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Step 2: Poll for completion
+    // Poll for completion
     const startTime = Date.now();
     while (Date.now() - startTime < MAX_POLL_TIME_MS) {
       await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
@@ -116,13 +106,11 @@ serve(async (req) => {
       console.log(`Poll ${elapsed}s - status: ${statusResult.status}`);
 
       if (statusResult.status === 'COMPLETED') {
-        await cleanupTempFile(supabase, tempFileName);
         return buildSuccessResponse(statusResult);
       }
 
       if (statusResult.status === 'FAILED') {
         console.error('Job FAILED:', JSON.stringify(statusResult));
-        await cleanupTempFile(supabase, tempFileName);
         return new Response(
           JSON.stringify({ error: 'Transcription failed on RunPod', details: statusResult.error || 'Unknown error' }),
           { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -130,7 +118,6 @@ serve(async (req) => {
       }
 
       if (statusResult.status === 'CANCELLED') {
-        await cleanupTempFile(supabase, tempFileName);
         return new Response(
           JSON.stringify({ error: 'Transcription was cancelled' }),
           { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -139,7 +126,6 @@ serve(async (req) => {
     }
 
     // Timeout
-    await cleanupTempFile(supabase, tempFileName);
     return new Response(
       JSON.stringify({ error: 'Transcription timed out after polling', details: `Waited ${MAX_POLL_TIME_MS / 1000}s` }),
       { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -154,14 +140,6 @@ serve(async (req) => {
     );
   }
 });
-
-async function cleanupTempFile(supabase: any, path: string) {
-  try {
-    await supabase.storage.from(TEMP_BUCKET).remove([path]);
-  } catch (e) {
-    console.warn('Failed to cleanup temp file:', e);
-  }
-}
 
 function buildSuccessResponse(result: any): Response {
   let transcriptionText = '';
