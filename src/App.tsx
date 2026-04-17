@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import { PrivacyCenter } from "./pages/PrivacyCenter";
 
 import { AuthCallback } from "./pages/AuthCallback";
+import { MobileAuthCallback } from "./pages/MobileAuthCallback";
 import { Auth } from "./pages/Auth";
 import { TermsAndConditions } from "./pages/TermsAndConditions";
 import { MyData } from "./pages/MyData";
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/privacy-center" element={<PrivacyCenter />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/auth/mobile-callback" element={<MobileAuthCallback />} />
               <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
               <Route path="/terms" element={<TermsAndConditions />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
