@@ -23,6 +23,9 @@ serve(async (req) => {
       );
     }
 
+    // Detect audio format from filename extension or content-type
+    const audioFormat = detectAudioFormat(file);
+
     // Convert audio to base64 for Modal worker
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
@@ -32,7 +35,7 @@ serve(async (req) => {
     }
     const audioBase64 = btoa(binaryString);
 
-    console.log(`Submitting to Modal, file size: ${arrayBuffer.byteLength} bytes`);
+    console.log(`Submitting to Modal, file size: ${arrayBuffer.byteLength} bytes, format: ${audioFormat}, name: ${file.name}, type: ${file.type}`);
 
     // Synchronous call to Modal
     const response = await fetch(MODAL_URL, {
@@ -44,6 +47,7 @@ serve(async (req) => {
         audio_base64: audioBase64,
         language: 'es',
         task: 'transcribe',
+        format: audioFormat,
       }),
     });
 
@@ -70,6 +74,34 @@ serve(async (req) => {
     );
   }
 });
+
+function detectAudioFormat(file: File): string {
+  const name = (file.name || '').toLowerCase();
+  const type = (file.type || '').toLowerCase();
+
+  // 1. Try filename extension first (most reliable)
+  const extMatch = name.match(/\.([a-z0-9]+)$/);
+  if (extMatch) {
+    const ext = extMatch[1];
+    if (ext === 'm4a' || ext === 'mp4') return 'm4a';
+    if (ext === 'wav') return 'wav';
+    if (ext === 'mp3') return 'mp3';
+    if (ext === 'webm') return 'webm';
+    if (ext === 'ogg' || ext === 'opus') return 'ogg';
+    if (ext === 'flac') return 'flac';
+  }
+
+  // 2. Fallback to content-type
+  if (type.includes('mp4') || type.includes('m4a') || type.includes('aac')) return 'm4a';
+  if (type.includes('wav') || type.includes('wave') || type.includes('x-wav')) return 'wav';
+  if (type.includes('mpeg') || type.includes('mp3')) return 'mp3';
+  if (type.includes('webm')) return 'webm';
+  if (type.includes('ogg') || type.includes('opus')) return 'ogg';
+  if (type.includes('flac')) return 'flac';
+
+  // 3. Default
+  return 'wav';
+}
 
 function buildSuccessResponse(result: any): Response {
   let transcriptionText = '';
