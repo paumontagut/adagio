@@ -23,6 +23,9 @@ serve(async (req) => {
       );
     }
 
+    // Detect audio format from filename extension or content-type
+    const audioFormat = detectAudioFormat(file);
+
     // Convert audio to base64 for Modal worker
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
@@ -32,7 +35,7 @@ serve(async (req) => {
     }
     const audioBase64 = btoa(binaryString);
 
-    console.log(`Submitting to Modal, file size: ${arrayBuffer.byteLength} bytes`);
+    console.log(`Submitting to Modal, file size: ${arrayBuffer.byteLength} bytes, format: ${audioFormat}, name: ${file.name}, type: ${file.type}`);
 
     // Synchronous call to Modal
     const response = await fetch(MODAL_URL, {
@@ -44,6 +47,7 @@ serve(async (req) => {
         audio_base64: audioBase64,
         language: 'es',
         task: 'transcribe',
+        format: audioFormat,
       }),
     });
 
