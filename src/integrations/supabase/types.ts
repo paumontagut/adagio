@@ -427,6 +427,7 @@ export type Database = {
       }
       transcriptions: {
         Row: {
+          audio_path: string | null
           created_at: string
           duration_seconds: number | null
           id: string
@@ -434,6 +435,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          audio_path?: string | null
           created_at?: string
           duration_seconds?: number | null
           id?: string
@@ -441,10 +443,41 @@ export type Database = {
           user_id: string
         }
         Update: {
+          audio_path?: string | null
           created_at?: string
           duration_seconds?: number | null
           id?: string
           text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_consents: {
+        Row: {
+          consented_at: string
+          data_use_consent: boolean
+          id: string
+          privacy_policy: boolean
+          terms_and_conditions: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consented_at?: string
+          data_use_consent?: boolean
+          id?: string
+          privacy_policy?: boolean
+          terms_and_conditions?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consented_at?: string
+          data_use_consent?: boolean
+          id?: string
+          privacy_policy?: boolean
+          terms_and_conditions?: boolean
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
