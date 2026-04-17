@@ -5,8 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const POLL_INTERVAL_MS = 3000;
-const MAX_POLL_TIME_MS = 180000; // 3 minutes max
+const MODAL_URL = 'https://info-70529--adagio-adagio-transcribe.modal.run';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,15 +13,6 @@ serve(async (req) => {
   }
 
   try {
-    const RUNPOD_API_KEY = Deno.env.get('RUNPOD_API_KEY');
-    if (!RUNPOD_API_KEY) throw new Error('RUNPOD_API_KEY is not configured');
-
-    const RUNPOD_ENDPOINT_ID = Deno.env.get('RUNPOD_ENDPOINT_ID');
-    if (!RUNPOD_ENDPOINT_ID) throw new Error('RUNPOD_ENDPOINT_ID is not configured');
-
-    const RUNPOD_RUN_URL = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run`;
-    const RUNPOD_STATUS_URL = `https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/status`;
-
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
 
@@ -33,7 +23,7 @@ serve(async (req) => {
       );
     }
 
-    // Convert audio to base64 for RunPod worker
+    // Convert audio to base64 for Modal worker
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     let binaryString = '';
@@ -42,13 +32,12 @@ serve(async (req) => {
     }
     const audioBase64 = btoa(binaryString);
 
-    console.log(`Submitting job with audio_base64, file size: ${arrayBuffer.byteLength} bytes`);
+    console.log(`Submitting to Modal, file size: ${arrayBuffer.byteLength} bytes`);
 
-    // Submit async job
-    const submitResponse = await fetch(RUNPOD_RUN_URL, {
+    // Synchronous call to Modal
+    const response = await fetch(MODAL_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${RUNPOD_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -60,76 +49,19 @@ serve(async (req) => {
       }),
     });
 
-    if (!submitResponse.ok) {
-      const errorText = await submitResponse.text();
-      console.error(`RunPod submit error [${submitResponse.status}]:`, errorText);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Modal error [${response.status}]:`, errorText);
       return new Response(
-        JSON.stringify({ error: 'Failed to submit transcription job' }),
+        JSON.stringify({ error: 'Transcription failed', details: errorText }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const submitResult = await submitResponse.json();
-    const jobId = submitResult.id;
-    console.log(`Job submitted: ${jobId}, status: ${submitResult.status}`);
+    const result = await response.json();
+    console.log('Modal response received');
 
-    // If already completed (warm worker)
-    if (submitResult.status === 'COMPLETED' && submitResult.output) {
-      return buildSuccessResponse(submitResult);
-    }
-
-    if (submitResult.status === 'FAILED') {
-      console.error('Job immediately FAILED:', JSON.stringify(submitResult));
-      return new Response(
-        JSON.stringify({ error: 'Transcription failed', details: submitResult.error || 'Unknown error' }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Poll for completion
-    const startTime = Date.now();
-    while (Date.now() - startTime < MAX_POLL_TIME_MS) {
-      await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
-
-      const statusResponse = await fetch(`${RUNPOD_STATUS_URL}/${jobId}`, {
-        headers: { 'Authorization': `Bearer ${RUNPOD_API_KEY}` },
-      });
-
-      if (!statusResponse.ok) {
-        const errText = await statusResponse.text();
-        console.error(`Status poll error [${statusResponse.status}]:`, errText);
-        continue;
-      }
-
-      const statusResult = await statusResponse.json();
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      console.log(`Poll ${elapsed}s - status: ${statusResult.status}`);
-
-      if (statusResult.status === 'COMPLETED') {
-        return buildSuccessResponse(statusResult);
-      }
-
-      if (statusResult.status === 'FAILED') {
-        console.error('Job FAILED:', JSON.stringify(statusResult));
-        return new Response(
-          JSON.stringify({ error: 'Transcription failed on RunPod', details: statusResult.error || 'Unknown error' }),
-          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      if (statusResult.status === 'CANCELLED') {
-        return new Response(
-          JSON.stringify({ error: 'Transcription was cancelled' }),
-          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    // Timeout
-    return new Response(
-      JSON.stringify({ error: 'Transcription timed out after polling', details: `Waited ${MAX_POLL_TIME_MS / 1000}s` }),
-      { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return buildSuccessResponse(result);
 
   } catch (error: unknown) {
     const correlationId = crypto.randomUUID();
@@ -143,21 +75,32 @@ serve(async (req) => {
 
 function buildSuccessResponse(result: any): Response {
   let transcriptionText = '';
-  if (result.output) {
-    if (typeof result.output === 'string') {
-      transcriptionText = result.output;
-    } else if (result.output.text) {
-      transcriptionText = result.output.text;
-    } else if (result.output.transcription) {
-      transcriptionText = result.output.transcription;
+  let segments: any[] = [];
+
+  if (result) {
+    if (typeof result === 'string') {
+      transcriptionText = result;
+    } else if (typeof result.text === 'string') {
+      transcriptionText = result.text;
+    } else if (typeof result.transcription === 'string') {
+      transcriptionText = result.transcription;
+    } else if (result.output) {
+      if (typeof result.output === 'string') {
+        transcriptionText = result.output;
+      } else if (typeof result.output.text === 'string') {
+        transcriptionText = result.output.text;
+      } else if (typeof result.output.transcription === 'string') {
+        transcriptionText = result.output.transcription;
+      }
+      segments = result.output?.segments || [];
     }
-  }
-  if (!transcriptionText && result.text) {
-    transcriptionText = result.text;
+    if (!segments.length && Array.isArray(result.segments)) {
+      segments = result.segments;
+    }
   }
 
   if (!transcriptionText) {
-    console.error('Empty transcription from RunPod:', JSON.stringify(result));
+    console.error('Empty transcription from Modal:', JSON.stringify(result));
     return new Response(
       JSON.stringify({ error: 'No transcription text returned', details: JSON.stringify(result) }),
       { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -167,8 +110,8 @@ function buildSuccessResponse(result: any): Response {
   return new Response(
     JSON.stringify({
       text: transcriptionText,
-      segments: result.output?.segments || [],
-      status: result.status,
+      segments,
+      status: 'COMPLETED',
     }),
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
