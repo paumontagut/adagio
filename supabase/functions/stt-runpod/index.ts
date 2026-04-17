@@ -41,11 +41,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        input: {
-          audio_base64: audioBase64,
-          language: 'es',
-          task: 'transcribe',
-        },
+        audio_base64: audioBase64,
+        language: 'es',
+        task: 'transcribe',
       }),
     });
 
