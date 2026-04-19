@@ -41,14 +41,15 @@ export const UserMenu = () => {
   return (
     <div className="flex items-center gap-2">
       {totalPoints > 0 && (
-        <Badge
-          variant="secondary"
-          className="hidden sm:inline-flex gap-1 px-2.5 py-1 text-xs font-medium"
+        <Link
+          to="/my-points"
+          className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium hover:bg-primary-hover transition-colors"
           title={`${totalPoints} puntos acumulados`}
+          aria-label={`Mis puntos: ${totalPoints}`}
         >
-          <Sparkles className="h-3 w-3 text-primary" aria-hidden="true" />
+          <Sparkles className="h-3 w-3" aria-hidden="true" />
           {totalPoints}
-        </Badge>
+        </Link>
       )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
