@@ -1,55 +1,93 @@
 
 
-## Diagnóstico del 404 antes de llegar a Google
+El usuario refina el plan: las estadísticas de acierto/fallo de Adagio se guardan **en privado** (no se muestran al usuario). En su lugar, gamificamos con un **sistema de puntos** que premia el feedback (validar Sí/No) y la corrección manual.
 
-Viendo tus capturas, la configuración de Google Cloud Console y Lovable Cloud se ve correcta. El 404 ocurre **antes** de que Google abra, lo que indica que el problema es la configuración de **Redirect URLs** en los ajustes de autenticación del backend.
+## Plan revisado: validación gamificada con puntos
 
-### Problema
+### 1. Recolección de feedback (sin cambios respecto al plan anterior)
 
-Cuando `supabase.auth.signInWithOAuth` se ejecuta desde `https://app.adagioweb.com`, envía como `redirect_to` la URL `https://app.adagioweb.com/auth/callback`. Si esta URL no esta en la lista de **Redirect URLs permitidas** en la configuración de autenticacion del backend, la peticion falla con 404.
+Después de cada transcripción, mostramos:
+> "¿Has querido decir: 'X'? ✅ Sí / ❌ No"
 
-### Lo que hay que hacer
+Si "No" → textarea para corrección → guardar.
 
-#### 1. Añadir tu dominio a las Redirect URLs del backend
+### 2. Datos en Supabase
 
-En la configuracion de autenticacion del backend (Cloud -> Auth -> URL Configuration):
+**Tabla `transcription_feedback`** (privada, sin exponer estadísticas al usuario):
 
-- **Site URL**: `https://app.adagioweb.com`
-- **Redirect URLs**: añadir `https://app.adagioweb.com/**`
+| Campo | Tipo |
+|---|---|
+| `id` | uuid PK |
+| `user_id` | uuid (RLS por `auth.uid()`) |
+| `provider` | text (`adagio` / `openai`) |
+| `predicted_text` | text |
+| `is_correct` | boolean |
+| `corrected_text` | text nullable |
+| `audio_path` | text nullable (bucket `inferencias` si hay `data_use_consent`) |
+| `duration_seconds` | int nullable |
+| `points_awarded` | int |
+| `created_at` | timestamptz |
 
-Esto es lo que falta para que el flujo OAuth funcione desde tu dominio.
+**Tabla `user_points`** (gamificación visible):
 
-#### 2. Configurar Nginx para SPA (responde a tu pregunta "donde añado eso")
+| Campo | Tipo |
+|---|---|
+| `user_id` | uuid PK (RLS) |
+| `total_points` | int default 0 |
+| `feedback_count` | int default 0 |
+| `corrections_count` | int default 0 |
+| `updated_at` | timestamptz |
 
-En tu archivo de configuracion de Nginx (normalmente `/etc/nginx/sites-available/tu-sitio` o `/etc/nginx/conf.d/adagio.conf`), dentro del bloque `server` existente. Ejemplo completo:
+RLS: usuario solo ve/actualiza su fila. Service role full access.
 
-```text
-server {
-    listen 80;
-    server_name app.adagioweb.com;
+### 3. Sistema de puntos
 
-    root /ruta/a/tu/carpeta/dist;
-    index index.html;
+| Acción | Puntos |
+|---|---|
+| Validar "Sí, es correcto" | **+5** |
+| Validar "No" sin corregir | **+5** |
+| Validar "No" + escribir corrección | **+15** (más valioso para el dataset) |
 
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
+Los puntos se otorgan al guardar el feedback (lógica en cliente con upsert atómico, o mejor: trigger en BD que incrementa `user_points` al insertar en `transcription_feedback`).
 
-La linea clave es `try_files $uri $uri/ /index.html;` — esto hace que cualquier ruta como `/auth`, `/auth/callback`, `/privacy-center`, etc., sirva el `index.html` en lugar de devolver 404. Sin esto, Nginx busca archivos reales para cada ruta y no los encuentra.
+### 4. UI de gamificación (lo que SÍ ve el usuario)
 
-Si ya tienes un bloque `server` para tu sitio, solo necesitas asegurarte de que el `location /` contenga esa linea `try_files`.
+- **Badge de puntos** en `UserMenu` (esquina superior): `⭐ 245 pts`.
+- **Toast tras feedback**: "+15 puntos por tu corrección 🎉"
+- **Mini panel opcional** en `MyData` o nueva pestaña: total de puntos, nº de feedbacks, nº de correcciones aportadas.
+- **NO mostramos**: tasa de acierto de Adagio, comparativa de modelos, ni nada que revele rendimiento del modelo.
 
-#### 3. No hay cambios de codigo necesarios
+### 5. Cambios técnicos
 
-El codigo actual ya tiene la estrategia dual correcta (Lovable Auth en `*.lovable.app`, Supabase Auth directo en dominios externos). No necesita modificaciones.
+1. **Migración SQL**:
+   - Crear `transcription_feedback` + RLS + índice por `user_id, provider`.
+   - Crear `user_points` + RLS.
+   - Trigger `award_points_on_feedback`: al insertar en `transcription_feedback`, hace `UPSERT` en `user_points` sumando los puntos correspondientes (5 / 15 según `corrected_text IS NULL`).
 
-### Resumen de acciones
+2. **`src/services/feedback.ts`** (nuevo): `saveFeedback({ provider, predictedText, isCorrect, correctedText, audioBlob, durationSec })` que:
+   - Sube audio al bucket `inferencias` si `data_use_consent = true`.
+   - Inserta en `transcription_feedback` (los puntos los calcula el trigger).
+   - Devuelve los puntos otorgados para mostrarlos en el toast.
 
-| Accion | Donde |
-|--------|-------|
-| Añadir `https://app.adagioweb.com/**` a Redirect URLs | Cloud -> Auth -> URL Configuration |
-| Añadir `try_files $uri $uri/ /index.html;` | Archivo de config Nginx del servidor |
-| Reiniciar Nginx: `sudo nginx -t && sudo systemctl reload nginx` | Terminal del servidor |
+3. **`src/hooks/useUserPoints.ts`** (nuevo): lee `user_points` del usuario actual, expone `totalPoints` y un método `refresh()`. Suscripción realtime opcional para actualizar el badge en vivo.
+
+4. **`src/components/FeedbackPrompt.tsx`** (nuevo): componente reutilizable con los botones Sí/No + textarea condicional + botón guardar.
+
+5. **`TranscribeView.tsx`**: nuevo estado `awaiting_validation` entre `completed` y reset. Renderiza `<FeedbackPrompt />` antes de los botones de copiar/descargar.
+
+6. **`ComparisonView.tsx`**: un `<FeedbackPrompt />` por cada proveedor (datos comparativos directos, también privados).
+
+7. **`UserMenu.tsx`**: añadir badge de puntos junto al avatar.
+
+### 6. Privacidad
+
+- `transcription_feedback` solo accesible por el usuario (sus filas) y service role (analítica admin).
+- Audio etiquetado solo se sube si existe `data_use_consent = true` en `user_consents`.
+- Al ejecutar borrado total de datos del usuario: limpiar también `transcription_feedback`, `user_points` y archivos del bucket.
+
+### Fuera de alcance (futuro)
+
+- Niveles, badges visuales, leaderboards.
+- Vista admin de WER / precisión por modelo (los datos ya estarán en `transcription_feedback`).
+- Reentrenamiento automático.
 
