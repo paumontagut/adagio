@@ -9,6 +9,7 @@ import { ShieldCheck, LogIn } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/logo.svg";
+import logoIcon from "@/assets/logo-icon.svg";
 
 const colors = {
   bg: "#F5F8DE", // Crema
@@ -58,9 +59,12 @@ const Index = () => {
         {/* --- LOGO (responsive) --- */}
         <Link
           to="/"
-          className="absolute top-1 left-1 md:top-4 md:left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
+          className="absolute top-3 left-3 md:top-4 md:left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
+          aria-label="Adagio - Inicio"
         >
-          <img src={logo} alt="Adagio Logo" className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto" />
+          {/* Icono cuadrado en móvil, logo completo en desktop */}
+          <img src={logoIcon} alt="Adagio" className="h-10 w-10 md:hidden" />
+          <img src={logo} alt="Adagio Logo" className="hidden md:block md:h-20 lg:h-24 w-auto" />
         </Link>
 
         {/* --- BARRA DE HERRAMIENTAS FLOTANTE --- */}
