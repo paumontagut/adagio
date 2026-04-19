@@ -461,15 +461,13 @@ const ComparisonView: React.FC = () => {
                   )}
                 </div>
 
-                {user && (
-                  <FeedbackPrompt
-                    provider="adagio"
-                    predictedText={state.adagio.result.text}
-                    audioBlob={audioBlobState}
-                    durationSec={state.audioMetadata?.duration ?? null}
-                    compact
-                  />
-                )}
+                <FeedbackPrompt
+                  provider="adagio"
+                  predictedText={state.adagio.result.text}
+                  audioBlob={audioBlobState}
+                  durationSec={state.audioMetadata?.duration ?? null}
+                  compact
+                />
               </>
             )}
           </CardContent>
@@ -575,15 +573,13 @@ const ComparisonView: React.FC = () => {
                   )}
                 </div>
 
-                {user && (
-                  <FeedbackPrompt
-                    provider="openai"
-                    predictedText={state.chatgpt.result.text}
-                    audioBlob={audioBlobState}
-                    durationSec={state.audioMetadata?.duration ?? null}
-                    compact
-                  />
-                )}
+                <FeedbackPrompt
+                  provider="openai"
+                  predictedText={state.chatgpt.result.text}
+                  audioBlob={audioBlobState}
+                  durationSec={state.audioMetadata?.duration ?? null}
+                  compact
+                />
               </>
             )}
           </CardContent>
