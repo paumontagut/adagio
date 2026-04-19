@@ -55,13 +55,13 @@ const Index = () => {
           Saltar al contenido principal
         </a>
 
-        {/* --- LOGO: centrado en móvil, esquina sup. izq. en desktop --- */}
+        {/* --- LOGO: centrado en móvil (fixed), esquina sup. izq. en desktop --- */}
         <Link
           to="/"
-          className="absolute top-2 left-1/2 -translate-x-1/2 md:left-6 md:translate-x-0 md:top-4 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
+          className="fixed top-1 left-1/2 -translate-x-1/2 md:absolute md:left-6 md:translate-x-0 md:top-4 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
           aria-label="Adagio - Inicio"
         >
-          <img src={logo} alt="Adagio Logo" className="h-12 sm:h-14 md:h-20 lg:h-24 w-auto" />
+          <img src={logo} alt="Adagio Logo" className="h-10 sm:h-12 md:h-20 lg:h-24 w-auto" />
         </Link>
 
         {/* --- BARRA DE HERRAMIENTAS FLOTANTE --- */}
