@@ -189,13 +189,11 @@ export const TranscribeView = () => {
                 </div>
                 <Textarea value={result.text} readOnly className="min-h-[120px] resize-y" aria-label="Texto transcrito" />
 
-                {user && (
-                  <FeedbackPrompt
-                    provider="adagio"
-                    predictedText={result.text}
-                    audioBlob={audioBlob}
-                  />
-                )}
+                <FeedbackPrompt
+                  provider="adagio"
+                  predictedText={result.text}
+                  audioBlob={audioBlob}
+                />
 
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" onClick={() => handleCopy(result.text)}>

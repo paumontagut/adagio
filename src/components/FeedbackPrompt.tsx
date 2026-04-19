@@ -30,7 +30,15 @@ export const FeedbackPrompt = ({
   const [stage, setStage] = useState<Stage>('prompt');
   const [correction, setCorrection] = useState('');
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <Card className="p-4 bg-muted/40 border-dashed">
+        <p className="text-sm text-muted-foreground">
+          🎯 <span className="font-medium text-foreground">Inicia sesión</span> para validar la transcripción y ganar puntos por ayudarnos a mejorar Adagio.
+        </p>
+      </Card>
+    );
+  }
 
   const handleSubmit = async (isCorrect: boolean, correctedText?: string) => {
     setStage('submitting');
