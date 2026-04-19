@@ -425,6 +425,45 @@ export type Database = {
         }
         Relationships: []
       }
+      transcription_feedback: {
+        Row: {
+          audio_path: string | null
+          corrected_text: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          is_correct: boolean
+          points_awarded: number
+          predicted_text: string
+          provider: string
+          user_id: string
+        }
+        Insert: {
+          audio_path?: string | null
+          corrected_text?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          is_correct: boolean
+          points_awarded?: number
+          predicted_text: string
+          provider: string
+          user_id: string
+        }
+        Update: {
+          audio_path?: string | null
+          corrected_text?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          is_correct?: boolean
+          points_awarded?: number
+          predicted_text?: string
+          provider?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transcriptions: {
         Row: {
           audio_path: string | null
@@ -477,6 +516,30 @@ export type Database = {
           id?: string
           privacy_policy?: boolean
           terms_and_conditions?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_points: {
+        Row: {
+          corrections_count: number
+          feedback_count: number
+          total_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          corrections_count?: number
+          feedback_count?: number
+          total_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          corrections_count?: number
+          feedback_count?: number
+          total_points?: number
           updated_at?: string
           user_id?: string
         }
