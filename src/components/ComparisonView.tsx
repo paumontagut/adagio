@@ -460,12 +460,18 @@ const ComparisonView: React.FC = () => {
                     </Button>
                   )}
                 </div>
+
+                {user && (
+                  <FeedbackPrompt
+                    provider="adagio"
+                    predictedText={state.adagio.result.text}
+                    audioBlob={audioBlobState}
+                    durationSec={state.audioMetadata?.duration ?? null}
+                    compact
+                  />
+                )}
               </>
             )}
-          </CardContent>
-        </Card>
-
-        {/* ChatGPT Results */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -564,6 +570,16 @@ const ComparisonView: React.FC = () => {
                     </Button>
                   )}
                 </div>
+
+                {user && (
+                  <FeedbackPrompt
+                    provider="openai"
+                    predictedText={state.chatgpt.result.text}
+                    audioBlob={audioBlobState}
+                    durationSec={state.audioMetadata?.duration ?? null}
+                    compact
+                  />
+                )}
               </>
             )}
           </CardContent>
