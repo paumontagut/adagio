@@ -76,14 +76,13 @@ export const UserMenu = () => {
             </div>
           </div>
           <DropdownMenuSeparator />
-          <div className="flex items-center justify-between px-2 py-1.5 text-sm">
-            <span className="flex items-center gap-2 text-muted-foreground">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Mis puntos
-            </span>
-            <span className="font-semibold">{totalPoints}</span>
-          </div>
-          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/my-points" className="cursor-pointer">
+              <Sparkles className="mr-2 h-4 w-4 text-primary" />
+              <span className="flex-1">Mis puntos</span>
+              <span className="font-semibold tabular-nums">{totalPoints}</span>
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/my-data" className="cursor-pointer">
               <HardDrive className="mr-2 h-4 w-4" />
