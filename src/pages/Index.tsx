@@ -9,7 +9,6 @@ import { ShieldCheck, LogIn } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/logo.svg";
-import logoIcon from "@/assets/logo-icon.svg";
 
 const colors = {
   bg: "#F5F8DE", // Crema
