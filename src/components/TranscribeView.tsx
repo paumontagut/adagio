@@ -124,7 +124,7 @@ export const TranscribeView = () => {
   const hasResults = state === "completed" && result;
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-8">
+    <div className="w-full max-w-3xl mx-auto space-y-4 md:space-y-8">
       <a href="#transcribe-controls" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground">
         Saltar a controles de transcripción
       </a>
@@ -144,7 +144,7 @@ export const TranscribeView = () => {
             </TabsList>
           </div>
 
-          <TabsContent value="adagio" className="space-y-8 focus-visible:outline-none mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
+          <TabsContent value="adagio" className="space-y-4 md:space-y-8 focus-visible:outline-none mt-0 animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
             <div className="relative">
               <RecorderUploader onAudioReady={handleAudioReady} disabled={isProcessing} />
             </div>
