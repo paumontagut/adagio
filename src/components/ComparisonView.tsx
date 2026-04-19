@@ -472,6 +472,10 @@ const ComparisonView: React.FC = () => {
                 )}
               </>
             )}
+          </CardContent>
+        </Card>
+
+        {/* ChatGPT Results */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
