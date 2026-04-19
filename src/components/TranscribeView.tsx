@@ -9,6 +9,8 @@ import { RecorderUploader } from "@/components/RecorderUploader";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import ComparisonView from "@/components/ComparisonView";
+import { FeedbackPrompt } from "@/components/FeedbackPrompt";
+import { useAuth } from "@/contexts/AuthContext";
 import { transcribeService, type TranscribeError } from "@/services/transcribe";
 import { speakWithElevenLabs } from "@/services/tts";
 import {
@@ -39,6 +41,7 @@ export const TranscribeView = () => {
   const [error, setError] = useState<TranscribeError | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (state === "completed") {
@@ -185,6 +188,15 @@ export const TranscribeView = () => {
                   <Badge variant="secondary" className="ml-auto">{result.provider}</Badge>
                 </div>
                 <Textarea value={result.text} readOnly className="min-h-[120px] resize-y" aria-label="Texto transcrito" />
+
+                {user && (
+                  <FeedbackPrompt
+                    provider="adagio"
+                    predictedText={result.text}
+                    audioBlob={audioBlob}
+                  />
+                )}
+
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" onClick={() => handleCopy(result.text)}>
                     <Copy className="mr-1 h-4 w-4" /> Copiar
