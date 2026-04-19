@@ -131,13 +131,15 @@ export const TranscribeView = () => {
 
       <div>
         <Tabs defaultValue="adagio" className="w-full">
-          <div className="flex justify-center mb-8">
-            <TabsList className="bg-black/5 p-1 rounded-full border border-white/10">
-              <TabsTrigger value="adagio" className="rounded-full px-8 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium">
-                Transcripción Adagio
+          <div className="flex justify-center mb-6 md:mb-8">
+            <TabsList className="bg-black/5 p-1 rounded-full border border-white/10 max-w-full">
+              <TabsTrigger value="adagio" className="rounded-full px-3 sm:px-5 md:px-8 py-2 text-xs sm:text-sm md:text-base data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium whitespace-nowrap">
+                <span className="sm:hidden">Adagio</span>
+                <span className="hidden sm:inline">Transcripción Adagio</span>
               </TabsTrigger>
-              <TabsTrigger value="comparison" className="rounded-full px-8 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium">
-                ChatGPT vs Adagio
+              <TabsTrigger value="comparison" className="rounded-full px-3 sm:px-5 md:px-8 py-2 text-xs sm:text-sm md:text-base data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all font-medium whitespace-nowrap">
+                <span className="sm:hidden">Comparar</span>
+                <span className="hidden sm:inline">ChatGPT vs Adagio</span>
               </TabsTrigger>
             </TabsList>
           </div>
