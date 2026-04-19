@@ -169,33 +169,33 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
         
-        <div className="flex flex-col items-center justify-center p-8 text-center">
+        <div className="flex flex-col items-center justify-center p-4 md:p-8 text-center">
           {selectedFile ? (
             <>
-              <CheckCircle className="h-12 w-12 text-success mb-4" />
-              <div className="space-y-2">
-                <p className="text-lg font-medium text-foreground">
+              <CheckCircle className="h-8 w-8 md:h-12 md:w-12 text-success mb-2 md:mb-4" />
+              <div className="space-y-1 md:space-y-2">
+                <p className="text-sm md:text-lg font-medium text-foreground">
                   Archivo seleccionado
                 </p>
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <File className="h-4 w-4" />
-                  <span>{selectedFile.name}</span>
+                <div className="flex items-center justify-center gap-2 text-xs md:text-sm text-muted-foreground">
+                  <File className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span className="truncate max-w-[180px]">{selectedFile.name}</span>
                   <span>({formatFileSize(selectedFile.size)})</span>
                 </div>
               </div>
             </>
           ) : (
             <>
-              <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-              <div className="space-y-2">
-                <p className="text-lg font-medium text-foreground">
+              <Upload className="h-8 w-8 md:h-12 md:w-12 text-muted-foreground mb-2 md:mb-4" />
+              <div className="space-y-1 md:space-y-2">
+                <p className="text-sm md:text-lg font-medium text-foreground">
                   Arrastra tu archivo aquí
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs md:text-sm text-muted-foreground">
                   o haz clic para seleccionar
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Formatos soportados: WAV, MP3, WEBM (máx. 20MB)
+                <p className="text-[10px] md:text-xs text-muted-foreground">
+                  WAV, MP3, WEBM · máx. 20MB
                 </p>
               </div>
             </>

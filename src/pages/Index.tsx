@@ -118,22 +118,22 @@ const Index = () => {
         </div>
 
         {/* --- CONTENIDO PRINCIPAL --- */}
-        <main id="main-content" className="flex-1 pt-28 md:pt-40 pb-12 md:pb-20 px-3 md:px-8 max-w-7xl mx-auto w-full space-y-6 md:space-y-8">
+        <main id="main-content" className="flex-1 pt-24 md:pt-40 pb-8 md:pb-20 px-3 md:px-8 max-w-7xl mx-auto w-full space-y-4 md:space-y-8">
           {/* Textos de Cabecera */}
-          <div className="text-center space-y-3 md:space-y-4 animate-fade-in-up [animation-delay:200ms] opacity-0 fill-mode-forwards">
-            <div className="inline-flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 rounded-full bg-white/40 border border-[#005C64]/10 text-[#005C64] text-[10px] md:text-xs font-bold tracking-wide uppercase">
+          <div className="text-center space-y-2 md:space-y-4 animate-fade-in-up [animation-delay:200ms] opacity-0 fill-mode-forwards">
+            <div className="inline-flex items-center gap-1 md:gap-2 px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-white/40 border border-[#005C64]/10 text-[#005C64] text-[9px] md:text-xs font-bold tracking-wide uppercase">
               <ShieldCheck className="w-2.5 h-2.5 md:w-3 md:h-3" />
               <span>Privacidad Garantizada</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold tracking-tight">
+            <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-6xl font-bold tracking-tight">
               Tu voz, <span style={{ color: colors.primary }}>sin barreras.</span>
             </h1>
-            <p className="text-sm md:text-lg opacity-60 max-w-xl mx-auto px-2">IA avanzada para el reconocimiento de habla atípica.</p>
+            <p className="text-xs md:text-lg opacity-60 max-w-xl mx-auto px-2">IA avanzada para el reconocimiento de habla atípica.</p>
           </div>
 
           {/* --- PANELES DE CRISTAL (Herramienta) --- */}
           <div className="w-full max-w-4xl mx-auto animate-fade-in-up [animation-delay:300ms] opacity-0 fill-mode-forwards">
-            <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 lg:p-10 shadow-sm min-h-[350px] md:min-h-[400px] relative overflow-hidden">
+            <div className="bg-white/60 backdrop-blur-xl border border-white/40 rounded-2xl md:rounded-[2.5rem] p-3 md:p-6 lg:p-10 shadow-sm min-h-[280px] md:min-h-[400px] relative overflow-hidden">
               {/* Decoración de fondo */}
               <div className="absolute top-0 right-0 w-32 md:w-64 h-32 md:h-64 bg-[#90C2E7]/20 rounded-full blur-3xl -z-10 pointer-events-none" />
 
