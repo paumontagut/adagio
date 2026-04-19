@@ -9,6 +9,8 @@ import { RecorderUploader } from '@/components/RecorderUploader';
 import { transcribeAdagio, type AdagioResult } from '@/services/adagio';
 import { speakWithElevenLabs } from '@/services/tts';
 import { supabase } from '@/integrations/supabase/client';
+import { FeedbackPrompt } from '@/components/FeedbackPrompt';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ChatGPTResult {
   text: string;
@@ -37,6 +39,8 @@ interface ComparisonState {
 
 const ComparisonView: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [audioBlobState, setAudioBlobState] = useState<Blob | null>(null);
   const [state, setState] = useState<ComparisonState>({
     isProcessing: false,
     adagio: { status: 'idle' },
@@ -54,6 +58,7 @@ const ComparisonView: React.FC = () => {
     
     const file = new File([audioBlob], 'audio.wav', { type: 'audio/wav' });
     
+    setAudioBlobState(audioBlob);
     setState(prev => ({
       ...prev,
       audioFile: file,
@@ -455,6 +460,16 @@ const ComparisonView: React.FC = () => {
                     </Button>
                   )}
                 </div>
+
+                {user && (
+                  <FeedbackPrompt
+                    provider="adagio"
+                    predictedText={state.adagio.result.text}
+                    audioBlob={audioBlobState}
+                    durationSec={state.audioMetadata?.duration ?? null}
+                    compact
+                  />
+                )}
               </>
             )}
           </CardContent>
@@ -559,6 +574,16 @@ const ComparisonView: React.FC = () => {
                     </Button>
                   )}
                 </div>
+
+                {user && (
+                  <FeedbackPrompt
+                    provider="openai"
+                    predictedText={state.chatgpt.result.text}
+                    audioBlob={audioBlobState}
+                    durationSec={state.audioMetadata?.duration ?? null}
+                    compact
+                  />
+                )}
               </>
             )}
           </CardContent>
