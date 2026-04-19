@@ -58,9 +58,9 @@ const Index = () => {
         {/* --- LOGO (responsive) --- */}
         <Link
           to="/"
-          className="absolute top-2 left-2 md:top-4 md:left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
+          className="absolute top-1 left-1 md:top-4 md:left-6 z-50 flex-shrink-0 hover:opacity-80 transition-opacity animate-fade-in-up [animation-delay:0ms] opacity-0 fill-mode-forwards"
         >
-          <img src={logo} alt="Adagio Logo" className="h-8 sm:h-10 md:h-20 lg:h-24 w-auto" />
+          <img src={logo} alt="Adagio Logo" className="h-14 sm:h-16 md:h-20 lg:h-24 w-auto" />
         </Link>
 
         {/* --- BARRA DE HERRAMIENTAS FLOTANTE --- */}
