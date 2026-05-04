@@ -41,30 +41,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get recordings from audio_metadata (modern encrypted)
+    // Get recordings from audio_metadata (modern encrypted flow)
     const { data: modernRecordings } = await supabase
       .from('audio_metadata')
       .select('id, session_pseudonym, consent_train, consent_store, duration_ms, unencrypted_file_path, created_at');
 
-    // Get recordings from recordings table (legacy)
+    // Get recordings from legacy recordings table
+    // NOTE: legacy `recordings` table does NOT have a session_pseudonym column,
+    // so we cannot dedupe against modern by pseudonym. In practice both flows
+    // do not overlap (legacy flow is no longer used for new captures), so we
+    // just sum both sources.
     const { data: legacyRecordings } = await supabase
       .from('recordings')
-      .select('id, session_pseudonym, consent_train, consent_store, duration_ms, created_at');
+      .select('id, consent_train, consent_store, duration_ms, created_at');
 
-    // Create a Set of session_pseudonyms from modern recordings to avoid duplicates
-    const modernPseudonyms = new Set(
-      modernRecordings?.map(r => r.session_pseudonym).filter(Boolean) || []
-    );
+    const legacyList = legacyRecordings || [];
 
-    // Filter legacy recordings to exclude those that exist in modern
-    const uniqueLegacyRecordings = legacyRecordings?.filter(
-      r => r.session_pseudonym && !modernPseudonyms.has(r.session_pseudonym)
-    ) || [];
-
-    // Combine all unique recordings
+    // Combine all recordings (legacy + modern). They are independent flows.
     const allRecordings = [
       ...(modernRecordings || []),
-      ...uniqueLegacyRecordings
+      ...legacyList
     ];
 
     // Count encrypted vs unencrypted from modern recordings
