@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.stt-runpod]
 verify_jwt = false
+
+[functions.admin-get-transcriptions]
+verify_jwt = false
