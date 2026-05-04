@@ -209,6 +209,7 @@ export const TranscribeView = () => {
                   provider="adagio"
                   predictedText={result.text}
                   audioBlob={audioBlob}
+                  transcriptionId={transcriptionId}
                 />
 
                 <div className="flex flex-wrap gap-2">
