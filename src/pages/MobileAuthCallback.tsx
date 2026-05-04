@@ -1,3 +1,4 @@
+// Deploy marker: mobile auth callback route — ensure server bundle includes /auth/mobile-callback
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
