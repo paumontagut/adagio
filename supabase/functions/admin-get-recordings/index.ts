@@ -162,10 +162,9 @@ Deno.serve(async (req) => {
       console.warn('Warning: Could not fetch legacy recordings:', recordingsError);
     }
 
-    // Create a Set of session_pseudonyms from modern recordings to track them
-    const modernPseudonyms = new Set(
-      audioData?.map(r => r.session_pseudonym).filter(Boolean) || []
-    );
+    // NOTE: legacy `recordings` table does NOT have a session_pseudonym column.
+    // Modern (audio_metadata) and legacy (recordings) are independent flows that
+    // do not overlap, so we include all rows from both sources.
 
     // Transform modern recordings (from audio_metadata)
     const modernRecordings = (audioData || []).map(audio => ({
@@ -193,9 +192,8 @@ Deno.serve(async (req) => {
       source: 'audio_metadata' // Mark as modern
     }));
 
-    // Transform legacy recordings (from recordings table), excluding duplicates
+    // Transform legacy recordings (from recordings table) — include all rows
     const legacyRecordings = (recordingsData || [])
-      .filter(recording => !recording.session_pseudonym || !modernPseudonyms.has(recording.session_pseudonym))
       .map(recording => {
         // Parse audio_url for legacy recordings
         let unencryptedBucket = null;
