@@ -145,7 +145,7 @@ const ComparisonView: React.FC = () => {
       setState(prev => ({ ...prev, isProcessing: false }));
     });
 
-  }, [state.audioFile, toast]);
+  }, [state.audioFile, audioBlobState, state.audioMetadata, toast]);
 
   const copyToClipboard = useCallback((text: string, provider: string) => {
     navigator.clipboard.writeText(text).then(() => {
