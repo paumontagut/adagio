@@ -27,6 +27,7 @@ export const FeedbackPrompt = ({
   durationSec,
   onSubmitted,
   compact = false,
+  transcriptionId = null,
 }: FeedbackPromptProps) => {
   const { user } = useAuth();
   const [stage, setStage] = useState<Stage>('prompt');
