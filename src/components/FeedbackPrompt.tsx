@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Check, X, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { saveFeedback, type FeedbackProvider } from '@/services/feedback';
+import { updateTranscriptionFeedback } from '@/services/transcriptionStore';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface FeedbackPromptProps {
@@ -14,6 +15,7 @@ interface FeedbackPromptProps {
   durationSec?: number | null;
   onSubmitted?: (pointsAwarded: number) => void;
   compact?: boolean;
+  transcriptionId?: string | null;
 }
 
 type Stage = 'prompt' | 'correcting' | 'submitting' | 'done';
