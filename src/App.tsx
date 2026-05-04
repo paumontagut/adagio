@@ -15,6 +15,7 @@ import { Auth } from "./pages/Auth";
 import { TermsAndConditions } from "./pages/TermsAndConditions";
 import { MyData } from "./pages/MyData";
 import { MyPoints } from "./pages/MyPoints";
+import { MyTranscriptions } from "./pages/MyTranscriptions";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
