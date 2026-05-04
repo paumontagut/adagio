@@ -489,6 +489,7 @@ const ComparisonView: React.FC = () => {
                   predictedText={state.adagio.result.text}
                   audioBlob={audioBlobState}
                   durationSec={state.audioMetadata?.duration ?? null}
+                  transcriptionId={adagioTranscriptionId}
                   compact
                 />
               </>
