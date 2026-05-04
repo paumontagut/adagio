@@ -602,6 +602,7 @@ const ComparisonView: React.FC = () => {
                   predictedText={state.chatgpt.result.text}
                   audioBlob={audioBlobState}
                   durationSec={state.audioMetadata?.duration ?? null}
+                  transcriptionId={chatgptTranscriptionId}
                   compact
                 />
               </>
