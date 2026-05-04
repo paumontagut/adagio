@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
         created_at
       `)
       .order('created_at', { ascending: false })
-      .limit(500);
+      .limit(2000);
 
     if (audioError) {
       console.error('Error fetching audio metadata:', audioError);
@@ -143,7 +143,6 @@ Deno.serve(async (req) => {
       .from('recordings')
       .select(`
         id,
-        session_pseudonym,
         phrase_text,
         audio_url,
         duration_ms,
@@ -152,20 +151,18 @@ Deno.serve(async (req) => {
         consent_train,
         consent_store,
         device_label,
-        created_at,
-        consent_at
+        created_at
       `)
       .order('created_at', { ascending: false })
-      .limit(500);
+      .limit(2000);
 
     if (recordingsError) {
       console.warn('Warning: Could not fetch legacy recordings:', recordingsError);
     }
 
-    // Create a Set of session_pseudonyms from modern recordings to track them
-    const modernPseudonyms = new Set(
-      audioData?.map(r => r.session_pseudonym).filter(Boolean) || []
-    );
+    // NOTE: legacy `recordings` table does NOT have a session_pseudonym column.
+    // Modern (audio_metadata) and legacy (recordings) are independent flows that
+    // do not overlap, so we include all rows from both sources.
 
     // Transform modern recordings (from audio_metadata)
     const modernRecordings = (audioData || []).map(audio => ({
@@ -193,9 +190,8 @@ Deno.serve(async (req) => {
       source: 'audio_metadata' // Mark as modern
     }));
 
-    // Transform legacy recordings (from recordings table), excluding duplicates
+    // Transform legacy recordings (from recordings table) — include all rows
     const legacyRecordings = (recordingsData || [])
-      .filter(recording => !recording.session_pseudonym || !modernPseudonyms.has(recording.session_pseudonym))
       .map(recording => {
         // Parse audio_url for legacy recordings
         let unencryptedBucket = null;
@@ -211,7 +207,7 @@ Deno.serve(async (req) => {
         
         return {
           id: recording.id,
-          session_pseudonym: recording.session_pseudonym,
+          session_pseudonym: null, // legacy table has no pseudonym column
           phrase_text: recording.phrase_text,
           audio_url: recording.audio_url,
           duration_ms: recording.duration_ms,
@@ -223,14 +219,14 @@ Deno.serve(async (req) => {
           device_label: recording.device_label,
           device_info: recording.device_label,
           created_at: recording.created_at,
-          consent_at: recording.consent_at,
+          consent_at: recording.created_at,
           quality_score: null,
           encryption_key_version: 1,
           file_size_bytes: null,
           unencrypted_file_size_bytes: null,
           unencrypted_storage_bucket: unencryptedBucket,
           unencrypted_file_path: unencryptedPath,
-          identity_available: recording.session_pseudonym ? true : false,
+          identity_available: false,
           source: 'recordings' // Mark as legacy
         };
       });
