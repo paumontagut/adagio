@@ -223,7 +223,7 @@ export const TranscribeView = () => {
                     {isPlaying ? <Square className="mr-1 h-4 w-4" /> : <Volume2 className="mr-1 h-4 w-4" />}
                     {isPlaying ? "Reproduciendo..." : "Escuchar"}
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => { setState("idle"); setResult(null); setAudioBlob(null); setCanTranscribe(false); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setState("idle"); setResult(null); setAudioBlob(null); setCanTranscribe(false); setTranscriptionId(null); }}>
                     Transcribir otro audio
                   </Button>
                 </div>
