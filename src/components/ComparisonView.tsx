@@ -195,6 +195,8 @@ const ComparisonView: React.FC = () => {
     setIsLoadingTTSAdagio(false);
     setIsLoadingTTSChatGPT(false);
     
+    setAdagioTranscriptionId(null);
+    setChatgptTranscriptionId(null);
     setState({
       isProcessing: false,
       adagio: { status: 'idle' },
