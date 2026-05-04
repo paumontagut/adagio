@@ -42,6 +42,8 @@ const ComparisonView: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [audioBlobState, setAudioBlobState] = useState<Blob | null>(null);
+  const [adagioTranscriptionId, setAdagioTranscriptionId] = useState<string | null>(null);
+  const [chatgptTranscriptionId, setChatgptTranscriptionId] = useState<string | null>(null);
   const [state, setState] = useState<ComparisonState>({
     isProcessing: false,
     adagio: { status: 'idle' },
