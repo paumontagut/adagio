@@ -77,6 +77,18 @@ export const TranscribeView = () => {
       setProgress(100);
       setState("completed");
 
+      // Guardar la transcripción (audio + texto) si el usuario está logueado
+      try {
+        const saved = await saveTranscription({
+          provider: 'adagio',
+          text: res.text,
+          audioBlob,
+        });
+        setTranscriptionId(saved?.id ?? null);
+      } catch (e) {
+        console.warn('No se pudo guardar la transcripción:', e);
+      }
+
       toast({ title: "Transcripción completada", description: "El audio ha sido procesado exitosamente." });
     } catch (err) {
       console.error("Transcription error:", err);
