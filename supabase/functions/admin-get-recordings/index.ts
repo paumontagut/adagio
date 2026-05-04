@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
         created_at
       `)
       .order('created_at', { ascending: false })
-      .limit(500);
+      .limit(2000);
 
     if (audioError) {
       console.error('Error fetching audio metadata:', audioError);
