@@ -12,6 +12,7 @@ import ComparisonView from "@/components/ComparisonView";
 import { FeedbackPrompt } from "@/components/FeedbackPrompt";
 import { useAuth } from "@/contexts/AuthContext";
 import { transcribeService, type TranscribeError } from "@/services/transcribe";
+import { saveTranscription } from "@/services/transcriptionStore";
 import { speakWithElevenLabs } from "@/services/tts";
 import {
   Loader2,
