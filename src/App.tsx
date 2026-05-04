@@ -46,6 +46,7 @@ const App = () => (
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/my-data" element={<MyData />} />
               <Route path="/my-points" element={<MyPoints />} />
+              <Route path="/mis-transcripciones" element={<MyTranscriptions />} />
               <Route path="/colabora" element={<Colabora />} />
               
               {/* Admin Routes */}
