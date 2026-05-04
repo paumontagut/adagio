@@ -54,6 +54,14 @@ export const FeedbackPrompt = ({
         audioBlob: audioBlob ?? null,
         durationSec: durationSec ?? null,
       });
+      // Si la transcripción se ha guardado en `transcriptions`, actualizar también esa fila
+      if (transcriptionId) {
+        await updateTranscriptionFeedback(transcriptionId, {
+          isCorrect,
+          correctedText: correctedText ?? null,
+          feedbackId: res.feedbackId,
+        });
+      }
       setStage('done');
       onSubmitted?.(res.pointsAwarded);
       toast.success(`+${res.pointsAwarded} puntos 🎉`, {
