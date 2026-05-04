@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       totalRecordings: allRecordings.length,
       encryptedRecordings: encryptedCount,
       unencryptedRecordings: unencryptedCount,
-      legacyRecordings: uniqueLegacyRecordings.length,
+      legacyRecordings: legacyList.length,
       totalUsers: usersCount || 0,
       todayRecordings: todayRecordings.length,
       consentedRecordings: consentedCount,
