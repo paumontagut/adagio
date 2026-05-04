@@ -207,7 +207,7 @@ Deno.serve(async (req) => {
         
         return {
           id: recording.id,
-          session_pseudonym: recording.session_pseudonym,
+          session_pseudonym: null, // legacy table has no pseudonym column
           phrase_text: recording.phrase_text,
           audio_url: recording.audio_url,
           duration_ms: recording.duration_ms,
@@ -219,14 +219,14 @@ Deno.serve(async (req) => {
           device_label: recording.device_label,
           device_info: recording.device_label,
           created_at: recording.created_at,
-          consent_at: recording.consent_at,
+          consent_at: recording.created_at,
           quality_score: null,
           encryption_key_version: 1,
           file_size_bytes: null,
           unencrypted_file_size_bytes: null,
           unencrypted_storage_bucket: unencryptedBucket,
           unencrypted_file_path: unencryptedPath,
-          identity_available: recording.session_pseudonym ? true : false,
+          identity_available: false,
           source: 'recordings' // Mark as legacy
         };
       });
