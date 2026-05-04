@@ -1170,13 +1170,19 @@ export const AdminRecordings = () => {
         </div>
       </Card>
 
-      {filteredRecordings.length === 0 && (
-        <div className="text-center py-8">
-          <FileAudio className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">No hay grabaciones</h3>
-          <p className="text-muted-foreground">No se encontraron grabaciones que coincidan con tu búsqueda.</p>
-        </div>
-      )}
+          {filteredRecordings.length === 0 && (
+            <div className="text-center py-8">
+              <FileAudio className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No hay grabaciones</h3>
+              <p className="text-muted-foreground">No se encontraron grabaciones que coincidan con tu búsqueda.</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="transcriptions">
+          <AdminTranscriptionsTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
