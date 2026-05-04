@@ -35,6 +35,7 @@ interface TranscriptionResult {
 
 export const TranscribeView = () => {
   const [result, setResult] = useState<TranscriptionResult | null>(null);
+  const [transcriptionId, setTranscriptionId] = useState<string | null>(null);
   const [state, setState] = useState<TranscribeState>("idle");
   const [progress, setProgress] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
