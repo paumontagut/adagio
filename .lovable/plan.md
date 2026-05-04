@@ -1,61 +1,111 @@
-## Contexto
+## Objetivo
 
-El sync Lovable ↔ GitHub estuvo caído ~2 semanas. Aunque ahora el último commit (deploy marker en `MobileAuthCallback.tsx`) sí llegó al repo, eso solo prueba que el sync funciona **a partir de ahora** — no garantiza que los commits intermedios (sistema de puntos, ruta mobile, etc.) se hayan recuperado retroactivamente.
+Que cada vez que uses el apartado **Transcribir** se guarde:
+1. El **audio** original que grabaste/subiste.
+2. El **texto transcrito** por el motor (Adagio o ChatGPT).
+3. El **proveedor** usado.
+4. Y que cuando des feedback ("Sí correcto" / "No, era esto otro"), el registro se **actualice** con el texto final corregido, sin crear duplicados.
 
-Hay que verificar archivo por archivo que lo crítico está en GitHub.
+Todo esto va en un **espacio separado** del entrenamiento (no toca `audio_metadata`, `audio_raw` ni `recordings`).
 
-## Archivos clave a verificar en GitHub
+---
 
-Lo añadido / modificado en las últimas semanas que debería estar sí o sí:
+## Dónde se guarda
 
-**Sistema de puntos**
-- `src/hooks/useUserPoints.ts`
-- `src/pages/MyPoints.tsx`
-- `src/services/feedback.ts`
-- Migraciones SQL de `user_points` y `transcription_feedback` en `supabase/migrations/`
+### Storage
+- **Bucket nuevo `transcripciones`** (privado), separado de `audio_raw` (entrenamiento) y de `inferencias` (feedback antiguo).
+- Ruta: `{user_id}/{transcription_id}.{ext}`
+- Solo el dueño puede leer/borrar sus archivos. Service role acceso total (admin).
 
-**Auth móvil**
-- `src/pages/MobileAuthCallback.tsx` (con el comentario `// Deploy marker:` al inicio → es la prueba más fiable de que el sync está al día)
-- Ruta `/auth/mobile-callback` registrada en `src/App.tsx`
+### Base de datos
+Ampliar la tabla existente `transcriptions` (hoy infrautilizada) con campos nuevos:
+- `provider` (adagio / openai)
+- `audio_path` (ya existe) → ruta en bucket `transcripciones`
+- `audio_format`, `file_size_bytes`
+- `original_text` (lo que dijo el modelo)
+- `text` (ya existe) → texto final mostrado al usuario
+- `corrected_text` (si el usuario corrigió)
+- `is_validated` (true/false/null)
+- `feedback_id` (FK a `transcription_feedback`, opcional)
+- `updated_at`
 
-**Menú de usuario**
-- `src/components/UserMenu.tsx` (entrada a "Mis puntos")
+RLS: cada usuario ve/edita/borra solo lo suyo. Admin (service_role) acceso total para que aparezca en el panel admin si lo deseas más adelante.
 
-**Edge functions recientes**
-- `supabase/functions/stt-runpod/index.ts`
-- `supabase/functions/stt-openai/index.ts`
+---
 
-## Cómo verificarlo (3 opciones, de menos a más esfuerzo)
+## Flujo nuevo en la app
 
-### Opción A — Visual rápida en GitHub (1 min)
-
-En tu repo de GitHub, ve directamente a estas URLs (sustituye `TU_USUARIO/TU_REPO`):
-
+```text
+1. Usuario graba/sube audio
+2. Pulsa "Transcribir con Adagio" (o ChatGPT en comparación)
+3. Se llama al motor STT → devuelve texto
+4. ➜ NUEVO: subir audio a bucket `transcripciones`
+   ➜ NUEVO: insertar fila en `transcriptions` con audio_path + original_text + text
+   ➜ guardar el `id` devuelto en el estado del componente
+5. Se muestra el resultado + FeedbackPrompt
+6. Usuario responde:
+   - "Sí, correcto" → UPDATE transcriptions SET is_validated=true
+   - "No" + corrección → UPDATE transcriptions SET corrected_text=..., text=corrección, is_validated=false
+   - "No" sin corrección → UPDATE transcriptions SET is_validated=false
+7. (El feedback sigue guardándose en `transcription_feedback` como hasta ahora, para los puntos)
 ```
-github.com/TU_USUARIO/TU_REPO/blob/main/src/pages/MyPoints.tsx
-github.com/TU_USUARIO/TU_REPO/blob/main/src/pages/MobileAuthCallback.tsx
-github.com/TU_USUARIO/TU_REPO/blob/main/src/hooks/useUserPoints.ts
-github.com/TU_USUARIO/TU_REPO/blob/main/src/services/feedback.ts
-```
 
-Si los 4 cargan y el primero de `MobileAuthCallback.tsx` muestra `// Deploy marker: ...`, el sync recuperó todo. Si alguna da 404, hay hueco.
+---
 
-### Opción B — Comparar commits (2 min)
+## Consentimiento
 
-En GitHub:
-```
-github.com/TU_USUARIO/TU_REPO/commits/main
-```
-Mira si ves commits de las últimas 2 semanas con mensajes tipo "Add MyPoints page", "Add user points system", "Add mobile auth callback". Si solo ves commits muy antiguos + el de hoy (deploy marker), el sync **no** recuperó el histórico.
+- Para **guardar el audio** en el bucket: requiere `data_use_consent = true` (igual que hoy con `inferencias`). Si no lo tiene, se guarda solo el texto sin audio.
+- Para **guardar el texto transcrito**: siempre se guarda si el usuario está logueado (es su propio dato, no se comparte).
+- Si el usuario **no está logueado** → no se guarda nada (comportamiento actual). Se le muestra un aviso suave invitando a iniciar sesión.
 
-### Opción C — Script de diff exhaustivo (más fiable)
+---
 
-Generar en Lovable un fichero `sync-check.json` con un listado + hash SHA-256 de los ~20 archivos críticos. Tu compa hace `git pull` y corre un script local que recalcula los hashes y dice cuáles faltan o difieren. Cero ambigüedad, pero requiere que ejecute un comando.
+## Dónde lo verá el usuario
 
-## Recomendación
+Crear una nueva página **"Mis Transcripciones"** (`/mis-transcripciones`) accesible desde el menú de usuario, separada de "Mis Grabaciones" (que es de entrenamiento). Mostrará una lista con:
+- Fecha
+- Proveedor (Adagio / ChatGPT)
+- Texto final
+- Botón para reproducir el audio (si se guardó)
+- Indicador visual de si fue validado/corregido
+- Botón borrar
 
-Empezar por **Opción A** (30 segundos). Si los 4 archivos cargan correctamente en GitHub, estás cubierto y no hace falta más. Si alguno falla, pasamos a Opción C para encontrar exactamente qué falta y restaurarlo desde Lovable forzando re-commits.
+---
 
-## Pregunta antes de implementar
+## Cambios técnicos
 
-¿Quieres que prepare ya la **Opción C** (el `sync-check.json` + script de verificación) o prefieres probar primero la Opción A tú mismo abriendo esas 4 URLs en GitHub?
+### 1. Migración SQL
+- Crear bucket `transcripciones` + políticas RLS.
+- Añadir columnas a `transcriptions`: `provider`, `audio_format`, `file_size_bytes`, `original_text`, `corrected_text`, `is_validated`, `feedback_id`, `updated_at`.
+- Trigger `updated_at` automático.
+
+### 2. Nuevo servicio `src/services/transcriptionStore.ts`
+- `saveTranscription({ audioBlob, text, provider, durationSec })` → sube audio (si hay consent) + inserta fila → devuelve `transcriptionId`.
+- `updateTranscriptionFeedback(id, { isCorrect, correctedText })` → UPDATE de la fila.
+- `listMyTranscriptions()`, `deleteTranscription(id)`, `getAudioUrl(path)` (signed URL).
+
+### 3. Modificar `TranscribeView.tsx` y `ComparisonView.tsx`
+- Tras transcripción exitosa → llamar `saveTranscription` y guardar `transcriptionId` en estado.
+- Pasar `transcriptionId` a `<FeedbackPrompt>` como prop nueva.
+
+### 4. Modificar `FeedbackPrompt.tsx`
+- Aceptar prop opcional `transcriptionId`.
+- Después de enviar feedback → llamar `updateTranscriptionFeedback(transcriptionId, ...)`.
+
+### 5. Nueva página `src/pages/MyTranscriptions.tsx` + ruta en `App.tsx` + entrada en `UserMenu.tsx`.
+
+---
+
+## Lo que NO cambia
+- Apartado **Entrenar** sigue intacto (sigue usando `audio_metadata`, `audio_raw`, cifrado AES-256).
+- Tabla `transcription_feedback` y sistema de puntos siguen funcionando igual.
+- Bucket `inferencias` se mantiene (compatibilidad con feedback antiguo).
+- Si el usuario no está logueado → todo igual que ahora (no se guarda nada).
+
+---
+
+## Preguntas antes de implementar
+
+1. ¿Quieres que esto **requiera consentimiento explícito** (un check tipo "guardar mis transcripciones") o que se guarde automáticamente para cualquier usuario logueado?
+2. ¿La nueva página **"Mis Transcripciones"** debe aparecer también en el panel **admin** (para que veas todas las transcripciones de todos los usuarios), o solo personal de cada usuario?
+3. ¿Quieres que las transcripciones tengan un **límite de retención** automático (ej. borrar tras 30/90 días), o se guardan indefinidamente hasta que el usuario las borre?
