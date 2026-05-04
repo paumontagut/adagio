@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPoints } from '@/hooks/useUserPoints';
-import { LogOut, HardDrive, Sparkles } from 'lucide-react';
+import { LogOut, HardDrive, Sparkles, FileAudio } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
