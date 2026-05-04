@@ -776,37 +776,51 @@ export const AdminRecordings = () => {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold">Grabaciones de Audio</h1>
-          <div className="flex gap-2">
-            <Button 
-              variant={showIdentities ? "default" : "outline"}
-              size="sm"
-              onClick={async () => {
-                if (!showIdentities) {
-                  await loadAllIdentities();
-                }
-                setShowIdentities(!showIdentities);
-              }}
-            >
-              {showIdentities ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
-              {showIdentities ? 'Ocultar identidades' : 'Mostrar identidades'}
-            </Button>
-            <Button onClick={fetchRecordings} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Actualizar
-            </Button>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <p className="text-muted-foreground">
-            Gestiona las grabaciones con separación de datos de identidad para privacidad
-          </p>
-          <Badge variant="secondary" className="text-xs">
-            Datos separados por privacidad
-          </Badge>
-        </div>
+        <h1 className="text-2xl font-bold mb-2">Grabaciones y transcripciones</h1>
+        <p className="text-muted-foreground">
+          Las grabaciones de <strong>entrenamiento</strong> y las <strong>transcripciones</strong> del apartado Transcribir se gestionan por separado.
+        </p>
       </div>
+
+      <Tabs defaultValue="training" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="training">🎓 Entrenamiento</TabsTrigger>
+          <TabsTrigger value="transcriptions">📝 Transcripciones</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="training">
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-semibold">Grabaciones de entrenamiento</h2>
+              <div className="flex gap-2">
+                <Button
+                  variant={showIdentities ? "default" : "outline"}
+                  size="sm"
+                  onClick={async () => {
+                    if (!showIdentities) {
+                      await loadAllIdentities();
+                    }
+                    setShowIdentities(!showIdentities);
+                  }}
+                >
+                  {showIdentities ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
+                  {showIdentities ? 'Ocultar identidades' : 'Mostrar identidades'}
+                </Button>
+                <Button onClick={fetchRecordings} variant="outline" size="sm">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Actualizar
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <p className="text-muted-foreground text-sm">
+                Audio cifrado del flujo de entrenamiento, con separación de identidad.
+              </p>
+              <Badge variant="secondary" className="text-xs">
+                Datos separados por privacidad
+              </Badge>
+            </div>
+          </div>
 
       {/* Search */}
       <div className="mb-6">
