@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { AdminTranscriptionsTab } from '@/components/admin/AdminTranscriptionsTab';
 import { useAdmin } from '@/contexts/AdminContext';
 import { secureStorage } from '@/lib/secureStorage';
 import { 
