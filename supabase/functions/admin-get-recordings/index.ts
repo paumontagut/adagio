@@ -143,7 +143,6 @@ Deno.serve(async (req) => {
       .from('recordings')
       .select(`
         id,
-        session_pseudonym,
         phrase_text,
         audio_url,
         duration_ms,
@@ -152,11 +151,10 @@ Deno.serve(async (req) => {
         consent_train,
         consent_store,
         device_label,
-        created_at,
-        consent_at
+        created_at
       `)
       .order('created_at', { ascending: false })
-      .limit(500);
+      .limit(2000);
 
     if (recordingsError) {
       console.warn('Warning: Could not fetch legacy recordings:', recordingsError);
