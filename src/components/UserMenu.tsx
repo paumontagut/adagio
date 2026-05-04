@@ -85,6 +85,12 @@ export const UserMenu = () => {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
+            <Link to="/mis-transcripciones" className="cursor-pointer">
+              <FileAudio className="mr-2 h-4 w-4" />
+              Mis transcripciones
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
             <Link to="/my-data" className="cursor-pointer">
               <HardDrive className="mr-2 h-4 w-4" />
               Mis datos
