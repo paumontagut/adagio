@@ -12,6 +12,7 @@ import ComparisonView from "@/components/ComparisonView";
 import { FeedbackPrompt } from "@/components/FeedbackPrompt";
 import { useAuth } from "@/contexts/AuthContext";
 import { transcribeService, type TranscribeError } from "@/services/transcribe";
+import { saveTranscription } from "@/services/transcriptionStore";
 import { speakWithElevenLabs } from "@/services/tts";
 import {
   Loader2,
@@ -34,6 +35,7 @@ interface TranscriptionResult {
 
 export const TranscribeView = () => {
   const [result, setResult] = useState<TranscriptionResult | null>(null);
+  const [transcriptionId, setTranscriptionId] = useState<string | null>(null);
   const [state, setState] = useState<TranscribeState>("idle");
   const [progress, setProgress] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -74,6 +76,18 @@ export const TranscribeView = () => {
       setResult({ text: res.text, provider: res.provider || "Adagio" });
       setProgress(100);
       setState("completed");
+
+      // Guardar la transcripción (audio + texto) si el usuario está logueado
+      try {
+        const saved = await saveTranscription({
+          provider: 'adagio',
+          text: res.text,
+          audioBlob,
+        });
+        setTranscriptionId(saved?.id ?? null);
+      } catch (e) {
+        console.warn('No se pudo guardar la transcripción:', e);
+      }
 
       toast({ title: "Transcripción completada", description: "El audio ha sido procesado exitosamente." });
     } catch (err) {
@@ -195,6 +209,7 @@ export const TranscribeView = () => {
                   provider="adagio"
                   predictedText={result.text}
                   audioBlob={audioBlob}
+                  transcriptionId={transcriptionId}
                 />
 
                 <div className="flex flex-wrap gap-2">
@@ -208,7 +223,7 @@ export const TranscribeView = () => {
                     {isPlaying ? <Square className="mr-1 h-4 w-4" /> : <Volume2 className="mr-1 h-4 w-4" />}
                     {isPlaying ? "Reproduciendo..." : "Escuchar"}
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => { setState("idle"); setResult(null); setAudioBlob(null); setCanTranscribe(false); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setState("idle"); setResult(null); setAudioBlob(null); setCanTranscribe(false); setTranscriptionId(null); }}>
                     Transcribir otro audio
                   </Button>
                 </div>

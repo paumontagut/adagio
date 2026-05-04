@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Check, X, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { saveFeedback, type FeedbackProvider } from '@/services/feedback';
+import { updateTranscriptionFeedback } from '@/services/transcriptionStore';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface FeedbackPromptProps {
@@ -14,6 +15,7 @@ interface FeedbackPromptProps {
   durationSec?: number | null;
   onSubmitted?: (pointsAwarded: number) => void;
   compact?: boolean;
+  transcriptionId?: string | null;
 }
 
 type Stage = 'prompt' | 'correcting' | 'submitting' | 'done';
@@ -25,6 +27,7 @@ export const FeedbackPrompt = ({
   durationSec,
   onSubmitted,
   compact = false,
+  transcriptionId = null,
 }: FeedbackPromptProps) => {
   const { user } = useAuth();
   const [stage, setStage] = useState<Stage>('prompt');
@@ -51,6 +54,14 @@ export const FeedbackPrompt = ({
         audioBlob: audioBlob ?? null,
         durationSec: durationSec ?? null,
       });
+      // Si la transcripción se ha guardado en `transcriptions`, actualizar también esa fila
+      if (transcriptionId) {
+        await updateTranscriptionFeedback(transcriptionId, {
+          isCorrect,
+          correctedText: correctedText ?? null,
+          feedbackId: res.feedbackId,
+        });
+      }
       setStage('done');
       onSubmitted?.(res.pointsAwarded);
       toast.success(`+${res.pointsAwarded} puntos 🎉`, {

@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserPoints } from '@/hooks/useUserPoints';
-import { LogOut, HardDrive, Sparkles } from 'lucide-react';
+import { LogOut, HardDrive, Sparkles, FileAudio } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -82,6 +82,12 @@ export const UserMenu = () => {
               <Sparkles className="mr-2 h-4 w-4 text-primary" />
               <span className="flex-1">Mis puntos</span>
               <span className="font-semibold tabular-nums">{totalPoints}</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/mis-transcripciones" className="cursor-pointer">
+              <FileAudio className="mr-2 h-4 w-4" />
+              Mis transcripciones
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

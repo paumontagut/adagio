@@ -15,6 +15,7 @@ import { Auth } from "./pages/Auth";
 import { TermsAndConditions } from "./pages/TermsAndConditions";
 import { MyData } from "./pages/MyData";
 import { MyPoints } from "./pages/MyPoints";
+import { MyTranscriptions } from "./pages/MyTranscriptions";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/my-data" element={<MyData />} />
               <Route path="/my-points" element={<MyPoints />} />
+              <Route path="/mis-transcripciones" element={<MyTranscriptions />} />
               <Route path="/colabora" element={<Colabora />} />
               
               {/* Admin Routes */}

@@ -466,27 +466,51 @@ export type Database = {
       }
       transcriptions: {
         Row: {
+          audio_format: string | null
           audio_path: string | null
+          corrected_text: string | null
           created_at: string
           duration_seconds: number | null
+          feedback_id: string | null
+          file_size_bytes: number | null
           id: string
+          is_validated: boolean | null
+          original_text: string | null
+          provider: string | null
           text: string
+          updated_at: string
           user_id: string
         }
         Insert: {
+          audio_format?: string | null
           audio_path?: string | null
+          corrected_text?: string | null
           created_at?: string
           duration_seconds?: number | null
+          feedback_id?: string | null
+          file_size_bytes?: number | null
           id?: string
+          is_validated?: boolean | null
+          original_text?: string | null
+          provider?: string | null
           text: string
+          updated_at?: string
           user_id: string
         }
         Update: {
+          audio_format?: string | null
           audio_path?: string | null
+          corrected_text?: string | null
           created_at?: string
           duration_seconds?: number | null
+          feedback_id?: string | null
+          file_size_bytes?: number | null
           id?: string
+          is_validated?: boolean | null
+          original_text?: string | null
+          provider?: string | null
           text?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

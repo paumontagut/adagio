@@ -11,6 +11,7 @@ import { speakWithElevenLabs } from '@/services/tts';
 import { supabase } from '@/integrations/supabase/client';
 import { FeedbackPrompt } from '@/components/FeedbackPrompt';
 import { useAuth } from '@/contexts/AuthContext';
+import { saveTranscription } from '@/services/transcriptionStore';
 
 interface ChatGPTResult {
   text: string;
@@ -41,6 +42,8 @@ const ComparisonView: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [audioBlobState, setAudioBlobState] = useState<Blob | null>(null);
+  const [adagioTranscriptionId, setAdagioTranscriptionId] = useState<string | null>(null);
+  const [chatgptTranscriptionId, setChatgptTranscriptionId] = useState<string | null>(null);
   const [state, setState] = useState<ComparisonState>({
     isProcessing: false,
     adagio: { status: 'idle' },
@@ -105,16 +108,34 @@ const ComparisonView: React.FC = () => {
     }));
 
     const adagioPromise = transcribeAdagio(state.audioFile)
-      .then(result => {
+      .then(async (result) => {
         setState(prev => ({ ...prev, adagio: { status: 'completed', result } }));
+        try {
+          const saved = await saveTranscription({
+            provider: 'adagio',
+            text: result.text,
+            audioBlob: audioBlobState,
+            durationSec: state.audioMetadata?.duration ?? null,
+          });
+          setAdagioTranscriptionId(saved?.id ?? null);
+        } catch (e) { console.warn('save adagio transcription failed', e); }
       })
       .catch(error => {
         setState(prev => ({ ...prev, adagio: { status: 'error', error: error.message } }));
       });
 
     const chatgptPromise = transcribeChatGPT(state.audioFile)
-      .then(result => {
+      .then(async (result) => {
         setState(prev => ({ ...prev, chatgpt: { status: 'completed', result } }));
+        try {
+          const saved = await saveTranscription({
+            provider: 'openai',
+            text: result.text,
+            audioBlob: audioBlobState,
+            durationSec: state.audioMetadata?.duration ?? null,
+          });
+          setChatgptTranscriptionId(saved?.id ?? null);
+        } catch (e) { console.warn('save chatgpt transcription failed', e); }
       })
       .catch(error => {
         setState(prev => ({ ...prev, chatgpt: { status: 'error', error: error.message } }));
@@ -124,7 +145,7 @@ const ComparisonView: React.FC = () => {
       setState(prev => ({ ...prev, isProcessing: false }));
     });
 
-  }, [state.audioFile, toast]);
+  }, [state.audioFile, audioBlobState, state.audioMetadata, toast]);
 
   const copyToClipboard = useCallback((text: string, provider: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -174,6 +195,8 @@ const ComparisonView: React.FC = () => {
     setIsLoadingTTSAdagio(false);
     setIsLoadingTTSChatGPT(false);
     
+    setAdagioTranscriptionId(null);
+    setChatgptTranscriptionId(null);
     setState({
       isProcessing: false,
       adagio: { status: 'idle' },
@@ -466,6 +489,7 @@ const ComparisonView: React.FC = () => {
                   predictedText={state.adagio.result.text}
                   audioBlob={audioBlobState}
                   durationSec={state.audioMetadata?.duration ?? null}
+                  transcriptionId={adagioTranscriptionId}
                   compact
                 />
               </>
@@ -578,6 +602,7 @@ const ComparisonView: React.FC = () => {
                   predictedText={state.chatgpt.result.text}
                   audioBlob={audioBlobState}
                   durationSec={state.audioMetadata?.duration ?? null}
+                  transcriptionId={chatgptTranscriptionId}
                   compact
                 />
               </>
