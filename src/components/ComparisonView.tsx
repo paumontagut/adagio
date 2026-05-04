@@ -11,6 +11,7 @@ import { speakWithElevenLabs } from '@/services/tts';
 import { supabase } from '@/integrations/supabase/client';
 import { FeedbackPrompt } from '@/components/FeedbackPrompt';
 import { useAuth } from '@/contexts/AuthContext';
+import { saveTranscription } from '@/services/transcriptionStore';
 
 interface ChatGPTResult {
   text: string;
